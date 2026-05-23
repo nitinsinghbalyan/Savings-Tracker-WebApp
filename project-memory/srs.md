@@ -276,3 +276,103 @@ Added 2026-05-23. See [plans.md](./plans.md).
 - [x] Insert into `savings_plans` with authenticated `user_id`
 - [x] Redirect to `/plans` on success
 - [x] `npm run build` passes
+
+---
+
+## 13. Acceptance criteria (plans list & detail — complete)
+
+Added 2026-05-23. See [plans.md](./plans.md).
+
+- [x] `/plans` lists user plans with Active / Completed / Paused tabs
+- [x] Plan cards show progress, health badge, amounts from transactions
+- [x] `/plans/[id]` shows real stats, history, projection, action links
+- [x] Wrong or other user's plan → 404
+- [x] `npm run build` passes
+
+---
+
+## 14. Acceptance criteria (transactions — complete)
+
+Added 2026-05-23. See [transactions.md](./transactions.md).
+
+- [x] Log CONTRIBUTION, WITHDRAWAL, ADJUSTMENT with validation
+- [x] Insert into `savings_transactions` (paise)
+- [x] `?planId` prefill; redirect to plan detail when applicable
+- [x] Withdrawal delay estimate shown (no payment automation for UPI)
+- [x] `npm run build` passes
+
+---
+
+## 15. Acceptance criteria (dashboard — complete)
+
+Added 2026-05-23. See [dashboard.md](./dashboard.md).
+
+- [x] Total saved, targets, progress, month stats from live data
+- [x] Active / completed / at-risk counts
+- [x] 6-month savings chart; quick actions; empty state
+- [x] `npm run build` passes
+
+---
+
+## 16. Acceptance criteria (insights — complete)
+
+Added 2026-05-23. See [insights.md](./insights.md).
+
+- [x] Savings Health Score 0–100 with explainable breakdown
+- [x] Strengths, weaknesses, recommended actions
+- [x] At-risk plans and completed milestones
+- [x] Extra savings simulator and monthly allocation (savings plans only)
+- [x] No investment advice copy
+- [x] `npm run build` passes
+
+---
+
+## 17. MVP checklist (updated 2026-05-23)
+
+Progress on [section 8](#8-future-acceptance-criteria-mvp):
+
+- [x] User can sign up, log in, and stay signed in
+- [x] User can create, list, and view savings plans; log transactions
+- [ ] User can edit plans and transactions
+- [x] Dashboard and insights show real aggregated data
+- [ ] RLS enforced in production _(policies in migration; apply to hosted project)_
+- [ ] Deployed on Vercel with production Supabase
+
+---
+
+## 18. Acceptance criteria (settings — complete)
+
+Added 2026-05-23. See [settings.md](./settings.md).
+
+- [x] Display user email; edit profile fields (name, income, saving day)
+- [x] Currency fixed INR; `updateProfile` upserts `profiles`
+- [x] Export transactions and plans as CSV
+- [x] Delete all transactions / all plans with confirmation dialog
+- [x] Sign out
+- [x] No family sharing, bank linking, UPI mandates, or credit score UI
+- [x] `npm run build` passes
+
+---
+
+## 19. Functional requirements — Expenses (v2 planned)
+
+Added 2026-05-23. **Not implemented.** See [expenses.md](./expenses.md), [cashflow.md](./cashflow.md).
+
+| ID | Requirement |
+|----|-------------|
+| FR-E1 | User can log an expense with amount (₹), category, date, optional note and payment method label |
+| FR-E2 | User can view expenses for the current calendar month in a list |
+| FR-E3 | Dashboard shows income (from profile), spent (sum of expenses), saved to goals (existing logic), and leftover |
+| FR-E4 | Expenses are stored in a dedicated table with RLS; amounts in paise |
+| FR-E5 | Logging an expense does not automatically change savings plan balances |
+| FR-E6 | Center “Add” navigation opens expense log by default; savings plan logging remains available from Plans |
+
+### Non-goals (v2 MVP)
+
+- Bank sync, UPI automation, category budgets, expense-to-plan linking — see [out-of-scope.md](./out-of-scope.md) v2 section.
+
+---
+
+## Component note — StatCard (2026-05-23)
+
+Section 7 checklist references **StatCard** as a shared component. `StatCard` was **removed** from the codebase during mobile polish; use dashboard cards (`DashboardHeroCard`, etc.) and `PlanCard` instead. Checklist entry preserved for historical accuracy.

@@ -103,7 +103,8 @@ See [auth.md](./auth.md).
 | Route protection | Centralized in `src/middleware.ts`; path lists in `src/lib/auth/routes.ts` |
 | Logout | Server action with `signOut()` + `redirect("/auth/login")` |
 | Post-login navigation | `router.refresh()` then `router.push("/dashboard")` |
-| Auth errors | Display inline in form; no toast required for v1 |
+| Auth errors | Display inline in form; toast optional for auth |
+| Success / CRUD feedback | Sonner toasts via `toast.success` / `toast.error` in client forms |
 
 ---
 
@@ -131,5 +132,50 @@ See [plans.md](./plans.md).
 | Form amounts | Users enter rupees (`targetAmountRupees`); server stores paise |
 | Conversion | `Math.round(rupees * 100)` in form before `createPlan` |
 | Categories / priority | Use constants from `src/config/plan-options.ts` |
-| Create flow | Client form → `createPlan` server action → `redirect("/plans")` |
-| List/detail/edit | Not yet wired to Supabase fetch/update |
+| Create flow | Client form → server action → toast → `router.push(redirectTo)` |
+| List/detail/edit | List/detail shipped; edit still stub |
+
+---
+
+## Environment (added 2026-05-23)
+
+| Rule | Detail |
+|------|--------|
+| Validation | `getPublicEnv()` from `@/lib/env` before Supabase client creation |
+| Local setup | Copy `.env.example` → `.env.local` |
+| Never commit | `.env.local` or real anon keys |
+| Optional | `NEXT_PUBLIC_APP_URL` for production metadata URLs |
+
+---
+
+## Server vs client imports (added 2026-05-23)
+
+| Rule | Detail |
+|------|--------|
+| RSC pages | Must not import functions from `"use client"` modules |
+| Shared parsers | Put in `src/lib/` without `"use client"` (e.g. `parse-transaction-type.ts`) |
+| Forms | Client components only; export components, not helpers used on server |
+
+---
+
+## Toasts (added 2026-05-23)
+
+- Provider: `AppProviders` wraps app with Sonner `Toaster` (`theme="dark"`, top-center)
+- Use after successful server actions: plan create, transaction create, profile update, bulk delete, CSV export
+- Server actions should not `redirect()` if a toast should appear — return `success` + `redirectTo` instead
+
+---
+
+## Expenses (planned v2 — 2026-05-23)
+
+See [expenses.md](./expenses.md).
+
+| Rule | Detail |
+|------|--------|
+| Ledger | `expenses` table only — never insert daily spending into `savings_transactions` |
+| Amount sign | `amount_paise` always **positive** (outflow) |
+| Form input | Users enter rupees; `Math.round(rupees * 100)` on save |
+| Categories | Presets from `expense-options.ts`; custom categories later |
+| Payment method | Label only (Cash, UPI, Card) — no payment API |
+| Plan balance | Unaffected by expense rows unless user also logs savings transaction |
+| Server actions | Same toast + `{ success, redirectTo }` pattern as plans |

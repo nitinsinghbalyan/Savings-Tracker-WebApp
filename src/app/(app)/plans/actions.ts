@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,9 +15,15 @@ export type CreatePlanInput = {
   color?: string;
 };
 
+export type ActionResult = {
+  error?: string;
+  success?: boolean;
+  redirectTo?: string;
+};
+
 export async function createPlan(
   input: CreatePlanInput,
-): Promise<{ error?: string }> {
+): Promise<ActionResult> {
   const supabase = await createClient();
 
   const {
@@ -44,5 +50,9 @@ export async function createPlan(
     return { error: error.message };
   }
 
-  redirect("/plans");
+  revalidatePath("/plans");
+  revalidatePath("/dashboard");
+  revalidatePath("/insights");
+
+  return { success: true, redirectTo: "/plans" };
 }

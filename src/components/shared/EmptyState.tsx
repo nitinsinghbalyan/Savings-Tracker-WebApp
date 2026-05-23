@@ -40,14 +40,14 @@ export function EmptyState({
       {actionLabel && actionHref ? (
         <Link
           href={actionHref}
-          className={cn(buttonVariants(), "mt-6 w-full justify-center")}
+          className={cn(buttonVariants({ size: "touch" }), "mt-6 w-full justify-center")}
         >
           {actionLabel}
         </Link>
       ) : actionLabel && onAction ? (
         <button
           type="button"
-          className={cn(buttonVariants(), "mt-6 w-full justify-center")}
+          className={cn(buttonVariants({ size: "touch" }), "mt-6 w-full justify-center")}
           onClick={onAction}
         >
           {actionLabel}

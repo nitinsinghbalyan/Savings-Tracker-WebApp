@@ -128,3 +128,25 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .page-content {
+    @apply flex flex-col gap-5;
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .app-main-padding {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-fab-bottom {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}

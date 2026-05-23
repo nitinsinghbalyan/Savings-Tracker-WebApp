@@ -61,7 +61,19 @@ const completion = projectCompletionDate({
 
 ## Not yet wired
 
-Dashboard, plan detail, and insights pages still use placeholder data — import these helpers when connecting to Supabase.
+_(Historical note from initial library ship — see below.)_
+
+## Wired to UI (added 2026-05-23)
+
+| Consumer | Usage |
+|----------|--------|
+| `src/lib/plans/enrich-plan.ts` | Current amount, progress, remaining, monthly required, health, avg monthly savings |
+| `src/lib/plans/get-plan-detail.ts` | `projectCompletionDate` on detail |
+| `src/lib/dashboard/` | Aggregates, month net savings, dashboard insight strings |
+| `src/lib/insights/health-score.ts` | Pace, consistency, on-track sub-scores |
+| `src/lib/insights/simulate-extra-savings.ts` | Simulator with extra monthly pace |
+| `src/lib/transactions/estimate-withdrawal-delay.ts` | Withdrawal warning on transaction form |
+| `src/components/plans/*`, `dashboard/*`, `insights/*` | Display only; math stays in `lib/` |
 
 ## Tests
 

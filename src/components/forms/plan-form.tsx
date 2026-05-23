@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { createPlan } from "@/app/(app)/plans/actions";
@@ -24,6 +25,10 @@ import {
   PLAN_COLOR_PRESETS,
   PLAN_PRIORITIES,
 } from "@/config/plan-options";
+import {
+  mobileSelectClassName,
+  mobileTextareaClassName,
+} from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
 
 const planSchema = z.object({
@@ -58,18 +63,8 @@ type PlanFormProps = {
   submitLabel?: string;
 };
 
-const fieldSelectClassName = cn(
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none",
-  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-  "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-  "md:text-sm dark:bg-input/30",
-);
-
-const fieldTextareaClassName = cn(
-  "min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none",
-  "placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-  "md:text-sm dark:bg-input/30",
-);
+const fieldSelectClassName = mobileSelectClassName;
+const fieldTextareaClassName = mobileTextareaClassName;
 
 export function PlanForm({
   defaultValues,
@@ -118,10 +113,13 @@ export function PlanForm({
     });
 
     if (result?.error) {
+      toast.error("Could not create plan", { description: result.error });
       setSubmitError(result.error);
       return;
     }
 
+    toast.success("Plan created");
+    router.push(result.redirectTo ?? "/plans");
     router.refresh();
   }
 
@@ -252,7 +250,7 @@ export function PlanForm({
                   type="button"
                   aria-label={`Use ${preset.label} color`}
                   className={cn(
-                    "size-8 rounded-full border-2 transition-transform hover:scale-105",
+                    "size-11 rounded-full border-2 transition-transform hover:scale-105 md:size-8",
                     selectedColor === preset.value
                       ? "border-primary"
                       : "border-transparent",
@@ -266,7 +264,7 @@ export function PlanForm({
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" size="touch" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : submitLabel}
           </Button>
         </form>

@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 
+import { PlanDetailActions } from "@/components/plans/plan-detail-actions";
+import { PlanDetailHeader } from "@/components/plans/plan-detail-header";
+import { PlanDetailStatCards } from "@/components/plans/plan-detail-stat-cards";
+import { PlanMetaCard } from "@/components/plans/plan-meta-card";
+import { PlanProgressRing } from "@/components/plans/plan-progress-ring";
+import { PlanProjectionCard } from "@/components/plans/plan-projection-card";
+import { PlanTransactionList } from "@/components/plans/plan-transaction-list";
 import { AppShell } from "@/components/layout/AppShell";
 import { buttonVariants } from "@/components/ui/button";
-import { formatINR } from "@/lib/format-inr";
+import { getPlanDetail } from "@/lib/plans/get-plan-detail";
 import { cn } from "@/lib/utils";
 
 type PlanDetailPageProps = {
@@ -12,42 +19,46 @@ type PlanDetailPageProps = {
 
 export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
   const { id } = await params;
+  const plan = await getPlanDetail(id);
+  const isComplete = plan.currentAmountPaise >= plan.targetAmountPaise;
 
   return (
     <AppShell
-      title="Plan details"
+      title={plan.name}
       showBack
       backHref="/plans"
       rightSlot={
         <Link
           href={`/plans/${id}/edit`}
-          className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon-lg" }))}
           aria-label="Edit plan"
         >
           <Pencil className="size-4" />
         </Link>
       }
     >
-      <div className="space-y-6">
-        <div>
-          <p className="text-sm text-muted-foreground">Plan ID</p>
-          <p className="font-medium">{id}</p>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Progress</p>
-          <p className="mt-1 text-2xl font-bold">{formatINR(35_000_000)}</p>
-          <p className="text-sm text-muted-foreground">
-            of {formatINR(100_000_000)} target
-          </p>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full w-[35%] rounded-full bg-primary" />
-          </div>
-        </div>
-
-        <p className="text-sm text-muted-foreground">
-          Contribution history and projections coming soon.
-        </p>
+      <div className="page-content">
+        <PlanDetailHeader plan={plan} />
+        <PlanProgressRing
+          percent={plan.progressPercent}
+          color={plan.color}
+        />
+        <PlanDetailStatCards
+          currentAmountPaise={plan.currentAmountPaise}
+          targetAmountPaise={plan.targetAmountPaise}
+          remainingAmountPaise={plan.remainingAmountPaise}
+        />
+        <PlanMetaCard
+          targetDate={plan.targetDate}
+          monthlyRequiredPaise={plan.monthlyRequiredPaise}
+          isComplete={isComplete}
+        />
+        <PlanProjectionCard
+          projectedCompletionDate={plan.projectedCompletionDate}
+          isComplete={isComplete}
+        />
+        <PlanDetailActions planId={plan.id} />
+        <PlanTransactionList transactions={plan.transactions} />
       </div>
     </AppShell>
   );

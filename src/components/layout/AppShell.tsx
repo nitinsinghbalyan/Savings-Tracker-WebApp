@@ -32,8 +32,8 @@ export function AppShell({
 
       <main
         className={cn(
-          "mx-auto w-full max-w-lg flex-1 px-4 py-4",
-          !hideNav && "pb-24",
+          "mx-auto w-full max-w-lg flex-1 px-3 py-4 sm:px-4",
+          !hideNav && "app-main-padding",
           className,
         )}
       >

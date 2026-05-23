@@ -6,10 +6,10 @@
 
 | Route | Status | Purpose |
 |-------|--------|---------|
-| `/plans` | Stub | List (EmptyState only; no DB fetch yet) |
+| `/plans` | Shipped | List with Active / Completed / Paused tabs |
 | `/plans/new` | Shipped | Create plan |
-| `/plans/[id]` | Stub | Detail with sample data |
-| `/plans/[id]/edit` | Stub | Form shell; not wired to update |
+| `/plans/[id]` | Shipped | Detail with live stats and transaction history |
+| `/plans/[id]/edit` | Stub | Form shell; not wired to `updatePlan` |
 
 ## Create plan (`/plans/new`)
 
@@ -59,8 +59,61 @@ Low, Medium, High, Critical (default: Medium)
 
 - Expense tracking, investment advice, bank linking, UPI, Account Aggregator, credit score
 
+## List plans (`/plans`) — added 2026-05-23
+
+### Files
+
+| File | Role |
+|------|------|
+| [`src/lib/plans/get-plans-with-stats.ts`](../src/lib/plans/get-plans-with-stats.ts) | Fetch plans + transactions; enrich per plan |
+| [`src/lib/plans/filter-plans.ts`](../src/lib/plans/filter-plans.ts) | Active / Completed / Paused tab rules |
+| [`src/components/plans/plans-view.tsx`](../src/components/plans/plans-view.tsx) | Client tabs + `PlanCard` list |
+| [`src/components/plans/plan-card.tsx`](../src/components/plans/plan-card.tsx) | Summary card linking to detail |
+
+### Tab rules
+
+- **Paused:** `status` is `"paused"` (case-insensitive)
+- **Completed:** `current >= target` and not paused
+- **Active:** not paused and not completed
+
+## Plan detail (`/plans/[id]`) — added 2026-05-23
+
+### Files
+
+| File | Role |
+|------|------|
+| [`src/lib/plans/get-plan-detail.ts`](../src/lib/plans/get-plan-detail.ts) | Auth + `notFound()` for wrong/missing plan |
+| [`src/lib/plans/enrich-plan.ts`](../src/lib/plans/enrich-plan.ts) | Shared `enrichPlanWithStats` / `enrichPlanDetail` |
+| [`src/app/(app)/plans/[id]/not-found.tsx`](../src/app/(app)/plans/[id]/not-found.tsx) | Friendly 404 |
+
+### UI sections
+
+Progress ring, saved/target/remaining stats, target date + monthly required, projection card, actions (contribution / withdraw / edit), contribution history list.
+
+### Actions links
+
+- Add contribution → `/transactions/new?planId={id}&type=CONTRIBUTION`
+- Withdraw → `/transactions/new?planId={id}&type=WITHDRAWAL`
+
+## Shared data layer (`src/lib/plans/`) — added 2026-05-23
+
+| File | Role |
+|------|------|
+| `types.ts` | `SavingsPlanRow`, `PlanWithStats`, `PlanDetail`, `PlanTransaction` |
+| `enrich-plan.ts` | Maps DB rows → stats + optional `projectedCompletionDate` |
+| `get-plans-with-stats.ts` | List page data |
+| `get-plan-detail.ts` | Detail page data |
+| `filter-plans.ts` | Tab filtering (generic over `PlanWithStats`) |
+
+`PlanWithStats` includes: `priority`, `healthStatus`, `averageMonthlySavingsPaise`, `monthlyRequiredPaise`, etc.
+
 ## Follow-ups
 
-- Fetch and render plans on `/plans`
 - Wire `updatePlan` for `/plans/[id]/edit`
-- Use `src/lib/calculations/` for progress on detail page
+- Delete plan with confirmation
+
+---
+
+## v2 note — expense tracking (2026-05-23)
+
+v1 listed expense tracking as not in scope. v2 adds manual expense logging in a **separate ledger** — see [expenses.md](./expenses.md). Savings plan flows in this document are unchanged.

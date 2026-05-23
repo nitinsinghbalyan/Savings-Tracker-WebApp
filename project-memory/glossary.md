@@ -21,6 +21,11 @@
 | **Transaction type** | CONTRIBUTION, WITHDRAWAL, or ADJUSTMENT on `savings_transactions` |
 | **Monthly snapshot** | Per-user row in `monthly_snapshots` for a calendar month (`YYYY-MM`) |
 | **SRS** | Software Requirements Specification |
+| **RupeeRise** | User-facing product brand (metadata, PWA, auth layout); repo package may still be `savingit` |
+| **SavingIt** | Internal / early scaffold name for the same product |
+| **Expense** | Manual outflow logged in `expenses` (v2 planned)—daily spending, not a savings plan movement |
+| **Cash flow** | Monthly picture: income, spent, saved to goals, leftover (surplus) — [cashflow.md](./cashflow.md) |
+| **Surplus / Leftover** | `income − spent − saved` for the calendar month; may be negative |
 
 ## Abbreviations
 

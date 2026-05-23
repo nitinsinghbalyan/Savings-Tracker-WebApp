@@ -72,3 +72,13 @@ DB snake_case → app camelCase when querying:
 | `transaction_type` | `transactionType` |
 | `transaction_date` | `transactionDate` |
 | `target_amount_paise` | `targetAmountPaise` |
+
+---
+
+## Planned migration 002 (2026-05-23)
+
+**Not applied.** Draft will add `expenses` (and optionally `expense_categories`) with RLS mirroring savings tables.
+
+- Spec: [expenses.md](./expenses.md)
+- Cash-flow metrics (no new table): [cashflow.md](./cashflow.md)
+- File (to create): `supabase/migrations/002_expenses.sql`

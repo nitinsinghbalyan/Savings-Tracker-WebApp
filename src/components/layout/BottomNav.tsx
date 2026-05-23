@@ -10,8 +10,11 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
+    <nav
+      aria-label="Main navigation"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 safe-bottom"
+    >
+      <div className="mx-auto flex h-[4.25rem] max-w-lg items-stretch justify-around px-1 sm:px-2">
         {bottomNavItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -26,7 +29,8 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-1 flex-col items-center justify-center gap-0.5"
+                aria-current={isActive ? "page" : undefined}
+                className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1"
               >
                 <span className="flex size-12 -translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25">
                   <Icon className="size-6" strokeWidth={2.5} />
@@ -42,8 +46,9 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-1.5 transition-colors",
+                "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 transition-colors",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",

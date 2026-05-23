@@ -4,10 +4,10 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-8">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-3 py-8 safe-top safe-bottom sm:px-4">
       <div className="mb-8 text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-primary">
-          SavingIt
+          RupeeRise
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           Track your INR savings with clarity

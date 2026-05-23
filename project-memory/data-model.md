@@ -168,3 +168,41 @@ The sections above are an **early sketch**. The implemented migration supersedes
 - No denormalized `saved_amount_paise` on plans — use [`src/lib/calculations/savings.ts`](../src/lib/calculations/savings.ts)
 
 See [schema.md](./schema.md) and [`supabase/migrations/001_initial_schema.sql`](../supabase/migrations/001_initial_schema.sql).
+
+---
+
+## Implementation status (2026-05-23)
+
+> Clarifies header note at top of this file (“not yet migrated”) — **migration 001 is shipped in the repo** and documented in [schema.md](./schema.md). Apply to hosted Supabase per [deploy.md](./deploy.md).
+
+| Migration | Status in repo | Tables |
+|-----------|----------------|--------|
+| `001_initial_schema.sql` | Shipped | `profiles`, `savings_plans`, `savings_transactions`, `monthly_snapshots` |
+| `002_expenses.sql` | Planned | `expenses` (+ optional `expense_categories`) — see below |
+
+Early sections above remain as **historical sketch**; do not delete.
+
+---
+
+## Planned v2: expenses (2026-05-23)
+
+Not migrated. Full spec: [expenses.md](./expenses.md).
+
+```mermaid
+erDiagram
+  users ||--o{ expenses : logs
+  users ||--o{ savings_plans : owns
+  savings_plans ||--o{ savings_transactions : receives
+
+  expenses {
+    uuid id PK
+    uuid user_id FK
+    bigint amount_paise
+    text category
+    date expense_date
+    text payment_method
+    text note
+  }
+```
+
+**Rules:** `amount_paise` positive outflow; no FK to `savings_plans` in MVP.

@@ -39,3 +39,34 @@ These items are **explicitly excluded** from SavingIt v1 and should not be imple
 ## When to revisit
 
 Re-evaluate exclusions only after MVP validation with users. Integrations (AA, UPI) would require separate compliance, security, and product design work.
+
+---
+
+## Scope change (v2 — 2026-05-23)
+
+The following **changes scope for v2** (expense + savings tracker). Original v1 exclusions above remain historical record.
+
+### Now in scope (v2 — manual expense + cash flow)
+
+| Item | v2 MVP slice |
+|------|----------------|
+| Manual expense logging | Yes — separate `expenses` table |
+| Monthly spend totals & category breakdown | Yes |
+| Dashboard cash-flow card (income / spent / saved / leftover) | Yes |
+| Payment method labels (Cash, UPI, Card) | Yes — labels only, no automation |
+
+### Still out of scope (v2 MVP slice)
+
+| Item | Reason |
+|------|--------|
+| Bank account linking | Unchanged |
+| UPI automation | Unchanged |
+| Account Aggregator (AA) | Unchanged |
+| Category budgets & overspend alerts | Deferred past v2 MVP |
+| Investment recommendations | Unchanged |
+| Expense ↔ plan linking | Deferred |
+| Credit score | Unchanged |
+| Complex family sharing | Unchanged |
+| Native iOS / Android apps | Unchanged — responsive web + PWA |
+
+**Spec:** [expenses.md](./expenses.md), [cashflow.md](./cashflow.md), [roadmap.md](./roadmap.md) Phase 6.

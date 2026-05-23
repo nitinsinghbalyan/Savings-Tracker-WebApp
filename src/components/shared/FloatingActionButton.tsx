@@ -21,7 +21,7 @@ export function FloatingActionButton({
 }: FloatingActionButtonProps) {
   const fabClassName = cn(
     buttonVariants({ size: "icon" }),
-    "fixed bottom-20 right-4 z-40 size-14 rounded-full shadow-lg shadow-primary/25",
+    "fixed app-fab-bottom right-3 z-40 size-14 rounded-full shadow-lg shadow-primary/25 sm:right-4",
     className,
   );
 

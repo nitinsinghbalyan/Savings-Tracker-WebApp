@@ -18,8 +18,15 @@ This folder is the **single source of truth** for product context, requirements,
 | [auth.md](./auth.md) | Supabase Auth flows, files, and route protection |
 | [schema.md](./schema.md) | Postgres tables, RLS, indexes (migration 001) |
 | [calculations.md](./calculations.md) | Pure TS savings math and health status |
-| [plans.md](./plans.md) | Plan create form, server actions, categories |
+| [plans.md](./plans.md) | Plan CRUD, list, detail, `lib/plans` enrichment |
+| [transactions.md](./transactions.md) | Log contributions/withdrawals/adjustments |
+| [dashboard.md](./dashboard.md) | Dashboard aggregates, chart, quick actions |
+| [insights.md](./insights.md) | Health score, simulator, allocation |
+| [settings.md](./settings.md) | Profile, CSV export, danger zone, logout |
 | [changelog.md](./changelog.md) | Append-only history of project changes |
+| [deploy.md](./deploy.md) | Vercel + Supabase deployment checklist |
+| [expenses.md](./expenses.md) | v2 expense logging (planned) |
+| [cashflow.md](./cashflow.md) | v2 income / spent / saved / surplus metrics (planned) |
 
 ## How to use
 
@@ -31,12 +38,13 @@ This folder is the **single source of truth** for product context, requirements,
 
 ## Current status
 
-- **Phase:** 2 in progress (create plan shipped; list/detail/edit pending)
+- **Shipped (v1):** Savings MVP — auth, plans, savings transactions, dashboard, insights, settings, mobile/PWA, Vercel deploy prep (Phases 2–5 largely complete; see [roadmap.md](./roadmap.md))
+- **Planned (v2):** Manual **expense + cash-flow** layer — [expenses.md](./expenses.md), [cashflow.md](./cashflow.md); Phase 6 not started in code
 - **Version:** 0.1.0+
-- **Auth:** Email/password login, signup, logout, middleware route protection
-- **Database:** Migration file ready; app **inserts** into `savings_plans` on create
-- **Plans:** `/plans/new` wired to Supabase via `createPlan`
-- **Calculations:** Pure TS library in `src/lib/calculations/` (not wired to UI)
-- **Deploy target:** Vercel
+- **Brand (UI):** RupeeRise — metadata, manifest, auth layout (repo package name may still be `savingit`)
+- **Database:** Migration `001_initial_schema.sql` shipped in repo; apply to hosted Supabase if not done; `002_expenses` planned
+- **Plans:** List, detail, create; edit still stub (`updatePlan` not wired)
+- **Savings log:** `/transactions/new` — CONTRIBUTION / WITHDRAWAL / ADJUSTMENT
+- **Deploy:** Vercel-ready — [deploy.md](./deploy.md)
 
-Last updated: 2026-05-23
+Last updated: 2026-05-23 (memory sync: expense + savings direction, stale doc fixes)
