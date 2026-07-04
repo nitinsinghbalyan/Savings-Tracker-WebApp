@@ -65,6 +65,26 @@
   .alert-error {
     @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
   }
+
+  .modal-panel {
+    @apply relative z-10 flex w-full flex-col overflow-hidden bg-white shadow-xl;
+  }
+
+  .modal-scroll {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain;
+  }
+
+  .app-shell {
+    @apply min-h-dvh bg-slate-50 lg:flex;
+  }
+
+  .app-main {
+    @apply min-h-dvh min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0;
+  }
+
+  .page-container {
+    @apply mx-auto w-full max-w-content px-4 py-6 lg:px-8 lg:py-8;
+  }
 }
 
 @keyframes slideUp {

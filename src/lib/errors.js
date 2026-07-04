@@ -1,5 +1,7 @@
 export function assertNoError(error, fallbackMessage) {
   if (error) {
-    throw new Error(error.message || fallbackMessage)
+    const detail = error.details || error.hint
+    const message = error.message || fallbackMessage
+    throw new Error(detail ? `${message} (${detail})` : message)
   }
 }

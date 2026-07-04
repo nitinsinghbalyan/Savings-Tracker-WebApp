@@ -15,6 +15,7 @@ import {
   getAmountScaleLabel,
   parseAmountInput,
 } from '../lib/format'
+import ModalShell from './ModalShell'
 
 const chipBase =
   'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium ring-1 ring-inset transition active:scale-95'
@@ -231,23 +232,6 @@ export default function GoalForm({
     setSubmitting(false)
   }, [open, goal])
 
-  useEffect(() => {
-    if (!open) return undefined
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape' && !submitting) onClose()
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open, onClose, submitting])
-
   if (!open) return null
 
   const setField = (field) => (event) => {
@@ -305,22 +289,15 @@ export default function GoalForm({
   const endDateLabelId = 'goal-end-date-label'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-      <button
-        type="button"
-        aria-label="Close form"
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-        onClick={submitting ? undefined : onClose}
-        disabled={submitting}
-      />
-
+    <ModalShell open={open} onClose={onClose} closeDisabled={submitting} hideBottomNav>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[90dvh] sm:rounded-2xl"
+        data-modal-panel
+        className="modal-panel max-h-[min(92dvh,100dvh)] max-w-lg rounded-t-2xl shadow-2xl lg:max-h-[90dvh] lg:max-w-xl lg:rounded-2xl"
       >
-        <div className="flex shrink-0 items-center justify-center border-b border-slate-100 px-4 pb-3 pt-3 sm:hidden">
+        <div className="flex shrink-0 items-center justify-center border-b border-slate-100 px-4 pb-3 pt-3 lg:hidden">
           <div className="h-1.5 w-12 rounded-full bg-slate-200" aria-hidden="true" />
         </div>
 
@@ -340,7 +317,7 @@ export default function GoalForm({
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 sm:px-6">
+          <div data-modal-scroll className="modal-scroll flex-1 space-y-5 px-4 py-4 sm:px-6">
             {submitError && (
               <p role="alert" className="alert-error">
                 {submitError}
@@ -498,6 +475,6 @@ export default function GoalForm({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   )
 }

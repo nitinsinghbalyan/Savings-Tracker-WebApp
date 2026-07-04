@@ -1,11 +1,4 @@
-import { useState } from 'react'
-import {
-  differenceInCalendarDays,
-  differenceInCalendarMonths,
-  format,
-  parseISO,
-  startOfDay,
-} from 'date-fns'
+import { memo, useState } from 'react'
 import { Calendar, ChevronDown, Pencil, Plus, Tag, Trash2 } from 'lucide-react'
 import {
   percentComplete,
@@ -14,89 +7,24 @@ import {
 } from '../lib/contributions'
 import { formatCurrency } from '../lib/format'
 import { getColorPalette, PRIORITIES } from '../lib/constants'
+import {
+  formatContributionDate,
+  formatDaysRemaining,
+  formatGoalDate,
+  getDaysRemaining,
+  getRequiredMonthly,
+  getTrackStatus,
+  sortedContributions,
+} from '../lib/goalDisplay'
+import { getForecast } from '../lib/forecast'
 
-const TRACK_STATUS = {
-  onTrack: {
-    label: 'On track',
-    className: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-  },
-  slightlyBehind: {
-    label: 'Slightly behind',
-    className: 'bg-amber-100 text-amber-800 ring-amber-200',
-  },
-  behind: {
-    label: 'Behind',
-    className: 'bg-rose-100 text-rose-800 ring-rose-200',
-  },
+function stopCardClick(event) {
+  event.stopPropagation()
 }
 
-function expectedProgress(goal) {
-  const start = startOfDay(parseISO(goal.start_date))
-  const end = startOfDay(parseISO(goal.end_date))
-  const today = startOfDay(new Date())
-
-  if (today >= end) return 100
-  if (today <= start) return 0
-
-  const totalDays = differenceInCalendarDays(end, start)
-  if (totalDays <= 0) return 100
-
-  const elapsedDays = differenceInCalendarDays(today, start)
-  return Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100))
-}
-
-function getTrackStatus(goal) {
-  const actual = percentComplete(goal)
-  const expected = expectedProgress(goal)
-  const gap = expected - actual
-
-  if (actual >= 100) return TRACK_STATUS.onTrack
-  if (actual >= expected || gap <= 5) return TRACK_STATUS.onTrack
-  if (gap <= 20) return TRACK_STATUS.slightlyBehind
-  return TRACK_STATUS.behind
-}
-
-function getMonthsRemaining(endDate) {
-  const today = startOfDay(new Date())
-  const end = startOfDay(parseISO(endDate))
-  return Math.max(1, differenceInCalendarMonths(end, today))
-}
-
-function getRequiredMonthly(goal) {
-  const remaining = remainingAmount(goal)
-  if (remaining <= 0) return 0
-  return remaining / getMonthsRemaining(goal.end_date)
-}
-
-function getDaysRemaining(endDate) {
-  const today = startOfDay(new Date())
-  const end = startOfDay(parseISO(endDate))
-  return differenceInCalendarDays(end, today)
-}
-
-function formatEndDate(endDate) {
-  return format(parseISO(endDate), 'd MMM yyyy')
-}
-
-function formatDaysRemaining(days) {
-  if (days < 0) return `${Math.abs(days)} days overdue`
-  if (days === 0) return 'Due today'
-  if (days === 1) return '1 day left'
-  return `${days} days left`
-}
-
-function formatContributionDate(createdAt) {
-  return format(parseISO(createdAt), 'd MMM yyyy')
-}
-
-function sortedContributions(goal) {
-  return [...(goal.contributions ?? [])].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at),
-  )
-}
-
-export default function GoalCard({
+function GoalCard({
   goal,
+  onOpenDetails,
   onAddMoney,
   onEdit,
   onDelete,
@@ -115,6 +43,7 @@ export default function GoalCard({
   const progress = percentComplete(goal)
   const trackStatus = getTrackStatus(goal)
   const requiredMonthly = getRequiredMonthly(goal)
+  const forecast = getForecast(goal)
   const daysLeft = getDaysRemaining(goal.end_date)
   const priorityStyle =
     PRIORITIES.find((p) => p.value === goal.priority)?.badge ??
@@ -122,7 +51,9 @@ export default function GoalCard({
   const palette = getColorPalette(goal.color)
   const currency = goal.currency ?? 'INR'
 
-  const handleDelete = async () => {
+  const handleDelete = async (event) => {
+    event.stopPropagation()
+
     if (!confirmingDelete) {
       setConfirmingDelete(true)
       return
@@ -153,7 +84,10 @@ export default function GoalCard({
   }
 
   return (
-    <article className={`card min-w-0 border-l-4 ${palette.border}`}>
+    <article
+      onClick={() => onOpenDetails?.(goal)}
+      className={`card min-w-0 cursor-pointer border-l-4 transition hover:shadow-card ${palette.border}`}
+    >
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-lg font-semibold text-slate-900">{goal.name}</h3>
@@ -164,17 +98,24 @@ export default function GoalCard({
             </p>
           )}
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${priorityStyle}`}
-        >
-          {goal.priority}
-        </span>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${trackStatus.className}`}
+          >
+            {trackStatus.label}
+          </span>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${priorityStyle}`}
+          >
+            {goal.priority}
+          </span>
+        </div>
       </header>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Calendar className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-          <span className="truncate">{formatEndDate(goal.end_date)}</span>
+          <span className="truncate">{formatGoalDate(goal.end_date)}</span>
         </span>
         <span
           className={`shrink-0 font-medium ${daysLeft < 0 ? 'text-rose-600' : daysLeft <= 7 ? 'text-amber-700' : 'text-slate-600'}`}
@@ -207,19 +148,6 @@ export default function GoalCard({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5">
-          <p className="text-xs text-slate-500">Saved</p>
-          <p className="mt-0.5 truncate font-semibold text-slate-900">{formatCurrency(saved, currency)}</p>
-        </div>
-        <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5">
-          <p className="text-xs text-slate-500">Remaining</p>
-          <p className="mt-0.5 truncate font-semibold text-slate-900">
-            {formatCurrency(remaining, currency)}
-          </p>
-        </div>
-      </div>
-
       {remaining > 0 && (
         <p className="mt-3 text-sm text-slate-600">
           Save{' '}
@@ -230,22 +158,18 @@ export default function GoalCard({
         </p>
       )}
 
-      <div className="mt-3">
-        <span
-          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${trackStatus.className}`}
-        >
-          {trackStatus.label}
-        </span>
-      </div>
+      {forecast?.label && !forecast.complete && (
+        <p className="mt-1 text-sm text-slate-500">{forecast.label}</p>
+      )}
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-4 flex items-center gap-2" onClick={stopCardClick}>
         <button
           type="button"
           onClick={() => {
             setConfirmingDelete(false)
             onAddMoney(goal)
           }}
-          className="btn-primary flex-1"
+          className="btn-primary min-w-0 flex-1"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add money
@@ -257,30 +181,40 @@ export default function GoalCard({
             setConfirmingDelete(false)
             onEdit(goal)
           }}
-          className="btn-secondary flex-1"
+          aria-label="Edit goal"
+          className="btn-icon shrink-0 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
         >
           <Pencil className="h-4 w-4" aria-hidden="true" />
-          Edit
         </button>
 
         <button
           type="button"
           onClick={handleDelete}
           disabled={deleting}
-          className={`flex-1 ${confirmingDelete ? 'btn-danger' : 'btn-secondary'} disabled:opacity-60`}
+          aria-label={
+            deleting
+              ? 'Deleting goal'
+              : confirmingDelete
+                ? 'Confirm delete goal'
+                : 'Delete goal'
+          }
+          className={`btn-icon shrink-0 rounded-xl disabled:opacity-60 ${
+            confirmingDelete
+              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+              : 'text-rose-600 hover:bg-rose-50 hover:text-rose-700'
+          }`}
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
-          {deleting ? 'Deleting…' : confirmingDelete ? 'Confirm delete' : 'Delete'}
         </button>
       </div>
 
       {confirmingDelete && !deleting && (
-        <p className="mt-2 text-center text-xs text-slate-500">
-          Tap <span className="font-medium">Confirm delete</span> again to remove this goal.
+        <p className="mt-2 text-center text-xs text-slate-500" onClick={stopCardClick}>
+          Tap the <span className="font-medium text-rose-600">delete icon</span> again to remove this goal.
         </p>
       )}
 
-      <div className="mt-4 border-t border-slate-100 pt-3">
+      <div className="mt-4 border-t border-slate-100 pt-3" onClick={stopCardClick}>
         <button
           type="button"
           onClick={() => {
@@ -354,3 +288,5 @@ export default function GoalCard({
     </article>
   )
 }
+
+export default memo(GoalCard)

@@ -19,6 +19,7 @@ export default {
         4.5: '1.125rem',
         13: '3.25rem',
         18: '4.5rem',
+        sidebar: '15rem',
       },
       borderRadius: {
         '2xl': '1rem',
@@ -30,6 +31,7 @@ export default {
       },
       maxWidth: {
         app: '72rem',
+        content: '90rem',
       },
     },
   },

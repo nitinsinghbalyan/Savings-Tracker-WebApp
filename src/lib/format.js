@@ -19,31 +19,39 @@ function getNumberFormatter(currency) {
   return formatterCache.get(key)
 }
 
-function getFormatter(currency, compact = false) {
-  const key = `${currency}-${compact}`
+function getFormatter(currency, { compact = false, decimals = 0 } = {}) {
+  const key = `${currency}-${compact}-${decimals}`
   if (!formatterCache.has(key)) {
     formatterCache.set(
       key,
       new Intl.NumberFormat(CURRENCY_LOCALES[currency] ?? 'en-IN', {
         style: 'currency',
         currency: currency === 'USD' ? 'USD' : 'INR',
-        ...(compact ? { notation: 'compact', maximumFractionDigits: 1 } : { maximumFractionDigits: 0 }),
+        ...(compact
+          ? { notation: 'compact', maximumFractionDigits: 1 }
+          : { minimumFractionDigits: 0, maximumFractionDigits: decimals }),
       }),
     )
   }
   return formatterCache.get(key)
 }
 
-export function formatCurrency(amount, currency = 'INR') {
+export function formatCurrency(amount, currency = 'INR', options = {}) {
   const code = currency === 'USD' ? 'USD' : 'INR'
-  return getFormatter(code).format(Number(amount) || 0)
+  const { compact = false, decimals = 0 } = options
+  return getFormatter(code, { compact, decimals }).format(Number(amount) || 0)
+}
+
+/** Account balances and transaction amounts — up to 2 decimal places */
+export function formatMoney(amount, currency = 'INR') {
+  return formatCurrency(amount, currency, { decimals: 2 })
 }
 
 export function formatCurrencyCompact(amount, currency = 'INR') {
   const value = Number(amount) || 0
   const code = currency === 'USD' ? 'USD' : 'INR'
   if (Math.abs(value) < 10000) return formatCurrency(value, code)
-  return getFormatter(code, true).format(value)
+  return getFormatter(code, { compact: true, decimals: 0 }).format(value)
 }
 
 export function parseAmountInput(raw) {

@@ -1,14 +1,35 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { getCurrencySymbol } from '../lib/constants'
+import { formatMoney } from '../lib/format'
+import {
+  buildConversionNote,
+  convertAmount,
+  fetchExchangeRate,
+} from '../lib/exchangeRate'
+import ModalShell from './ModalShell'
 
-export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }) {
+export default function AddMoneyModal({
+  open,
+  onClose,
+  goal,
+  defaultCurrency = 'INR',
+  onSubmit,
+  onError,
+}) {
   const titleId = useId()
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [amountError, setAmountError] = useState(null)
   const [submitError, setSubmitError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [rateInfo, setRateInfo] = useState(null)
+  const [rateLoading, setRateLoading] = useState(false)
+  const [rateError, setRateError] = useState(null)
+
+  const goalCurrency = goal?.currency ?? 'INR'
+  const inputCurrency = defaultCurrency ?? 'INR'
+  const needsConversion = goalCurrency !== inputCurrency
 
   useEffect(() => {
     if (!open) return
@@ -18,43 +39,96 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
     setAmountError(null)
     setSubmitError(null)
     setSubmitting(false)
+    setRateInfo(null)
+    setRateLoading(false)
+    setRateError(null)
   }, [open, goal])
 
   useEffect(() => {
-    if (!open) return undefined
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape' && !submitting) onClose()
+    if (!open || !needsConversion) {
+      setRateInfo(null)
+      setRateError(null)
+      setRateLoading(false)
+      return undefined
     }
 
-    window.addEventListener('keydown', onKeyDown)
+    let cancelled = false
+    setRateLoading(true)
+    setRateError(null)
+
+    fetchExchangeRate(inputCurrency, goalCurrency)
+      .then((data) => {
+        if (!cancelled) {
+          setRateInfo(data)
+          setRateLoading(false)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setRateInfo(null)
+          setRateLoading(false)
+          setRateError(
+            err instanceof Error ? err.message : 'Could not load exchange rate',
+          )
+        }
+      })
+
     return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
+      cancelled = true
     }
-  }, [open, onClose, submitting])
+  }, [open, needsConversion, inputCurrency, goalCurrency])
+
+  const convertedAmount = useMemo(() => {
+    if (!needsConversion || !rateInfo?.rate || !amount.trim()) return null
+    const value = Number(amount)
+    if (Number.isNaN(value) || value <= 0) return null
+    return convertAmount(value, rateInfo.rate)
+  }, [amount, needsConversion, rateInfo])
 
   if (!open || !goal) return null
 
-  const currencySymbol = getCurrencySymbol(goal.currency)
+  const inputCurrencySymbol = getCurrencySymbol(inputCurrency)
+  const goalCurrencySymbol = getCurrencySymbol(goalCurrency)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const value = Number(amount)
-    if (!amount.trim() || Number.isNaN(value) || value <= 0) {
+    const sourceAmount = Number(amount)
+    if (!amount.trim() || Number.isNaN(sourceAmount) || sourceAmount <= 0) {
       setAmountError('Enter an amount greater than 0')
       return
     }
+
+    if (needsConversion && (rateLoading || !rateInfo?.rate)) {
+      setAmountError('Exchange rate is still loading. Try again in a moment.')
+      return
+    }
+
+    const contributionAmount = needsConversion
+      ? convertAmount(sourceAmount, rateInfo.rate)
+      : sourceAmount
+
+    if (!contributionAmount || contributionAmount <= 0) {
+      setAmountError('Converted amount must be greater than 0')
+      return
+    }
+
+    const contributionNote = needsConversion
+      ? buildConversionNote({
+          sourceAmount,
+          sourceCurrency: inputCurrency,
+          goalAmount: contributionAmount,
+          goalCurrency,
+          rate: rateInfo.rate,
+          userNote: note.trim() || null,
+        })
+      : note.trim() || null
 
     setSubmitting(true)
     setSubmitError(null)
 
     try {
-      await onSubmit(goal, value, note.trim() || null)
+      await onSubmit(goal, contributionAmount, contributionNote)
       onClose()
     } catch (err) {
       const message =
@@ -67,20 +141,13 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-        onClick={submitting ? undefined : onClose}
-        disabled={submitting}
-      />
-
+    <ModalShell open={open} onClose={onClose} closeDisabled={submitting}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+        data-modal-panel
+        className="modal-panel max-w-md rounded-t-2xl shadow-2xl lg:rounded-2xl"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
           <h2 id={titleId} className="text-lg font-semibold text-slate-900">
@@ -97,10 +164,15 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-4 py-4 sm:px-6">
+        <form onSubmit={handleSubmit} className="px-4 py-4 sm:px-6" data-modal-scroll>
           <p className="mb-4 text-sm text-slate-600">
             Adding to{' '}
             <span className="font-semibold text-slate-900">{goal.name}</span>
+            {needsConversion && (
+              <span className="block mt-1 text-xs text-slate-500">
+                Goal is in {goalCurrency}. Enter savings in {inputCurrency}; we convert at today&apos;s rate.
+              </span>
+            )}
           </p>
 
           {submitError && (
@@ -111,11 +183,11 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
 
           <div className="mb-4">
             <label htmlFor="contribution-amount" className="label-field">
-              Amount
+              {needsConversion ? `Amount (${inputCurrency})` : 'Amount'}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                {currencySymbol}
+                {inputCurrencySymbol}
               </span>
               <input
                 id="contribution-amount"
@@ -135,6 +207,21 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
               />
             </div>
             {amountError && <p className="mt-1 text-sm text-red-600">{amountError}</p>}
+            {needsConversion && rateLoading && (
+              <p className="mt-2 text-sm text-slate-500">Loading today&apos;s {inputCurrency}/{goalCurrency} rate…</p>
+            )}
+            {needsConversion && rateError && (
+              <p className="mt-2 text-sm text-red-600">{rateError}</p>
+            )}
+            {needsConversion && convertedAmount != null && rateInfo?.rate && (
+              <p className="mt-2 text-sm font-medium text-brand-600">
+                ≈ {formatMoney(convertedAmount, goalCurrency)} added to goal
+                <span className="block text-xs font-normal text-slate-500">
+                  1 {inputCurrency} = {rateInfo.rate} {goalCurrency}
+                  {rateInfo.date ? ` · ${rateInfo.date}` : ''}
+                </span>
+              </p>
+            )}
           </div>
 
           <div className="mb-6">
@@ -152,8 +239,12 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
           </div>
 
           <div className="flex flex-col gap-3 safe-bottom sm:flex-row-reverse">
-            <button type="submit" disabled={submitting} className="btn-primary w-full sm:flex-1">
-              {submitting ? 'Adding…' : 'Add contribution'}
+            <button
+              type="submit"
+              disabled={submitting || (needsConversion && (rateLoading || !rateInfo?.rate))}
+              className="btn-primary w-full sm:flex-1"
+            >
+              {submitting ? 'Adding…' : needsConversion ? `Add ${goalCurrencySymbol} to goal` : 'Add contribution'}
             </button>
             <button
               type="button"
@@ -166,6 +257,6 @@ export default function AddMoneyModal({ open, onClose, goal, onSubmit, onError }
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   )
 }

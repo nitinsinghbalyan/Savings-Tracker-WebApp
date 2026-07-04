@@ -1,14 +1,14 @@
 import { supabase } from './supabase'
-import { getDeviceId } from './device'
+import { requireUserId } from './auth'
 import { assertNoError } from './errors'
 
 export async function getGoals() {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
 
   const { data, error } = await supabase
     .from('goals')
     .select('*')
-    .eq('device_id', deviceId)
+    .eq('user_id', userId)
     .order('end_date', { ascending: true })
 
   assertNoError(error, 'Failed to load goals')
@@ -16,24 +16,45 @@ export async function getGoals() {
 }
 
 export async function getGoalsWithContributions() {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
 
-  const { data, error } = await supabase
+  const { data: goals, error: goalsError } = await supabase
     .from('goals')
-    .select('*, contributions(*)')
-    .eq('device_id', deviceId)
+    .select('*')
+    .eq('user_id', userId)
     .order('end_date', { ascending: true })
 
-  assertNoError(error, 'Failed to load goals')
-  return data ?? []
+  assertNoError(goalsError, 'Failed to load goals')
+  if (!goals?.length) return []
+
+  const goalIds = goals.map((g) => g.id)
+  const { data: contributions, error: contributionsError } = await supabase
+    .from('contributions')
+    .select('*')
+    .in('goal_id', goalIds)
+    .order('created_at', { ascending: false })
+
+  assertNoError(contributionsError, 'Failed to load goals')
+
+  const contributionsByGoal = new Map()
+  for (const contribution of contributions ?? []) {
+    const list = contributionsByGoal.get(contribution.goal_id) ?? []
+    list.push(contribution)
+    contributionsByGoal.set(contribution.goal_id, list)
+  }
+
+  return goals.map((goal) => ({
+    ...goal,
+    contributions: contributionsByGoal.get(goal.id) ?? [],
+  }))
 }
 
 export async function createGoal(data) {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
 
   const { data: goal, error } = await supabase
     .from('goals')
-    .insert({ ...data, device_id: deviceId })
+    .insert({ ...data, user_id: userId })
     .select()
     .single()
 
@@ -42,9 +63,10 @@ export async function createGoal(data) {
 }
 
 export async function updateGoal(id, patch) {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
   const safePatch = { ...patch }
   delete safePatch.device_id
+  delete safePatch.user_id
   delete safePatch.id
   delete safePatch.created_at
 
@@ -52,7 +74,7 @@ export async function updateGoal(id, patch) {
     .from('goals')
     .update(safePatch)
     .eq('id', id)
-    .eq('device_id', deviceId)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -61,13 +83,21 @@ export async function updateGoal(id, patch) {
 }
 
 export async function deleteGoal(id) {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
 
   const { error } = await supabase
     .from('goals')
     .delete()
     .eq('id', id)
-    .eq('device_id', deviceId)
+    .eq('user_id', userId)
 
   assertNoError(error, 'Failed to delete goal')
+}
+
+export async function deleteAllGoals() {
+  const userId = await requireUserId()
+
+  const { error } = await supabase.from('goals').delete().eq('user_id', userId)
+
+  assertNoError(error, 'Failed to clear goals')
 }

@@ -1,15 +1,15 @@
 import { supabase } from './supabase'
-import { getDeviceId } from './device'
+import { requireUserId } from './auth'
 import { assertNoError } from './errors'
 
 export async function getContributions(goalId) {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
 
   const { data, error } = await supabase
     .from('contributions')
     .select('*')
     .eq('goal_id', goalId)
-    .eq('device_id', deviceId)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   assertNoError(error, 'Failed to load contributions')
@@ -17,14 +17,18 @@ export async function getContributions(goalId) {
 }
 
 export async function addContribution(goalId, amount, note) {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
+  const value = Number(amount)
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('Contribution amount must be greater than 0')
+  }
 
   const { data: contribution, error } = await supabase
     .from('contributions')
     .insert({
       goal_id: goalId,
-      device_id: deviceId,
-      amount,
+      user_id: userId,
+      amount: value,
       note: note ?? null,
     })
     .select()
@@ -35,13 +39,13 @@ export async function addContribution(goalId, amount, note) {
 }
 
 export async function deleteContribution(id) {
-  const deviceId = getDeviceId()
+  const userId = await requireUserId()
 
   const { error } = await supabase
     .from('contributions')
     .delete()
     .eq('id', id)
-    .eq('device_id', deviceId)
+    .eq('user_id', userId)
 
   assertNoError(error, 'Failed to delete contribution')
 }

@@ -1,23 +1,31 @@
 {
-  "name": "Savings Tracker",
-  "short_name": "Savings",
-  "description": "Track savings goals and contributions",
-  "start_url": "/",
+  "id": "/",
+  "name": "Savings Tracker Lite",
+  "short_name": "Savings Lite",
+  "description": "Track savings goals, expenses, and account balances",
+  "start_url": "/goals",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#4f46e5",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]

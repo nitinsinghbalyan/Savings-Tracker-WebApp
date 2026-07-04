@@ -43,6 +43,7 @@ export const COLOR_PALETTES = [
     label: 'Indigo',
     swatch: 'bg-indigo-500',
     bar: 'bg-indigo-500',
+    fill: '#6366f1',
     border: 'border-l-indigo-500',
     chip: 'ring-indigo-500 bg-indigo-50 text-indigo-700',
   },
@@ -51,6 +52,7 @@ export const COLOR_PALETTES = [
     label: 'Rose',
     swatch: 'bg-rose-500',
     bar: 'bg-rose-500',
+    fill: '#f43f5e',
     border: 'border-l-rose-500',
     chip: 'ring-rose-500 bg-rose-50 text-rose-700',
   },
@@ -59,6 +61,7 @@ export const COLOR_PALETTES = [
     label: 'Emerald',
     swatch: 'bg-emerald-500',
     bar: 'bg-emerald-500',
+    fill: '#10b981',
     border: 'border-l-emerald-500',
     chip: 'ring-emerald-500 bg-emerald-50 text-emerald-700',
   },
@@ -67,6 +70,7 @@ export const COLOR_PALETTES = [
     label: 'Amber',
     swatch: 'bg-amber-500',
     bar: 'bg-amber-500',
+    fill: '#f59e0b',
     border: 'border-l-amber-500',
     chip: 'ring-amber-500 bg-amber-50 text-amber-700',
   },
@@ -75,6 +79,7 @@ export const COLOR_PALETTES = [
     label: 'Violet',
     swatch: 'bg-violet-500',
     bar: 'bg-violet-500',
+    fill: '#8b5cf6',
     border: 'border-l-violet-500',
     chip: 'ring-violet-500 bg-violet-50 text-violet-700',
   },
@@ -83,6 +88,7 @@ export const COLOR_PALETTES = [
     label: 'Cyan',
     swatch: 'bg-cyan-500',
     bar: 'bg-cyan-500',
+    fill: '#06b6d4',
     border: 'border-l-cyan-500',
     chip: 'ring-cyan-500 bg-cyan-50 text-cyan-700',
   },
@@ -94,4 +100,47 @@ export function getColorPalette(colorId) {
 
 export function getCurrencySymbol(currencyCode) {
   return CURRENCIES.find((c) => c.code === currencyCode)?.symbol ?? '₹'
+}
+
+export const ACCOUNT_TYPES = [
+  { value: 'checking', label: 'Checking' },
+  { value: 'savings', label: 'Savings' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'credit', label: 'Credit' },
+]
+
+export const TRANSACTION_TYPES = ['expense', 'income', 'transfer']
+
+export const BANKS = [
+  { id: 'icici', label: 'ICICI Bank', defaultName: 'ICICI Savings' },
+  { id: 'sbi', label: 'SBI', defaultName: 'SBI Savings' },
+  { id: 'hdfc', label: 'HDFC Bank', defaultName: 'HDFC Savings' },
+  { id: 'axis', label: 'Axis Bank', defaultName: 'Axis Savings' },
+  { id: 'other', label: 'Other bank', defaultName: '' },
+]
+
+export function getBankPreset(bankId) {
+  return BANKS.find((b) => b.id === bankId) ?? null
+}
+
+export const DEFAULT_EXPENSE_CATEGORIES = [
+  { name: 'Food', color: 'amber' },
+  { name: 'Transport', color: 'cyan' },
+  { name: 'Rent', color: 'indigo' },
+  { name: 'Utilities', color: 'violet' },
+  { name: 'Shopping', color: 'rose' },
+  { name: 'Health', color: 'emerald' },
+  { name: 'Entertainment', color: 'rose' },
+  { name: 'Other', color: 'indigo' },
+]
+
+export const DEFAULT_INCOME_CATEGORIES = [
+  { name: 'Salary', color: 'emerald' },
+  { name: 'Freelance', color: 'indigo' },
+  { name: 'Investment', color: 'violet' },
+  { name: 'Other', color: 'amber' },
+]
+
+export function getAccountTypeLabel(type) {
+  return ACCOUNT_TYPES.find((t) => t.value === type)?.label ?? type
 }
