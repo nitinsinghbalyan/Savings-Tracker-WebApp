@@ -118,6 +118,26 @@
 | 2026-06-23 | Drag handle + slider for chart size | Direct manipulation on chart; slider for precision | Fixed Tailwind size classes only |
 | 2026-06-23 | Chart always center aligned | User request; consistent Summary layout | Left-aligned on desktop (session 53) |
 | 2026-06-23 | Remove Income by category list | Reduce Summary clutter; Income total stays in stat grid | Keep income breakdown card |
+| 2026-07-04 | Shared `normalizeRecurringSchedule()` for recurring CRUD | Ensures `day_of_month` cleared for daily/weekly/yearly; consistent `next_run_date` on create and schedule edits | Duplicate logic in form vs lib; update-only patch without recalc |
+| 2026-07-04 | Idempotent frequency CHECK via SQL `DO` block | `CREATE TABLE IF NOT EXISTS` leaves old CHECK on existing DBs; dynamic drop finds any frequency constraint by name | Manual constraint rename hunt; app-only workaround |
+| 2026-07-04 | Phase 2 finance as single git commit on `master` | One reviewable bundle before GitHub remote; 114 files auth + ledger + UI | Multiple partial commits without remote |
+| 2026-07-04 | Restore separate Goals and Activity tabs | User request; merged Home tab crowded daily workflow | Keep merged Home tab (session 56) |
+| 2026-07-04 | Show all goals on Goals tab (no currency filter) | USD goals hidden when INR goals exist and default currency is INR | Filter goals by `profile.default_currency` in progress list |
+| 2026-07-04 | Snapshot category label on transactions | Category delete/rename must not alter past transaction display | Live join only; `ON DELETE SET NULL` without snapshot |
+| 2026-07-04 | Shared grid for Activity table header + rows | Column headers must align with cell values on desktop | Mismatched `grid-cols` on header vs row; account duplicated in description column |
+| 2026-07-04 | Icon buttons for tx edit/delete | Consistent with GoalCard/GoalDetailModal; compact actions column | Text "Edit"/"Delete" links |
+| 2026-07-04 | Pagination bar bottom-only on Activity | Less clutter; user scans filters → list → page controls | Top + bottom duplicate pagination bars |
+| 2026-07-04 | GoalCard grid on Goals tab | User request; card actions visible at a glance; up to 6 cols on xl | `GoalsProgressBars` list (session 48–64) |
+| 2026-07-04 | Days left only on goal cards | Save space; full date in detail modal | End date + days row on card |
+| 2026-07-04 | No track-status badge on goal cards | Reduce noise on compact cards | On track / slightly behind chips on `GoalCard` |
+| 2026-07-04 | New goal CTA below card grid | Natural add flow after scanning goals | Header button + mobile FAB |
+| 2026-07-04 | Summary first in nav + default route | Summary as home dashboard | Goals first; `/` → `/goals` |
+| 2026-07-04 | Activity full-width table | More room for Description / Account columns | Sidebar filter column (25% width) |
+| 2026-07-04 | Activity type chips only | Simpler filter UX | Search + account + amount range filters |
+| 2026-07-04 | Rupee icon for Activity nav | Consistent with INR-first app branding | Lucide `Receipt` icon |
+| 2026-07-04 | Flat wrap row for tx category chips | Saves vertical space in add-tx modal | Grouped vertical category sections |
+| 2026-07-04 | Remove Budgets from Settings UI | Settings declutter; budgets rarely edited | In-app `BudgetManager` on Settings page |
+| 2026-07-04 | Settings single-column layout | Clear vertical scan | 2-col grid on lg+ |
 
 ### Superseded (historical — do not delete rows)
 
@@ -139,8 +159,13 @@
 | 2026-06-23 | Recurring transactions deferred | Implemented session 47 — F-97 |
 | 2026-06-23 | Finance insights on Activity tab | Overview removed session 46; forecasting remains on goal cards only |
 | 2026-06-23 | Goals bars in SummarySection sidebar | Moved to Dashboard main column session 48 — F-99 |
-| 2026-06-23 | Inline GoalCard grid on Dashboard | Replaced by clickable `GoalsProgressBars` + modal session 48 |
+| 2026-06-23 | Inline GoalCard grid on Dashboard | Replaced by clickable `GoalsProgressBars` + modal session 48; **restored** `GoalCard` compact grid session 65 — F-117 |
 | 2026-06-23 | Separate Goals and Activity tabs | Merged into Home tab session 56 — F-104 |
+| 2026-07-04 | Merged Home tab (goals + activity) | Separate Goals + Activity tabs restored session 63 — F-112 |
+| 2026-07-04 | Goals tab uses `GoalsProgressBars` | `GoalCard` compact grid session 65 — F-117 |
+| 2026-07-04 | Settings Budgets section | Removed from Settings UI session 65 — F-126; DB/chart budgets kept |
+| 2026-07-04 | Default route `/goals` | `/summary` session 65 — F-120 |
+| 2026-07-04 | Activity nav `Receipt` icon | `RupeeIcon` session 65 — F-123 |
 | 2026-06-23 | Charts on Goals/Home page | Moved to Summary tab session 56 — F-105 |
 | 2026-06-23 | Summary tab redirected to Goals (v0.12) | Restored as charts page session 56 |
 | 2026-06-23 | Vertical bar chart for category breakdown | Pie chart session 57 — F-107 |

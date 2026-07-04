@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { AppDataProvider } from './context/AppDataContext'
@@ -7,11 +7,6 @@ import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
-
-function TransactionsRedirect() {
-  const { search } = useLocation()
-  return <Navigate to={`/goals${search}`} replace />
-}
 
 function AppRoutes() {
   const { session, initialLoading, claimNotice, clearClaimNotice } = useAuth()
@@ -42,8 +37,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/goals" replace />} />
-      <Route path="/transactions" element={<TransactionsRedirect />} />
+      <Route path="/" element={<Navigate to="/summary" replace />} />
       <Route path="/*" element={<AppShell />} />
     </Routes>
   )

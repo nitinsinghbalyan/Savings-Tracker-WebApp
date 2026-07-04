@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Search, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import RupeeIcon from '../components/icons/RupeeIcon'
 import { useAuth } from '../hooks/useAuth'
 import { useAppData } from '../context/AppDataContext'
@@ -14,7 +14,7 @@ import { groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate }
 import { buildGoalContributionFromTransaction } from '../lib/transactionGoal'
 import PageHeader from '../components/PageHeader'
 import MonthPicker from '../components/MonthPicker'
-import TransactionRow from '../components/TransactionRow'
+import TransactionRow, { TransactionTableHeader } from '../components/TransactionRow'
 import TransactionForm from '../components/TransactionForm'
 
 const FILTER_TYPES = [
@@ -33,16 +33,7 @@ function parseMonthParam(value) {
   return { year, month }
 }
 
-function matchesSearch(tx, query) {
-  if (!query) return true
-  const q = query.toLowerCase()
-  const note = (tx.note ?? '').toLowerCase()
-  const category = (tx.category?.name ?? '').toLowerCase()
-  const account = (tx.account?.name ?? '').toLowerCase()
-  return note.includes(q) || category.includes(q) || account.includes(q)
-}
-
-export default function TransactionsPage({ isTabActive = true, embedded = false }) {
+export default function TransactionsPage({ isTabActive = true }) {
   const toast = useToast()
   const navigate = useNavigate()
   const { user, authReady } = useAuth()
@@ -63,10 +54,6 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
   const [year, setYear] = useState(monthFromUrl?.year ?? now.getFullYear())
   const [month, setMonth] = useState(monthFromUrl?.month ?? now.getMonth() + 1)
   const [filterType, setFilterType] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterAccountId, setFilterAccountId] = useState('')
-  const [amountMin, setAmountMin] = useState('')
-  const [amountMax, setAmountMax] = useState('')
   const [pageSize, setPageSize] = useState(10)
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
@@ -104,26 +91,12 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
     type: filterType || undefined,
   })
 
-  const filteredTransactions = useMemo(() => {
-    const min = amountMin !== '' ? Number(amountMin) : null
-    const max = amountMax !== '' ? Number(amountMax) : null
-
-    return transactions.filter((tx) => {
-      if (filterAccountId && tx.account_id !== filterAccountId) return false
-      if (!matchesSearch(tx, searchQuery)) return false
-      const amount = Number(tx.amount) || 0
-      if (min !== null && !Number.isNaN(min) && amount < min) return false
-      if (max !== null && !Number.isNaN(max) && amount > max) return false
-      return true
-    })
-  }, [transactions, filterAccountId, searchQuery, amountMin, amountMax])
-
-  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize))
+  const totalPages = Math.max(1, Math.ceil(transactions.length / pageSize))
 
   const paginatedTransactions = useMemo(() => {
     const start = (page - 1) * pageSize
-    return filteredTransactions.slice(start, start + pageSize)
-  }, [filteredTransactions, page, pageSize])
+    return transactions.slice(start, start + pageSize)
+  }, [transactions, page, pageSize])
 
   const groups = useMemo(
     () => groupTransactionsByDate(paginatedTransactions),
@@ -132,21 +105,11 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
 
   useEffect(() => {
     setPage(1)
-  }, [year, month, filterType, searchQuery, filterAccountId, amountMin, amountMax, pageSize])
+  }, [year, month, filterType, pageSize])
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
   }, [page, totalPages])
-
-  const hasAdvancedFilters =
-    searchQuery || filterAccountId || amountMin !== '' || amountMax !== ''
-
-  const clearAdvancedFilters = () => {
-    setSearchQuery('')
-    setFilterAccountId('')
-    setAmountMin('')
-    setAmountMax('')
-  }
 
   useEffect(() => {
     const parsed = parseMonthParam(searchParams.get('month'))
@@ -160,7 +123,7 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
     const path = window.location.pathname.replace(/\/+$/, '') || '/'
     if (path === '/goals' || path === '/transactions') return
     const month = searchParams.get('month')
-    navigate(month ? `/goals?month=${month}` : '/goals', { replace: true })
+    navigate(month ? `/transactions?month=${month}` : '/transactions', { replace: true })
   }, [formOpen, navigate, searchParams])
 
   const showTransactionForm = formOpen || isTabActive
@@ -194,9 +157,6 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
     }
     if (filterType && filterType !== data.type) {
       setFilterType('')
-    }
-    if (filterAccountId && filterAccountId !== data.account_id) {
-      setFilterAccountId('')
     }
 
     if (options.goalId) {
@@ -249,7 +209,7 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
   const showSkeleton = loading && transactions.length === 0
 
   const filterChips = (
-    <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
+    <div className="flex flex-wrap gap-2">
       {FILTER_TYPES.map((f) => (
         <button
           key={f.value || 'all'}
@@ -267,82 +227,8 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
     </div>
   )
 
-  const advancedFilters = (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search note, category, account…"
-          className="input-field w-full pl-9"
-          aria-label="Search transactions"
-        />
-      </div>
-
-      <select
-        value={filterAccountId}
-        onChange={(e) => setFilterAccountId(e.target.value)}
-        className="input-field w-full"
-        aria-label="Filter by account"
-      >
-        <option value="">All accounts</option>
-        {accounts
-          .filter((a) => !a.is_archived)
-          .map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-      </select>
-
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          value={amountMin}
-          onChange={(e) => setAmountMin(e.target.value)}
-          placeholder="Min amount"
-          className="input-field w-full"
-          aria-label="Minimum amount"
-          min="0"
-        />
-        <input
-          type="number"
-          value={amountMax}
-          onChange={(e) => setAmountMax(e.target.value)}
-          placeholder="Max amount"
-          className="input-field w-full"
-          aria-label="Maximum amount"
-          min="0"
-        />
-      </div>
-
-      {(hasAdvancedFilters || filteredTransactions.length !== transactions.length) && (
-        <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
-          <span>
-            {filteredTransactions.length} of {transactions.length} transactions
-          </span>
-          {hasAdvancedFilters && (
-            <button
-              type="button"
-              onClick={clearAdvancedFilters}
-              className="inline-flex items-center gap-1 font-medium text-brand-600 hover:text-brand-700"
-            >
-              <X className="h-3 w-3" aria-hidden="true" />
-              Clear filters
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  )
-
   const paginationBar =
-    filteredTransactions.length > 0 ? (
+    transactions.length > 0 ? (
       <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           <span className="text-slate-500">Show</span>
@@ -362,8 +248,7 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
           ))}
           <span className="text-slate-500">
             · {(page - 1) * pageSize + 1}–
-            {Math.min(page * pageSize, filteredTransactions.length)} of{' '}
-            {filteredTransactions.length}
+            {Math.min(page * pageSize, transactions.length)} of {transactions.length}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2 sm:justify-end">
@@ -407,33 +292,31 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
       <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
         {transactions.length === 0
           ? 'Record expenses, income, or transfers between your accounts.'
-          : 'Try adjusting your search or filters for this month.'}
+          : 'Try a different type filter or month.'}
       </p>
       {transactions.length === 0 ? (
         <button type="button" onClick={openAddForm} className="btn-primary mt-6 px-5">
           <Plus className="h-4 w-4" />
           Add transaction
         </button>
-      ) : hasAdvancedFilters ? (
-        <button type="button" onClick={clearAdvancedFilters} className="btn-secondary mt-6 px-5">
-          Clear filters
+      ) : filterType ? (
+        <button
+          type="button"
+          onClick={() => setFilterType('')}
+          className="btn-secondary mt-6 px-5"
+        >
+          Show all types
         </button>
       ) : null}
     </section>
   ) : (
     <div className="space-y-4">
-      {paginationBar}
       {groups.map(({ date, items }) => (
-        <section key={date} className="card">
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <section key={date} className="card overflow-hidden">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             {formatTransactionDateLabel(date)}
           </h3>
-          <div className="hidden border-b border-slate-100 px-1 py-2 text-xs font-medium uppercase tracking-wide text-slate-400 lg:grid lg:grid-cols-[auto_1fr_minmax(6rem,auto)_auto] lg:gap-4">
-            <span />
-            <span>Description</span>
-            <span>Account</span>
-            <span className="text-right">Amount · Actions</span>
-          </div>
+          <TransactionTableHeader />
           <div className="divide-y divide-slate-100">
             {items.map((tx) => (
               <TransactionRow
@@ -454,98 +337,16 @@ export default function TransactionsPage({ isTabActive = true, embedded = false 
   )
 
   const activityBody = (
-    <>
-      <div className="flex flex-col gap-3 lg:hidden">
+    <div className="space-y-4">
+      <div className="card flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <MonthPicker year={year} month={month} onChange={handleMonthChange} />
         {filterChips}
-        {advancedFilters}
       </div>
 
-      <div className="hidden lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
-        <aside className="space-y-4 lg:col-span-3 xl:col-span-3">
-          <div className="card space-y-4 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Month</p>
-            <MonthPicker year={year} month={month} onChange={handleMonthChange} />
-          </div>
-          <div className="card space-y-3 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Type</p>
-            {filterChips}
-          </div>
-          <div className="card space-y-3 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Filters</p>
-            {advancedFilters}
-          </div>
-        </aside>
-        <div className="space-y-4 lg:col-span-9">
-          {error && <p className="alert-error">{error}</p>}
-          {transactionList}
-        </div>
-      </div>
-
-      <div className="lg:hidden">
-        {error && <p className="alert-error">{error}</p>}
-        {transactionList}
-      </div>
-    </>
+      {error && <p className="alert-error">{error}</p>}
+      {transactionList}
+    </div>
   )
-
-  if (embedded) {
-    return (
-      <>
-        <section className="space-y-4 border-t border-slate-200 pt-10">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-slate-900 lg:text-base">Activity</h2>
-            <button
-              type="button"
-              onClick={openAddForm}
-              className="btn-primary px-3 py-2 text-sm lg:hidden"
-            >
-              <Plus className="h-4 w-4" />
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={openAddForm}
-              className="btn-primary hidden px-4 lg:inline-flex"
-            >
-              <Plus className="h-4 w-4" />
-              Add transaction
-            </button>
-          </div>
-          {activityBody}
-        </section>
-
-        {isTabActive && !showSkeleton && (
-          <button
-            type="button"
-            onClick={openAddForm}
-            aria-label="Add transaction"
-            className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[60] flex h-14 w-14 min-h-11 min-w-11 touch-manipulation items-center justify-center rounded-full bg-brand-600 text-white shadow-fab transition hover:bg-brand-700 active:scale-95 sm:right-6 lg:hidden"
-          >
-            <Plus className="h-6 w-6" />
-          </button>
-        )}
-
-        {showTransactionForm && (
-          <TransactionForm
-            open={formOpen}
-            onClose={() => {
-              setFormOpen(false)
-              setEditingTx(null)
-            }}
-            transaction={editingTx}
-            accounts={accounts}
-            expenseCategories={expenseCategories}
-            incomeCategories={incomeCategories}
-            goals={goals}
-            defaultCurrency={defaultCurrency}
-            onSubmit={handleSubmit}
-            onError={(msg) => toast.error(msg)}
-          />
-        )}
-      </>
-    )
-  }
 
   return (
     <>

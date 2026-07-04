@@ -4,15 +4,11 @@ import { getColorPalette } from '../lib/constants'
 import { formatCurrency } from '../lib/format'
 import { formatDaysRemaining, getDaysRemaining } from '../lib/goalDisplay'
 
-function GoalsProgressBars({ goals, preferredCurrency, onGoalClick }) {
-  const visibleGoals = useMemo(() => {
-    const filtered = preferredCurrency
-      ? goals.filter((g) => (g.currency ?? 'INR') === preferredCurrency)
-      : goals
-    const list = filtered.length > 0 ? filtered : goals
-
-    return [...list].sort((a, b) => percentComplete(a) - percentComplete(b))
-  }, [goals, preferredCurrency])
+function GoalsProgressBars({ goals, onGoalClick }) {
+  const visibleGoals = useMemo(
+    () => [...goals].sort((a, b) => percentComplete(a) - percentComplete(b)),
+    [goals],
+  )
 
   if (visibleGoals.length === 0) {
     return (

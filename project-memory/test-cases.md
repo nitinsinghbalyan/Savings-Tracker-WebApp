@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-06-23 (v0.18)
+**Last updated:** 2026-07-04 (v0.22)
 
 ## Setup
 
@@ -452,14 +452,60 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 
 | ID | Area | Steps | Expected | Result | Notes |
 |----|------|-------|----------|--------|-------|
-| TC-353 | Daily rule create | Recurring → Daily → save | Rule saved; `next_run_date` advances by 1 day | not-run | Requires migration |
+| TC-353 | Daily rule create | Recurring → Daily → save | Rule saved; `next_run_date` advances by 1 day | not-run | Requires migration; session 62 adds idempotent SQL + app error hint |
+
+### Daily recurring hardening (session 62)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-360 | Daily without migration | Save daily rule on DB with old frequency CHECK | Toast explains run `add_recurring_daily_frequency.sql` | not-run | `assertRecurringNoError` |
+| TC-361 | Daily after migration | Run SQL then create daily rule | Rule saved; `day_of_month` null; next run computed | not-run | |
+| TC-362 | Edit schedule to daily | Edit monthly rule → Daily → save | `day_of_month` cleared; `next_run_date` recalculated | not-run | `normalizeRecurringSchedule` on update |
+| TC-363 | Interval unit label | Select Daily frequency in form | “Every (days)” shown | not-run | |
+| TC-364 | Local production build | `npm run build` after clean install | Vite build succeeds | pass | session 62 |
+
+### Separate tabs + goals + snapshots (session 63)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-365 | 4-tab nav | Open app on mobile/desktop | Goals, Activity, Summary, Settings visible | not-run | |
+| TC-366 | Activity standalone | Tap Activity tab | `/transactions`; month picker; tx list | not-run | |
+| TC-367 | USD goal visible | Goals tab with INR + USD goals, default INR | Both goals listed | not-run | F-113 |
+| TC-368 | Category delete preserves tx | Delete category with past transactions | Activity still shows original category name | not-run | Requires snapshot migration |
+| TC-369 | Category rename preserves tx | Rename category; view old transactions | Old txs keep name at time of snapshot | not-run | |
+| TC-370 | Summary tx link | Summary → View transactions | Opens `/transactions?month=…` | not-run | |
+
+### Activity table + pagination (session 64)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-371 | Pagination bottom only | Activity with 10+ transactions | Pagination below list only; none above | not-run | F-101 |
+| TC-372 | Column alignment | Activity desktop @ lg+ | Headers align with Description, Account, Amount, Actions | not-run | F-115 |
+| TC-373 | Icon edit/delete | View expense/income row | Pencil + Trash icons; aria-labels present | not-run | F-116; supersedes TC-355 text buttons |
+| TC-374 | Transfer row actions | View transfer row | Delete icon only; no edit | not-run | |
+
+### Goals cards + nav + Settings (session 65)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-386 | Goal card grid | Goals tab with 2+ goals | Cards in responsive grid; up to 6 cols on xl | not-run | F-117 |
+| TC-387 | Days left on card | View goal card | Days left top-right; no calendar date row | not-run | F-118 |
+| TC-388 | No track badge on card | View goal card | No on-track / behind chip on card | not-run | F-118 |
+| TC-389 | New goal below grid | Scroll Goals tab | Dashed “New goal” CTA below cards; no FAB | not-run | F-119 |
+| TC-390 | Summary first nav | Open app | Summary tab first; `/` lands on Summary | not-run | F-120 |
+| TC-391 | Activity rupee icon | View bottom/sidebar nav | Activity shows ₹ icon | not-run | F-123 |
+| TC-392 | Activity full-width table | Activity @ desktop | Table spans full content width | not-run | F-121 |
+| TC-393 | Activity chip filters only | Activity filter bar | Month + type chips only; no search/amount | not-run | F-122 |
+| TC-394 | Tx category chips wrap | Add transaction → Category | Chips side-by-side wrapping | not-run | F-124 |
+| TC-395 | No Settings budgets | Settings page | No Budgets section | not-run | F-126 |
+| TC-396 | Settings vertical | Settings @ desktop | Sections stacked vertically | not-run | F-125 |
 
 ### Activity pagination (session 50)
 
 | ID | Area | Steps | Expected | Result | Notes |
 |----|------|-------|----------|--------|-------|
 | TC-354 | Page size 50 | Activity → select 50 | Up to 50 tx per page | not-run | |
-| TC-355 | Edit delete same line | View any expense row | Amount, Edit, Delete on one line | not-run | |
+| TC-355 | Edit delete same line | View any expense row | Amount + icon Edit/Delete on one line | not-run | **Session 64:** Pencil/Trash2 icons |
 | TC-356 | Page reset on filter | Change month or filter | Page returns to 1 | not-run | |
 
 ### Horizontal categories (session 51)
@@ -479,10 +525,10 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 
 | ID | Area | Steps | Expected | Result | Notes |
 |----|------|-------|----------|--------|-------|
-| TC-360 | Home tab | Open Home | Goals list + Activity transactions on one page | not-run | Route `/goals` |
+| TC-360 | Home tab | Open Home | Goals list + Activity transactions on one page | obsolete | **Session 63:** separate Goals + Activity tabs; `/goals` goals only |
 | TC-361 | Summary tab | Open Summary | Stats + chart + balances; no goals list | not-run | Route `/summary` |
-| TC-362 | Tx redirect | Visit `/transactions?month=2026-06` | Lands on Home with same month | not-run | |
-| TC-363 | Nav three tabs | Bottom/sidebar nav | Home · Summary · Settings only | not-run | |
+| TC-362 | Tx redirect | Visit `/transactions?month=2026-06` | Lands on Home with same month | obsolete | **Session 63:** `/transactions` is Activity tab; no redirect |
+| TC-363 | Nav three tabs | Bottom/sidebar nav | Home · Summary · Settings only | obsolete | **Session 63:** 4 tabs — Goals · Activity · Summary · Settings |
 
 ### Category pie chart (session 57)
 
@@ -580,3 +626,7 @@ _Add a row here after each release or bug fix._
 | 2026-06-23 | v0.17 production deploy | `npm run build` pass; deployed `dpl_JAuw2D4fW8sw1RnA1KUFG6mtmx62` — pie + chart settings |
 | 2026-06-23 | v0.17.1 slice hover tooltip | `npm run build` pass; rich tooltip on slice hover (deploy pending) |
 | 2026-06-23 | v0.18 resizable chart | `npm run build` pass; drag resize + remove income list (deploy pending) |
+| 2026-07-04 | v0.19 Phase 2 commit + daily recurring fix | `npm run build` pass locally; git commit `f912255` on `master`; daily recurring migration + app hardening (deploy pending) |
+| 2026-07-04 | v0.20 separate tabs + snapshots | `npm run build` pass locally; 4-tab nav; all-currency goals; category snapshot on transactions (deploy pending) |
+| 2026-07-04 | v0.21 Activity table polish | `npm run build` pass locally; bottom-only pagination; aligned columns; icon edit/delete (deploy pending) |
+| 2026-07-04 | v0.22 Goals cards + Activity + Settings | `npm run build` pass locally; GoalCard grid; Summary first nav; Activity full-width + chip filters; Settings budgets removed (deploy pending) |

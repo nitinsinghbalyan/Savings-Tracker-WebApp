@@ -325,3 +325,45 @@ Persistent context for the **savings-tracker** app. Use this folder so agents an
 - **Prior production:** `dpl_JAuw2D4fW8sw1RnA1KUFG6mtmx62` (v0.17)
 - **Everything in v0.17.1 snapshot still applies** (hover tooltip, chart settings, pie/donut)
 - **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
+
+## Current snapshot (2026-07-04, v0.19 Phase 2 commit + daily recurring fix)
+
+- **Git:** `master` at `f912255` — Phase 2 finance app committed locally (114 files); **no GitHub remote** (`origin` not configured)
+- **Daily recurring fix (session 62):** `normalizeRecurringSchedule()`; idempotent frequency CHECK in SQL migrations; form shows interval unit; friendly error if DB migration missing
+- **Migration:** run `supabase/add_recurring_daily_frequency.sql` in Supabase SQL Editor if daily rules still fail (or re-run frequency block at end of `add_subcategories_recurring_bank.sql`)
+- **Build:** `npm run build` passes after clean `npm install` if Rolldown/vite binary issues occur
+- **Prior production:** `dpl_JAuw2D4fW8sw1RnA1KUFG6mtmx62` (v0.17 — pie + settings)
+- **Everything in v0.18 snapshot still applies** (resizable chart, summary trim, hover tooltip)
+- **Not deployed:** session 62 app + migration fixes local only
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/` after Supabase migration
+
+## Current snapshot (2026-07-04, v0.20 separate tabs + category snapshots)
+
+- **Navigation:** 4 tabs — **Goals** `/goals` · **Activity** `/transactions` · **Summary** `/summary` · **Settings** `/settings` (session 63; supersedes merged Home tab from session 56)
+- **Goals tab:** all goals shown (INR + USD); no `preferredCurrency` filter on `GoalsProgressBars`
+- **Activity tab:** standalone `TransactionsPage`; `?month=YYYY-MM` on `/transactions`
+- **Category snapshots:** `add_transaction_category_snapshot.sql` required; past transactions keep label on category delete/rename
+- **Prior snapshot:** v0.19 (Phase 2 commit `f912255`, daily recurring fix)
+- **Not deployed:** session 62–63 local only
+- **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
+- **Deploy:** `npx vercel --prod --yes` after Supabase migrations
+
+## Current snapshot (2026-07-04, v0.21 Activity table polish)
+
+- **Activity pagination:** bottom of list only (session 64)
+- **Activity table (desktop):** aligned columns — Description · Account · Amount · Actions via `TRANSACTION_TABLE_GRID`
+- **Transaction actions:** Pencil/Trash2 icon buttons with accessible labels
+- **Prior snapshot:** v0.20 (4-tab nav, category snapshots, all-currency goals)
+- **Not deployed:** session 62–64 local only
+- **Deploy:** `npx vercel --prod --yes` after Supabase migrations
+
+## Current snapshot (2026-07-04, v0.22 Goals cards + Activity + Settings)
+
+- **Navigation:** **Summary** · Goals · Activity · Settings — Summary is first tab and default route (`/` → `/summary`, PWA `start_url`)
+- **Goals tab:** `GoalCard` compact grid (up to 6 cols on xl); days left top-right; “New goal” CTA below cards; detail via `GoalDetailModal`
+- **Activity tab:** full-width table; month + type chip filters only; `RupeeIcon` in nav
+- **Settings:** single vertical column; **Budgets section removed** (DB/chart budgets unchanged)
+- **Prior snapshot:** v0.21 (Activity table polish)
+- **Not deployed:** session 62–65 local only
+- **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
+- **Deploy:** `npx vercel --prod --yes` after Supabase migrations

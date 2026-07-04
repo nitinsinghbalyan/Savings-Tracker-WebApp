@@ -47,7 +47,7 @@
   }
 
   .chip-row {
-    @apply flex flex-nowrap gap-1.5;
+    @apply flex flex-wrap gap-1.5;
   }
 
   .chip-row-item {

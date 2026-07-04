@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
 import { assertNoError } from './errors'
+import { categorySnapshotFromRow } from './transactionCategory'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from './constants'
 
 function categoryNameKey(name) {
@@ -239,14 +240,67 @@ export async function archiveCategory(id) {
   return updateCategory(id, { is_archived: true })
 }
 
+async function collectDescendantCategoryIds(userId, rootId) {
+  const { data: rows, error } = await supabase
+    .from('categories')
+    .select('id, parent_id')
+    .eq('user_id', userId)
+
+  assertNoError(error, 'Failed to load categories')
+
+  const ids = new Set([rootId])
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const row of rows ?? []) {
+      if (row.parent_id && ids.has(row.parent_id) && !ids.has(row.id)) {
+        ids.add(row.id)
+        changed = true
+      }
+    }
+  }
+  return [...ids]
+}
+
+async function freezeTransactionSnapshotsForCategories(userId, categoryIds) {
+  for (const catId of categoryIds) {
+    const { data: cat, error } = await supabase
+      .from('categories')
+      .select('name, color, is_savings')
+      .eq('id', catId)
+      .eq('user_id', userId)
+      .single()
+
+    if (error || !cat) continue
+
+    const snapshot = categorySnapshotFromRow(cat)
+    const { error: updateError } = await supabase
+      .from('transactions')
+      .update(snapshot)
+      .eq('category_id', catId)
+      .eq('user_id', userId)
+
+    assertNoError(updateError, 'Failed to preserve transaction categories')
+  }
+}
+
 export async function deleteCategory(id) {
   const userId = await requireUserId()
+  const subtreeIds = await collectDescendantCategoryIds(userId, id)
+  await freezeTransactionSnapshotsForCategories(userId, subtreeIds)
+
   const { error } = await supabase.from('categories').delete().eq('id', id).eq('user_id', userId)
   assertNoError(error, 'Failed to delete category')
 }
 
 export async function deleteAllCategories() {
   const userId = await requireUserId()
+  const rows = await fetchCategoriesRaw(userId, { includeArchived: true })
+  await freezeTransactionSnapshotsForCategories(
+    userId,
+    rows.map((row) => row.id),
+  )
+
   const { error } = await supabase.from('categories').delete().eq('user_id', userId)
   assertNoError(error, 'Failed to clear categories')
 }

@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, BarChart3, Settings } from 'lucide-react'
+import { Target, BarChart3, Settings } from 'lucide-react'
 import { useShellChrome } from '../hooks/useShellChrome'
+import RupeeIcon from './icons/RupeeIcon'
 
 const tabs = [
-  { to: '/goals', label: 'Home', icon: LayoutDashboard },
   { to: '/summary', label: 'Summary', icon: BarChart3 },
+  { to: '/goals', label: 'Goals', icon: Target },
+  { to: '/transactions', label: 'Activity', icon: RupeeIcon },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -19,7 +21,7 @@ export default function BottomNav() {
       style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
       aria-label="Main navigation"
       aria-hidden={bottomNavHidden}
-    >      <div className="mx-auto grid max-w-app grid-cols-3">
+    >      <div className="mx-auto grid max-w-app grid-cols-4">
         {tabs.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

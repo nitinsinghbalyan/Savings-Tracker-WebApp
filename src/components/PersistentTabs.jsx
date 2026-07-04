@@ -4,10 +4,12 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import HomePage from '../pages/HomePage'
 import SummaryPage from '../pages/SummaryPage'
 import SettingsRoutes from '../pages/SettingsRoutes'
+import TransactionsPage from '../pages/TransactionsPage'
 
 const TABS = [
-  { path: '/goals', Component: HomePage },
   { path: '/summary', Component: SummaryPage },
+  { path: '/goals', Component: HomePage },
+  { path: '/transactions', Component: TransactionsPage },
   { path: '/settings', Component: SettingsRoutes },
 ]
 
@@ -16,25 +18,20 @@ const TAB_PATHS = TABS.map((tab) => tab.path)
 function normalizeTabPath(pathname) {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (path === '/settings' || path.startsWith('/settings/')) return '/settings'
-  if (path === '/transactions') return '/goals'
-  return TAB_PATHS.includes(path) ? path : '/goals'
+  return TAB_PATHS.includes(path) ? path : '/summary'
 }
 
 export default function PersistentTabs() {
-  const { pathname, search } = useLocation()
+  const { pathname } = useLocation()
   const navigate = useNavigate()
   const activePath = normalizeTabPath(pathname)
 
   useEffect(() => {
     const normalized = pathname.replace(/\/+$/, '') || '/'
-    if (normalized === '/transactions') {
-      navigate(`/goals${search}`, { replace: true })
-      return
-    }
     if (!TAB_PATHS.includes(normalized) && !normalized.startsWith('/settings/')) {
-      navigate('/goals', { replace: true })
+      navigate('/summary', { replace: true })
     }
-  }, [pathname, search, navigate])
+  }, [pathname, navigate])
 
   return (
     <div className="relative">

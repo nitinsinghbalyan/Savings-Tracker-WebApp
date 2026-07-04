@@ -2,6 +2,7 @@ import { format, endOfMonth, parseISO, startOfMonth } from 'date-fns'
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
 import { assertNoError } from './errors'
+import { fetchCategorySnapshot } from './transactionCategory'
 
 /** Calendar month bucket used by MonthPicker / getMonthRange for a transaction date */
 export function getPeriodForDate(dateStr, monthStartDay = 1) {
@@ -100,6 +101,9 @@ export async function createTransaction(data) {
     return tx
   }
 
+  const snapshot =
+    data.type === 'transfer' ? {} : await fetchCategorySnapshot(userId, data.category_id)
+
   const { data: tx, error } = await supabase
     .from('transactions')
     .insert({
@@ -110,6 +114,7 @@ export async function createTransaction(data) {
       amount: Number(data.amount),
       note: data.note ?? null,
       transaction_date: data.transaction_date,
+      ...snapshot,
       ...(data.recurring_id ? { recurring_id: data.recurring_id } : {}),
     })
     .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
@@ -131,6 +136,10 @@ export async function updateTransaction(id, patch) {
   delete safePatch.id
   delete safePatch.created_at
   delete safePatch.transfer_to_account_id
+
+  if (Object.prototype.hasOwnProperty.call(safePatch, 'category_id')) {
+    Object.assign(safePatch, await fetchCategorySnapshot(userId, safePatch.category_id))
+  }
 
   const { data, error } = await supabase
     .from('transactions')

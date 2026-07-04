@@ -3,7 +3,7 @@
   "name": "Savings Tracker Lite",
   "short_name": "Savings Lite",
   "description": "Track savings goals, expenses, and account balances",
-  "start_url": "/goals",
+  "start_url": "/summary",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

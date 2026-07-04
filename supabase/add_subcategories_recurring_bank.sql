@@ -69,6 +69,14 @@ CREATE POLICY "users_delete_own_recurring" ON recurring_transactions
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON recurring_transactions TO authenticated;
 
+-- Ensure daily frequency is allowed (idempotent; fixes DBs created before session 49)
+ALTER TABLE recurring_transactions
+  DROP CONSTRAINT IF EXISTS recurring_transactions_frequency_check;
+
+ALTER TABLE recurring_transactions
+  ADD CONSTRAINT recurring_transactions_frequency_check
+  CHECK (frequency IN ('daily', 'weekly', 'monthly', 'yearly'));
+
 -- Postgres cannot change OUT/return row type with CREATE OR REPLACE — drop first
 DROP FUNCTION IF EXISTS get_account_balances();
 

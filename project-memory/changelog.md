@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-06-23 (v0.18)
+**Last updated:** 2026-07-04 (v0.22)
 
 ## 2026-06-14
 
@@ -1206,3 +1206,109 @@
 ### Deploy status
 
 - Not yet deployed to production (local bundle includes sessions 60–61)
+
+---
+
+## 2026-07-04 (session 62 — Phase 2 commit + daily recurring fix)
+
+### Added
+
+- **Git commit on `master`** — `f912255` bundles Phase 2 finance app (114 files): auth, accounts, transactions, categories, budgets, recurring, PWA, desktop shell, Supabase migrations, project memory
+- **`normalizeRecurringSchedule()`** in `recurringTransactions.js` — shared schedule normalization for create/update; clears `day_of_month` for non-monthly rules; recalculates `next_run_date`
+
+### Changed
+
+- **`add_recurring_daily_frequency.sql`** — idempotent `DO` block drops any existing frequency CHECK on `recurring_transactions` before re-adding with `daily`
+- **`add_subcategories_recurring_bank.sql`** — appended same frequency CHECK fix at end (re-run safe for DBs created before session 49)
+- **`RecurringTransactionForm`** — “Every” label shows unit (days/weeks/months/years) for selected frequency
+- **`updateRecurringTransaction`** — recalculates schedule when frequency/start/interval/day fields change
+
+### Fixed
+
+- **Daily recurring create fails** — Postgres CHECK on `frequency` rejected `daily` on DBs migrated before session 49; migration + app error mapping (`assertRecurringNoError`) with actionable message
+- **Local build** — `node_modules` missing Rolldown native binding + non-executable `vite` binary; fixed via `rm -rf node_modules && npm install`
+
+### Verified
+
+- `npm run build` passes locally (Vite 8.0.16, ~834ms–1.4s)
+
+### Not done (manual follow-up)
+
+- **Git push** — no `origin` remote configured; push blocked pending remote URL
+- **Supabase** — run `add_recurring_daily_frequency.sql` (or re-run end of `add_subcategories_recurring_bank.sql`) on production if daily recurring still fails
+- **Production deploy** — local fixes not yet on Vercel
+
+---
+
+## 2026-07-04 (session 63 — separate tabs, USD goals, category snapshots)
+
+### Added
+
+- **4-tab navigation restored** — Goals · Activity · Summary · Settings (`/goals`, `/transactions`, `/summary`, `/settings`)
+- **`transactionCategory.js`** — `resolveTransactionCategory()`, `fetchCategorySnapshot()`, `categorySnapshotFromRow()`
+- **Migration** — `supabase/add_transaction_category_snapshot.sql` — `category_name`, `category_color`, `category_is_savings` on `transactions`
+
+### Changed
+
+- **`HomePage`** — goals only; title “Goals”; removed embedded `TransactionsPage`
+- **`PersistentTabs`** — `/transactions` is its own tab again; removed redirect to `/goals`
+- **`BottomNav` / `SidebarNav`** — 4 columns; icons Target + Receipt; labels Goals / Activity
+- **`SummarySection`** — “Add transaction” / “View transactions” links → `/transactions?month=…`
+- **`TransactionsPage`** — removed `embedded` prop; month query stays on Activity tab
+- **`deleteCategory` / `deleteAllCategories`** — freeze category label onto linked transactions before delete
+
+### Fixed
+
+- **USD goal hidden on Goals tab** — `GoalsProgressBars` filtered by `profile.default_currency`; INR goals caused USD goals (e.g. Indmoney) to be omitted; now shows all goals
+- **Category delete/rename changed past transactions** — transactions only stored `category_id`; delete nullified link; rename changed joined label; snapshot fields + display prefer snapshot
+
+### Verified
+
+- `npm run build` passes locally
+
+### Not done (manual follow-up)
+
+- **Supabase** — run `add_transaction_category_snapshot.sql` for snapshot columns + backfill
+- **Production deploy** — session 63 changes local only
+
+---
+
+## 2026-07-04 (session 64 — Activity table + pagination)
+
+### Changed
+
+- **Activity pagination** — controls only at bottom of transaction list (removed duplicate top bar)
+- **`TransactionRow`** — shared `TRANSACTION_TABLE_GRID` aligns header + rows on desktop: Icon · Description · Account · Amount · Actions
+- **`TransactionTableHeader`** — exported from `TransactionRow.jsx`; column headers match row grid
+- **Edit/Delete actions** — Lucide `Pencil` / `Trash2` icon buttons with `aria-label` (replaces text links)
+
+### Verified
+
+- `npm run build` passes locally
+
+---
+
+## 2026-07-04 (session 65 — Goals cards, Activity polish, Settings trim)
+
+### Changed
+
+- **Goals tab** — `GoalCard` responsive grid (`1→2→3→6` cols on `xl`); `compact` mode hides track badge, contributions accordion, forecast; **days left** top-right only (no end date row)
+- **`HomePage`** — “New goal” dashed CTA below card grid; removed header button and mobile FAB
+- **Navigation order** — Summary first in `BottomNav` / `SidebarNav`; `/` and PWA `start_url` → `/summary`; unknown paths fallback to `/summary` in `PersistentTabs`
+- **Activity nav icon** — `RupeeIcon` (₹) replaces Lucide `Receipt` on Activity tab
+- **Activity layout** — filters in one card above list; transaction table full page width (removed desktop sidebar column layout)
+- **Activity filters** — type chips only (All / Expense / Income / Transfer); removed search, account dropdown, min/max amount
+- **`TransactionForm` / `RecurringTransactionForm`** — category chips in single `flex-wrap` row; compact `categoryChipBase`; subcategories labeled `Parent · Child`
+- **`.chip-row`** — `flex-wrap` instead of `flex-nowrap` (global)
+- **Settings** — removed **Budgets** section (`BudgetManager`); single vertical stack for Account, Preferences, Balances, Finance, Data, Sign out (no `lg:grid-cols-2`)
+
+### Superseded
+
+- **`GoalsProgressBars`** on Goals tab — replaced by `GoalCard` grid (session 65)
+- **Settings Budgets UI** — removed from Settings page; `categories.monthly_budget` + chart budget display unchanged (F-76 data layer retained)
+- **Default landing tab** — was `/goals`; now `/summary` (session 65)
+- **Activity advanced filters** — search/account/amount removed (session 65)
+
+### Verified
+
+- `npm run build` passes locally

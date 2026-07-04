@@ -1,25 +1,20 @@
 import { format } from 'date-fns'
 import { categoryDedupeKey, dedupeCategoriesForDisplay } from './categories'
 import { getMonthRange } from './transactions'
+import { resolveTransactionCategory } from './transactionCategory'
 
-function resolveCategoryBucket(tx, categoryMap) {
-  const embedded = tx.category
-  if (embedded?.name) {
+function resolveCategoryBucket(tx) {
+  const resolved = resolveTransactionCategory(tx)
+  if (resolved?.name) {
     return {
-      categoryId: categoryDedupeKey(embedded),
-      name: embedded.name,
-      color: embedded.color ?? 'indigo',
-      isSavings: Boolean(embedded.is_savings),
-    }
-  }
-
-  const fromMap = tx.category_id ? categoryMap.get(tx.category_id) : null
-  if (fromMap) {
-    return {
-      categoryId: categoryDedupeKey(fromMap),
-      name: fromMap.name,
-      color: fromMap.color ?? 'indigo',
-      isSavings: Boolean(fromMap.is_savings),
+      categoryId: categoryDedupeKey({
+        kind: resolved.kind ?? (tx.type === 'income' ? 'income' : 'expense'),
+        name: resolved.name,
+        parent_id: null,
+      }),
+      name: resolved.name,
+      color: resolved.color ?? 'indigo',
+      isSavings: Boolean(resolved.is_savings),
     }
   }
 
@@ -69,9 +64,9 @@ export function buildMonthlySummary(transactions, categories, { currency } = {})
     const amount = Number(tx.amount) || 0
     if (tx.type === 'income') {
       income += amount
-      addToBucket(byIncomeCategory, resolveCategoryBucket(tx, categoryMap), amount)
+      addToBucket(byIncomeCategory, resolveCategoryBucket(tx), amount)
     } else if (tx.type === 'expense') {
-      const bucket = resolveCategoryBucket(tx, categoryMap)
+      const bucket = resolveCategoryBucket(tx)
       if (bucket.isSavings) {
         categorySavings += amount
         addToBucket(bySavingsCategory, bucket, amount)

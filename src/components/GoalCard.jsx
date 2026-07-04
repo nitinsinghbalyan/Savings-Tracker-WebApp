@@ -1,19 +1,17 @@
 import { memo, useState } from 'react'
-import { Calendar, ChevronDown, Pencil, Plus, Tag, Trash2 } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Tag, Trash2 } from 'lucide-react'
 import {
   percentComplete,
   remainingAmount,
   savedAmount,
 } from '../lib/contributions'
 import { formatCurrency } from '../lib/format'
-import { getColorPalette, PRIORITIES } from '../lib/constants'
+import { getColorPalette } from '../lib/constants'
 import {
   formatContributionDate,
   formatDaysRemaining,
-  formatGoalDate,
   getDaysRemaining,
   getRequiredMonthly,
-  getTrackStatus,
   sortedContributions,
 } from '../lib/goalDisplay'
 import { getForecast } from '../lib/forecast'
@@ -24,6 +22,7 @@ function stopCardClick(event) {
 
 function GoalCard({
   goal,
+  compact = false,
   onOpenDetails,
   onAddMoney,
   onEdit,
@@ -41,13 +40,9 @@ function GoalCard({
   const target = Number(goal.target_amount)
   const remaining = remainingAmount(goal)
   const progress = percentComplete(goal)
-  const trackStatus = getTrackStatus(goal)
   const requiredMonthly = getRequiredMonthly(goal)
   const forecast = getForecast(goal)
   const daysLeft = getDaysRemaining(goal.end_date)
-  const priorityStyle =
-    PRIORITIES.find((p) => p.value === goal.priority)?.badge ??
-    PRIORITIES.find((p) => p.value === 'medium').badge
   const palette = getColorPalette(goal.color)
   const currency = goal.currency ?? 'INR'
 
@@ -88,53 +83,40 @@ function GoalCard({
       onClick={() => onOpenDetails?.(goal)}
       className={`card min-w-0 cursor-pointer border-l-4 transition hover:shadow-card ${palette.border}`}
     >
-      <header className="flex items-start justify-between gap-3">
+      <header className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-lg font-semibold text-slate-900">{goal.name}</h3>
-          {goal.category && (
+          <h3 className={`truncate font-semibold text-slate-900 ${compact ? 'text-base' : 'text-lg'}`}>
+            {goal.name}
+          </h3>
+          {!compact && goal.category && (
             <p className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-slate-500">
               <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span className="truncate">{goal.category}</span>
             </p>
           )}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${trackStatus.className}`}
-          >
-            {trackStatus.label}
-          </span>
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${priorityStyle}`}
-          >
-            {goal.priority}
-          </span>
-        </div>
-      </header>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <Calendar className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-          <span className="truncate">{formatGoalDate(goal.end_date)}</span>
-        </span>
         <span
-          className={`shrink-0 font-medium ${daysLeft < 0 ? 'text-rose-600' : daysLeft <= 7 ? 'text-amber-700' : 'text-slate-600'}`}
+          className={`shrink-0 font-medium ${compact ? 'text-xs' : 'text-sm'} ${
+            daysLeft < 0 ? 'text-rose-600' : daysLeft <= 7 ? 'text-amber-700' : 'text-slate-500'
+          }`}
         >
           {formatDaysRemaining(daysLeft)}
         </span>
-      </div>
+      </header>
 
-      <div className="mt-4">
+      <div className={compact ? 'mt-3' : 'mt-4'}>
         <div className="mb-2 flex items-baseline justify-between gap-2">
-          <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+          <p className={`min-w-0 truncate font-medium text-slate-700 ${compact ? 'text-xs' : 'text-sm'}`}>
             {formatCurrency(saved, currency)}{' '}
             <span className="font-normal text-slate-400">of {formatCurrency(target, currency)}</span>
           </p>
-          <p className="shrink-0 text-sm font-semibold text-slate-700">{Math.round(progress)}%</p>
+          <p className={`shrink-0 font-semibold text-slate-700 ${compact ? 'text-xs' : 'text-sm'}`}>
+            {Math.round(progress)}%
+          </p>
         </div>
 
         <div
-          className="h-3 overflow-hidden rounded-full bg-slate-100"
+          className={`overflow-hidden rounded-full bg-slate-100 ${compact ? 'h-2' : 'h-3'}`}
           role="progressbar"
           aria-valuenow={Math.round(progress)}
           aria-valuemin={0}
@@ -148,7 +130,7 @@ function GoalCard({
         </div>
       </div>
 
-      {remaining > 0 && (
+      {remaining > 0 && !compact && (
         <p className="mt-3 text-sm text-slate-600">
           Save{' '}
           <span className="font-semibold text-slate-900">
@@ -158,21 +140,21 @@ function GoalCard({
         </p>
       )}
 
-      {forecast?.label && !forecast.complete && (
+      {forecast?.label && !forecast.complete && !compact && (
         <p className="mt-1 text-sm text-slate-500">{forecast.label}</p>
       )}
 
-      <div className="mt-4 flex items-center gap-2" onClick={stopCardClick}>
+      <div className={`flex items-center gap-2 ${compact ? 'mt-3' : 'mt-4'}`} onClick={stopCardClick}>
         <button
           type="button"
           onClick={() => {
             setConfirmingDelete(false)
             onAddMoney(goal)
           }}
-          className="btn-primary min-w-0 flex-1"
+          className={`btn-primary min-w-0 flex-1 ${compact ? 'px-2 py-2 text-xs' : ''}`}
         >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add money
+          <Plus className={`${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} aria-hidden="true" />
+          {compact ? 'Add' : 'Add money'}
         </button>
 
         <button
@@ -208,12 +190,13 @@ function GoalCard({
         </button>
       </div>
 
-      {confirmingDelete && !deleting && (
+      {confirmingDelete && !deleting && !compact && (
         <p className="mt-2 text-center text-xs text-slate-500" onClick={stopCardClick}>
           Tap the <span className="font-medium text-rose-600">delete icon</span> again to remove this goal.
         </p>
       )}
 
+      {!compact && (
       <div className="mt-4 border-t border-slate-100 pt-3" onClick={stopCardClick}>
         <button
           type="button"
@@ -285,6 +268,7 @@ function GoalCard({
           </div>
         )}
       </div>
+      )}
     </article>
   )
 }

@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-06-23 (v0.18)
+**Last updated:** 2026-07-04 (v0.22)
 
 ## Tech stack
 
@@ -429,7 +429,7 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 | File | Status |
 |------|--------|
 | `add_subcategories_recurring_bank.sql` | **Required** for v0.13 — `parent_id`, `recurring_transactions`, `accounts.bank`, `transactions.recurring_id`, `get_account_balances()` with `bank`; run after `phase2_finance.sql`; uses `DROP FUNCTION IF EXISTS get_account_balances()` before recreate |
-| `add_recurring_daily_frequency.sql` | **Optional** if `recurring_transactions` already exists without `daily` — widens `frequency` CHECK to include `daily` |
+| `add_transaction_category_snapshot.sql` | **Required** for session 63 — `transactions.category_name`, `category_color`, `category_is_savings`; backfill from `categories`; app freezes snapshot before category delete |
 
 ---
 
@@ -456,7 +456,7 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 ### Category budgets (v0.10)
 
 - Schema: `categories.monthly_budget numeric NOT NULL DEFAULT 0 CHECK (>= 0)` (`add_category_budget.sql`, applied on prod)
-- Set per expense category in **Settings → Budgets** (`BudgetManager.jsx` → `updateCategory`); savings categories excluded
+- Set per expense category via `categories.monthly_budget` (was **Settings → Budgets** `BudgetManager.jsx` session 34; **UI removed** session 65 — edit via DB/import only); savings categories excluded
 - `buildMonthlySummary` — `expenseBudgets` map keyed by `categoryDedupeKey`; each `byExpenseCategory` item gets a `budget`; returns `expenseBudgetTotal`
 - `CategoryBreakdownChart` extra prop `budgetTotal`; renders dashed target line per bar (scale max = `max(total, budget)`), rose bar when over, legend `spent / budget` + "over by X", header total spent / total budget
 - Limitation: budget compared within each currency group as a plain number (single-currency INR is typical); categories with a budget but no spend don't draw a bar but count in `expenseBudgetTotal`
@@ -569,6 +569,14 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - **`RecurringTransactionForm`** — Daily chip in `FREQUENCIES`
 - **`add_recurring_daily_frequency.sql`** — alters `recurring_transactions_frequency_check`
 
+### Daily recurring hardening (v0.19, session 62)
+
+- **`normalizeRecurringSchedule()`** — shared create/update path; `day_of_month` null except monthly; recomputes `next_run_date`
+- **`assertRecurringNoError()`** — maps Postgres `23514` frequency CHECK failures to migration instructions
+- **`add_recurring_daily_frequency.sql`** — `DO` loop drops any CHECK referencing `frequency`; re-adds full enum including `daily`
+- **`add_subcategories_recurring_bank.sql`** — end-of-file frequency CHECK block (idempotent re-run)
+- **`RecurringTransactionForm`** — interval label shows days/weeks/months/years
+
 ### Activity pagination (v0.14.2, session 50)
 
 - **`TransactionsPage`** — `pageSize` 10|50|100, `page` state; slice `filteredTransactions` before `groupTransactionsByDate`
@@ -628,3 +636,60 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - **`CategoryBreakdownChart`** — inline `width: min(size, 100%)` + `aspect-ratio: 1`; center-aligned; SE drag handle with pointer listeners
 - **Settings popover** — range input for chart size
 - **`SummarySection`** — no `renderIncomeList`; expense pie chart only below stat cards
+
+### Separate Goals + Activity tabs (v0.20, session 63)
+
+- **`PersistentTabs`** — `/goals` (`HomePage`), `/transactions` (`TransactionsPage`), `/summary`, `/settings`
+- **`BottomNav` / `SidebarNav`** — 4 tabs: Goals (Target), Activity (Receipt), Summary, Settings
+- **`HomePage`** — goals + modals only; no embedded Activity
+- **`TransactionsPage`** — full Activity page; `?month=YYYY-MM` URL sync on `/transactions`
+- **`App.jsx`** — no `/transactions` → `/goals` redirect
+
+### Transaction category snapshots (v0.20, session 63)
+
+- **`add_transaction_category_snapshot.sql`** — denormalized category label fields on `transactions`
+- **`src/lib/transactionCategory.js`** — `resolveTransactionCategory()`, `fetchCategorySnapshot()`
+- **Write path** — snapshot set on `createTransaction` / `updateTransaction` when `category_id` changes
+- **Delete path** — `deleteCategory` / `deleteAllCategories` freeze snapshots for subtree before delete
+- **Read path** — `TransactionRow`, `monthlySummary`, Activity search prefer snapshot over live join
+- **Goals list** — `GoalsProgressBars` shows all goals (no `preferredCurrency` filter)
+
+### Activity table layout (v0.21, session 64)
+
+- **`TRANSACTION_TABLE_GRID`** — `lg:grid-cols-[2.5rem_minmax(0,1fr)_minmax(7rem,10rem)_minmax(5.5rem,7rem)_4.5rem]` shared by header + rows
+- **`TransactionTableHeader`** — Description / Account / Amount columns (desktop `lg+`)
+- **`TransactionRow`** — description = category + note; account column separate; amount right-aligned tabular; `lg:contents` wrapper for mobile amount+actions group
+- **Actions** — `Pencil` edit (non-transfer), `Trash2` delete; `btn-icon` pattern
+- **Pagination** — single bar below grouped transaction list (not duplicated above)
+
+### Goals card grid (v0.22, session 65)
+
+- **`HomePage`** — `GoalCard` grid `grid-cols-1 sm:2 lg:3 xl:6`; `compact` prop on each card
+- **`GoalCard`** — compact: no track-status badge, no priority chip, no end-date row; days left in header top-right; shorter progress bar + “Add” button; contributions section hidden (detail in `GoalDetailModal`)
+- **Create goal** — dashed full-width CTA below grid; no PageHeader “New goal” or mobile FAB
+- **`GoalsProgressBars.jsx`** — file retained; no longer used on Goals tab
+
+### Navigation + defaults (v0.22, session 65)
+
+- **Tab order** — Summary · Goals · Activity · Settings (`BottomNav`, `SidebarNav`)
+- **`App.jsx`** — `/` → `/summary`
+- **`PersistentTabs`** — fallback + unknown-path redirect → `/summary`
+- **`manifest.webmanifest`** — `start_url`: `/summary`
+- **Activity icon** — `RupeeIcon` (not `Receipt`)
+
+### Activity layout + filters (v0.22, session 65)
+
+- **`TransactionsPage`** — single column: filter card (month + type chips) then full-width table; no `lg:grid-cols-12` sidebar
+- **Filters removed** — search, account select, min/max amount (client-side); type filter still via chips → `useTransactions` `type` param
+- **`TRANSACTION_TABLE_GRID`** — wider account/amount columns; `w-full` on grid
+
+### Transaction form category chips (v0.22, session 65)
+
+- **`TransactionForm` / `RecurringTransactionForm`** — flat `selectableCategories` in one `flex-wrap` row; `categoryChipLabel()` for parent · child
+- **`.chip-row`** — `flex-wrap` globally in `index.css`
+
+### Settings layout (v0.22, session 65)
+
+- **`SettingsPage`** — vertical `space-y-6` stack only; **Budgets** section removed
+- **`BudgetManager.jsx`** — retained in codebase; not mounted on Settings page
+- **`categories.monthly_budget`** — still in DB; Summary chart budget lines unchanged

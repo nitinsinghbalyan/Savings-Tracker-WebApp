@@ -14,7 +14,6 @@ import SettingsSection from '../components/SettingsSection'
 import UserAccountInfo from '../components/UserAccountInfo'
 import AccountCard from '../components/AccountCard'
 import AccountForm from '../components/AccountForm'
-import BudgetManager from '../components/BudgetManager'
 import ImportBackupModal from '../components/ImportBackupModal'
 import RupeeIcon from '../components/icons/RupeeIcon'
 
@@ -37,7 +36,7 @@ export default function SettingsPage() {
   const { accounts, createAccount, updateAccount, refetch: refetchAccounts } = useAccounts({
     enabled: Boolean(user) && authReady,
   })
-  const { categories, loading: categoriesLoading, updateCategory, refetch: refetchCategories } = useCategories({
+  const { refetch: refetchCategories } = useCategories({
     enabled: Boolean(user) && authReady,
   })
 
@@ -96,12 +95,11 @@ export default function SettingsPage() {
       <PageHeader title="Settings" />
 
       <main className="page-container space-y-6">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SettingsSection title="Account">
-            <UserAccountInfo user={user} />
-          </SettingsSection>
+        <SettingsSection title="Account">
+          <UserAccountInfo user={user} />
+        </SettingsSection>
 
-          <SettingsSection title="Preferences">
+        <SettingsSection title="Preferences">
           <div className="divide-y divide-slate-100">
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="flex items-center gap-2">
@@ -165,8 +163,8 @@ export default function SettingsPage() {
           </div>
         </SettingsSection>
 
-          <SettingsSection
-            title="Balances"
+        <SettingsSection
+          title="Balances"
           action={
             <button
               type="button"
@@ -198,46 +196,31 @@ export default function SettingsPage() {
           )}
         </SettingsSection>
 
-          <div className="space-y-6 lg:col-span-2 xl:grid xl:grid-cols-2 xl:gap-6 xl:space-y-0">
-            <SettingsSection title="Finance">
-              <Link
-                to="/settings/categories"
-                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50"
-              >
-                <Tags className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
-                <span className="flex-1 text-sm font-medium text-slate-900">Manage categories</span>
-                <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
-              </Link>
-              <Link
-                to="/settings/recurring"
-                className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left transition hover:bg-slate-50"
-              >
-                <Repeat className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
-                <span className="flex-1 text-sm font-medium text-slate-900">Recurring transactions</span>
-                <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
-              </Link>
-            </SettingsSection>
-
-            <SettingsSection title="Budgets">
-          {categoriesLoading && categories.length === 0 ? (
-            <div className="animate-pulse space-y-3 px-4 py-4">
-              {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="h-9 rounded-lg bg-slate-100" />
-              ))}
-            </div>
-          ) : (
-            <BudgetManager
-              categories={categories}
-              onSave={updateCategory}
-              onError={(msg) => toast.error(msg)}
-              currency={profile?.default_currency ?? 'INR'}
-            />
-          )}
+        <SettingsSection title="Finance">
+          <Link
+            to="/settings/categories"
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50"
+          >
+            <Tags className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+            <span className="flex-1 text-sm font-medium text-slate-900">Manage categories</span>
+            <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
+          </Link>
+          <Link
+            to="/settings/recurring"
+            className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left transition hover:bg-slate-50"
+          >
+            <Repeat className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+            <span className="flex-1 text-sm font-medium text-slate-900">Recurring transactions</span>
+            <ChevronRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
+          </Link>
         </SettingsSection>
-          </div>
 
-          <SettingsSection title="Data" className="lg:col-span-2">
-          <button type="button" onClick={handleExport} className="flex w-full px-4 py-3.5 text-left text-sm font-medium text-slate-900 hover:bg-slate-50">
+        <SettingsSection title="Data">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="flex w-full px-4 py-3.5 text-left text-sm font-medium text-slate-900 hover:bg-slate-50"
+          >
             Download backup
           </button>
           <button
@@ -252,10 +235,9 @@ export default function SettingsPage() {
           </p>
         </SettingsSection>
 
-          <button type="button" onClick={handleSignOut} className="btn-secondary w-full lg:col-span-2">
-            Sign out
-          </button>
-        </div>
+        <button type="button" onClick={handleSignOut} className="btn-secondary w-full">
+          Sign out
+        </button>
       </main>
 
       <AccountForm

@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-06-23 (v0.18)
+**Last updated:** 2026-07-04 (v0.22)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -79,7 +79,7 @@
 | F-73 | Goals separate in summary | done | **Goals** column + “Goals this month” list; **Savings** = category savings only |
 | F-74 | Total balance matches Settings | done | Summary total = sum of `get_account_balances()` per currency (not balances − expenses) |
 | F-75 | Spending-by-category bar charts | superseded | Was vertical bars (session 32); **pie chart** session 57 — see F-107 |
-| F-76 | Category budgets | done | `categories.monthly_budget`; Settings Budgets section; chart target line + over-budget tag (session 34) |
+| F-76 | Category budgets | done | `categories.monthly_budget`; chart budget/over-budget in Summary (session 34); **session 65:** Settings Budgets UI removed — values still in DB + charts |
 | F-77 | Summary scoped to default currency | done | `preferredCurrency` in `groupSummariesByCurrency`; summary + balance list use `profile.default_currency` (session 37) |
 | F-77 deploy | Summary default currency live | done | Production `dpl_3vXo8iDvn63rboSRJ5ZLwWY5DMrT` (session 37 deploy) |
 | F-78 | Goal save resilience | done | Two-query load; optimistic merge; contribution RLS backfill (session 38) |
@@ -103,12 +103,12 @@
 | F-96 | Deletable categories (no defaults) | done | No auto-seed; delete all/any; starter pack optional (session 47) |
 | F-97 | Recurring transactions | done | Auto-post + pause/skip; `/settings/recurring` (session 47) |
 | F-98 | Bank icons on accounts | done | ICICI/SBI/HDFC/Axis on `AccountCard` (session 47) |
-| F-99 | Goals list with days left + detail modal | done | On **Home** tab via `HomePage` (session 48; moved session 56) |
-| F-100 | Daily recurring frequency | done | `daily` in `recurringTransactions.js` + `add_recurring_daily_frequency.sql` (session 49) |
-| F-101 | Activity pagination | done | 10/50/100 per page on filtered month list (session 50) |
-| F-102 | Inline tx Edit/Delete | done | Amount + text actions on one row in `TransactionRow` (session 50) |
+| F-99 | Goals list with days left + detail modal | superseded | Was `GoalsProgressBars` on Goals tab (session 48); **session 65:** `GoalCard` compact grid + `GoalDetailModal` on click |
+| F-100 | Daily recurring frequency | done | `daily` in `recurringTransactions.js` + `add_recurring_daily_frequency.sql` (session 49); **session 62:** `normalizeRecurringSchedule()`, idempotent migration `DO` block, interval unit in form |
+| F-101 | Activity pagination | done | 10/50/100 per page on filtered month list (session 50); **session 64:** pagination bar bottom only |
+| F-102 | Inline tx Edit/Delete | done | Icon `Pencil`/`Trash2` on row (session 64); was text buttons (session 50) |
 | F-103 | Horizontal category chips | done | `CategoryTreeManager` flex-wrap groups (session 51) |
-| F-104 | Merged Home tab (goals + activity) | done | `HomePage.jsx`; `TransactionsPage` `embedded` mode (session 56) |
+| F-104 | Merged Home tab (goals + activity) | superseded | `HomePage.jsx`; `TransactionsPage` `embedded` mode (session 56); **session 63:** separate Goals + Activity tabs restored |
 | F-105 | Summary tab (charts page) | done | `SummaryPage.jsx` at `/summary`; `SummarySection` charts-only (session 56) |
 | F-106 | Full-width spending chart | done | `CategoryBreakdownChart` `large` on Summary page (sessions 53–54) |
 | F-107 | Spending-by-category pie chart | done | SVG pie in `CategoryBreakdownChart`; `COLOR_PALETTES.fill`; over-budget rose slices (session 57) |
@@ -116,6 +116,21 @@
 | F-109 | Slice hover tooltip | done | Rich tooltip on hover/focus; dim other slices (session 60) |
 | F-110 | Resizable spending chart | done | Drag handle + settings slider; `prefs.size` 200–560px default 380 (session 61) |
 | F-111 | Summary income list removed | done | “Income by category” card removed; Income total remains in stat grid (session 61) |
+| F-112 | Separate Goals + Activity tabs | done | 4-tab nav: Goals `/goals`, Activity `/transactions`, Summary, Settings (session 63) |
+| F-113 | All goals visible regardless of currency | done | Removed `preferredCurrency` filter from `GoalsProgressBars` (session 63) |
+| F-114 | Transaction category snapshots | done | `category_name`/`color`/`is_savings` on tx; freeze before category delete; `transactionCategory.js` (session 63) |
+| F-115 | Activity table column alignment | done | `TRANSACTION_TABLE_GRID` + `TransactionTableHeader` (session 64) |
+| F-116 | Activity tx icon actions | done | Edit/delete as `btn-icon` Pencil/Trash2 (session 64) |
+| F-117 | GoalCard grid on Goals tab | done | Responsive grid up to 6 cols; `compact` GoalCard (session 65) |
+| F-118 | GoalCard days-left header | done | Days left top-right; no track-status badge or end-date row on cards (session 65) |
+| F-119 | New goal CTA below cards | done | Dashed full-width button under grid; no header/FAB create (session 65) |
+| F-120 | Summary first nav tab | done | Nav order Summary · Goals · Activity · Settings; `/` → `/summary`; PWA `start_url` (session 65) |
+| F-121 | Activity full-width table | done | Filters above list; table spans full `page-container` width (session 65) |
+| F-122 | Activity chip-only filters | done | Type chips only; no search/account/amount filters (session 65) |
+| F-123 | Activity nav rupee icon | done | `RupeeIcon` on Activity tab in bottom + sidebar nav (session 65) |
+| F-124 | Flat category chips in tx forms | done | Single wrap row in `TransactionForm` + `RecurringTransactionForm`; `categoryChipLabel()` (session 65) |
+| F-125 | Settings vertical layout | done | Single-column sections; no 2-col grid (session 65) |
+| F-126 | Settings Budgets UI removed | done | `BudgetManager` no longer on Settings page; DB/chart budgets retained (session 65) |
 
 ## Backlog ideas
 
@@ -180,3 +195,36 @@
 | Chart settings menu | **Done** — F-108, session 58 |
 | Slice hover tooltip | **Done** — F-109, session 60 (deploy pending) |
 | Resizable chart | **Done** — F-110, session 61 (deploy pending) |
+
+### Candidate features — status after session 62 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Daily recurring migration hardening | **Done** — idempotent SQL + app error hint (session 62) |
+| Phase 2 finance app on git `master` | **Done** — commit `f912255` (session 62); push pending remote |
+
+### Candidate features — status after session 63 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Separate Goals and Activity tabs | **Done** — F-112; 4-tab nav restored (session 63) |
+| Show all-currency goals on Goals tab | **Done** — F-113; removed `preferredCurrency` filter (session 63) |
+| Frozen category labels on transactions | **Done** — F-114; snapshot columns + `resolveTransactionCategory()` (session 63) |
+
+### Candidate features — status after session 64 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Activity pagination bottom only | **Done** — F-101 note update (session 64) |
+| Aligned Activity table columns | **Done** — F-115 (session 64) |
+| Icon edit/delete on tx rows | **Done** — F-116 (session 64) |
+
+### Candidate features — status after session 65 (append-only)
+
+| Idea | Status |
+|------|--------|
+| GoalCard grid on Goals tab | **Done** — F-117 (session 65) |
+| Summary as first nav tab | **Done** — F-120 (session 65) |
+| Activity full-width table | **Done** — F-121 (session 65) |
+| Activity chip-only filters | **Done** — F-122 (session 65) |
+| Settings budgets UI removed | **Done** — F-126 (session 65) |

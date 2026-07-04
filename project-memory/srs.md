@@ -441,3 +441,97 @@ Balance computed via `get_account_balances()` RPC (not stored).
 ### Production
 
 - Local build verified; not yet deployed (bundle includes v0.17.1 tooltip + v0.18 resize)
+
+## 20. v0.19 additions (append — does not replace §2–19)
+
+**Last updated:** 2026-07-04
+
+### Phase 2 finance commit
+
+- Git commit `f912255` on `master` — auth, accounts, transactions, categories, budgets, recurring, PWA, desktop shell, Supabase migrations (114 files)
+- No GitHub remote configured yet; push pending
+
+### Daily recurring hardening
+
+- `normalizeRecurringSchedule()` — shared create/update path; `day_of_month` null except monthly; recalculates `next_run_date`
+- `assertRecurringNoError()` — maps Postgres frequency CHECK failure to migration instructions
+- `add_recurring_daily_frequency.sql` — idempotent `DO` block drops any frequency CHECK, re-adds with `daily`
+- Same frequency CHECK block appended to `add_subcategories_recurring_bank.sql`
+- `RecurringTransactionForm` — interval label shows days/weeks/months/years
+
+### Build / deploy
+
+- Local `npm run build` verified after clean `npm install` (Rolldown native binding fix)
+- Not yet deployed to Vercel production
+
+## 21. v0.20 additions (append — does not replace §2–20)
+
+**Last updated:** 2026-07-04
+
+### Navigation
+
+- **4 tabs:** Goals `/goals` · Activity `/transactions` · Summary `/summary` · Settings `/settings`
+- Supersedes merged Home tab (session 56) — goals and activity are separate pages again
+- Month query `?month=YYYY-MM` on Activity tab; Summary links point to `/transactions`
+
+### Goals
+
+- Goals tab lists **all goals** (INR, USD, etc.) — not filtered by profile default currency
+
+### Transaction category snapshots
+
+- `category_name`, `category_color`, `category_is_savings` stored on each transaction
+- Snapshot written on create and when user edits transaction category
+- Category delete/rename does not change how past transactions appear
+- Migration: `add_transaction_category_snapshot.sql`
+
+### Production
+
+- Local build verified; not yet deployed
+
+## 22. v0.21 additions (append — does not replace §2–21)
+
+**Last updated:** 2026-07-04
+
+### Activity tab UX
+
+- Pagination controls appear **only below** the transaction list
+- Desktop table: aligned columns (Description, Account, Amount, Actions) via shared grid template
+- Edit and delete use icon buttons (Pencil, Trash2) with accessible labels
+
+### Production
+
+- Local build verified; not yet deployed
+
+## 23. v0.22 additions (append — does not replace §2–22)
+
+**Last updated:** 2026-07-04
+
+### Navigation
+
+- **Tab order:** Summary · Goals · Activity · Settings
+- **Default route:** `/` → `/summary`; PWA cold start opens Summary
+- **Activity icon:** Indian rupee (₹), not receipt/dollar glyph
+
+### Goals tab
+
+- Goals shown as **individual cards** in responsive grid (up to 6 columns on xl)
+- Card shows name, days left, progress, Add / edit / delete; tap opens detail modal
+- “New goal” button below the card grid
+- No on-track / behind badges on cards; no end date on cards
+
+### Activity tab
+
+- Transaction table **full width** below a compact filter bar
+- Filters: month picker + type chips only (no search, account, or amount range)
+- Pagination remains bottom-only; aligned desktop columns unchanged from v0.21
+
+### Settings
+
+- **Budgets section removed** from Settings page
+- All other sections in a single vertical column
+- Category budget values may still exist in DB and appear on Summary charts
+
+### Production
+
+- Local build verified; not yet deployed

@@ -99,7 +99,7 @@ function SummarySection({ profile }) {
         ) ? (
         <section className="card py-8 text-center">
           <p className="text-sm text-slate-500">No income or expenses recorded this month.</p>
-          <Link to={`/goals?month=${monthKey}`} className="btn-primary mt-4 inline-flex px-5">
+          <Link to={`/transactions?month=${monthKey}`} className="btn-primary mt-4 inline-flex px-5">
             Add transaction
           </Link>
         </section>
@@ -166,7 +166,7 @@ function SummarySection({ profile }) {
       </div>
 
       <Link
-        to={`/goals?month=${monthKey}`}
+        to={`/transactions?month=${monthKey}`}
         className="btn-secondary flex w-full justify-center"
       >
         View transactions this month

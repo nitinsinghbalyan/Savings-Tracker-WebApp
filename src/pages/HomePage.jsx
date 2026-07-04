@@ -8,12 +8,11 @@ import { useGoals } from '../hooks/useGoals'
 import { useProfile } from '../hooks/useProfile'
 import { useToast } from '../hooks/useToast'
 import PageHeader from '../components/PageHeader'
-import GoalsProgressBars from '../components/GoalsProgressBars'
+import GoalCard from '../components/GoalCard'
 import GoalForm from '../components/GoalForm'
 import GoalDetailModal from '../components/GoalDetailModal'
 import AddMoneyModal from '../components/AddMoneyModal'
 import Celebration from '../components/Celebration'
-import TransactionsPage from './TransactionsPage'
 
 export default function HomePage({ isTabActive = true }) {
   const toast = useToast()
@@ -95,7 +94,7 @@ export default function HomePage({ isTabActive = true }) {
 
   return (
     <>
-      <PageHeader title="Home">
+      <PageHeader title="Goals">
         <Link
           to="/summary"
           className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200 lg:inline-flex"
@@ -108,14 +107,6 @@ export default function HomePage({ isTabActive = true }) {
         >
           Recurring
         </Link>
-        <button
-          type="button"
-          onClick={openCreateForm}
-          className="btn-secondary hidden px-3 lg:inline-flex"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New goal
-        </button>
       </PageHeader>
 
       <main className="page-container space-y-10 pb-8">
@@ -137,14 +128,13 @@ export default function HomePage({ isTabActive = true }) {
           )}
 
           {loading && goals.length === 0 ? (
-            <div className="card animate-pulse space-y-4 p-4">
-              {Array.from({ length: 3 }, (_, i) => (
-                <div key={i}>
-                  <div className="mb-2 flex justify-between">
-                    <div className="h-4 w-1/3 rounded bg-slate-200" />
-                    <div className="h-4 w-16 rounded bg-slate-100" />
-                  </div>
-                  <div className="h-2.5 w-full rounded-full bg-slate-100" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} className="card animate-pulse space-y-4 p-4">
+                  <div className="h-5 w-2/3 rounded bg-slate-200" />
+                  <div className="h-3 w-1/2 rounded bg-slate-100" />
+                  <div className="h-3 w-full rounded-full bg-slate-100" />
+                  <div className="h-10 w-full rounded-xl bg-slate-100" />
                 </div>
               ))}
             </div>
@@ -155,7 +145,7 @@ export default function HomePage({ isTabActive = true }) {
               </span>
               <h3 className="mt-4 text-lg font-semibold text-slate-900">No goals yet</h3>
               <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-                Create a savings goal and track progress alongside your transactions.
+                Create a savings goal and track your progress over time.
               </p>
               <button
                 type="button"
@@ -167,27 +157,33 @@ export default function HomePage({ isTabActive = true }) {
               </button>
             </section>
           ) : (
-            <GoalsProgressBars
-              goals={goals}
-              preferredCurrency={profile?.default_currency ?? 'INR'}
-              onGoalClick={setDetailGoal}
-            />
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                {goals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    compact
+                    onOpenDetails={setDetailGoal}
+                    onAddMoney={setAddMoneyGoal}
+                    onEdit={openEditForm}
+                    onDelete={handleDeleteGoal}
+                    onDeleteContribution={handleDeleteContribution}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={openCreateForm}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-semibold text-brand-600 transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99] sm:py-3.5"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                New goal
+              </button>
+            </>
           )}
         </section>
-
-        <TransactionsPage isTabActive={isTabActive} embedded />
       </main>
-
-      {isTabActive && !loading && goals.length > 0 && (
-        <button
-          type="button"
-          onClick={openCreateForm}
-          aria-label="New goal"
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] left-4 z-[60] flex h-12 w-12 min-h-11 min-w-11 touch-manipulation items-center justify-center rounded-full bg-white text-brand-600 shadow-fab ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-95 sm:left-6 lg:hidden"
-        >
-          <Target className="h-5 w-5" aria-hidden="true" />
-        </button>
-      )}
 
       {isTabActive && (
         <GoalForm

@@ -9,6 +9,15 @@ import ModalShell from './ModalShell'
 const chipBase =
   'inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-medium ring-1 ring-inset transition active:scale-95'
 
+const categoryChipBase =
+  'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-inset transition active:scale-95 sm:text-sm'
+
+function categoryChipLabel(category, pickerGroups) {
+  const group = pickerGroups.find((g) => g.items.some((item) => item.id === category.id))
+  if (group?.label) return `${group.label} · ${category.name}`
+  return category.name
+}
+
 const TYPES = [
   { value: 'expense', label: 'Expense' },
   { value: 'income', label: 'Income' },
@@ -267,35 +276,24 @@ export default function RecurringTransactionForm({
                 {pickerGroups.length === 0 ? (
                   <p className="text-sm text-slate-500">Add categories in Settings first.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {pickerGroups.map((group) => (
-                      <div key={group.parentId ?? group.label ?? 'leaf'}>
-                        {group.label && (
-                          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                            {group.label}
-                          </p>
-                        )}
-                        <div className="chip-row flex-wrap">
-                          {group.items.map((c) => {
-                            const palette = getColorPalette(c.color)
-                            return (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() => setValues((v) => ({ ...v, category_id: c.id }))}
-                                className={`${chipBase} ${
-                                  values.category_id === c.id
-                                    ? palette.chip + ' ring-2'
-                                    : 'bg-slate-50 text-slate-700 ring-slate-200'
-                                }`}
-                              >
-                                {c.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectable.map((c) => {
+                      const palette = getColorPalette(c.color)
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setValues((v) => ({ ...v, category_id: c.id }))}
+                          className={`${categoryChipBase} ${
+                            values.category_id === c.id
+                              ? palette.chip + ' ring-2'
+                              : 'bg-slate-50 text-slate-700 ring-slate-200'
+                          }`}
+                        >
+                          {categoryChipLabel(c, pickerGroups)}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -323,7 +321,21 @@ export default function RecurringTransactionForm({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="rec-interval" className="label-field">Every</label>
+                <label htmlFor="rec-interval" className="label-field">
+                  Every
+                  {values.frequency === 'daily' && (
+                    <span className="ml-1 font-normal normal-case text-slate-500">(days)</span>
+                  )}
+                  {values.frequency === 'weekly' && (
+                    <span className="ml-1 font-normal normal-case text-slate-500">(weeks)</span>
+                  )}
+                  {values.frequency === 'monthly' && (
+                    <span className="ml-1 font-normal normal-case text-slate-500">(months)</span>
+                  )}
+                  {values.frequency === 'yearly' && (
+                    <span className="ml-1 font-normal normal-case text-slate-500">(years)</span>
+                  )}
+                </label>
                 <input
                   id="rec-interval"
                   type="number"

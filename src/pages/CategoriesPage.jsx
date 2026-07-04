@@ -120,8 +120,8 @@ export default function CategoriesPage() {
         <SettingsSection title="Delete all categories">
           <div className="space-y-3 px-4 py-4">
             <p className="text-sm text-slate-600">
-              Permanently removes every category. Existing transactions will keep their amounts but
-              lose category labels.
+              Permanently removes every category. Existing transactions keep their original category
+              labels.
             </p>
             <input
               value={deleteConfirm}

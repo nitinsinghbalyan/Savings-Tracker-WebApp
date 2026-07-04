@@ -14,6 +14,59 @@ import { createTransaction } from './transactions'
 
 const MAX_CATCH_UP = 12
 
+const SCHEDULE_FIELDS = ['frequency', 'interval_count', 'day_of_month', 'start_date', 'end_date']
+
+function assertRecurringNoError(error, fallbackMessage) {
+  if (!error) return
+
+  const message = error.message || fallbackMessage
+  const code = error.code
+
+  if (
+    code === '23514' &&
+    (message.includes('frequency') || message.includes('recurring_transactions_frequency_check'))
+  ) {
+    throw new Error(
+      'Daily recurring rules need a database update. Run supabase/add_recurring_daily_frequency.sql in the Supabase SQL Editor, then try again.',
+    )
+  }
+
+  assertNoError(error, fallbackMessage)
+}
+
+export function normalizeRecurringSchedule(data) {
+  const frequency = data.frequency ?? 'monthly'
+  const intervalCount = Math.max(1, Number(data.interval_count) || 1)
+  const startDate = data.start_date
+  const dayOfMonth =
+    frequency === 'monthly' && startDate
+      ? Math.min(
+          31,
+          Math.max(1, Number(data.day_of_month) || parseISO(startDate).getDate()),
+        )
+      : null
+
+  const nextRunDate = computeInitialNextRunDate({
+    startDate,
+    frequency,
+    intervalCount,
+    dayOfMonth,
+  })
+
+  return {
+    frequency,
+    interval_count: intervalCount,
+    day_of_month: dayOfMonth,
+    start_date: startDate,
+    end_date: data.end_date ?? null,
+    next_run_date: nextRunDate,
+  }
+}
+
+function patchTouchesSchedule(patch) {
+  return SCHEDULE_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(patch, field))
+}
+
 export function computeInitialNextRunDate({ startDate, frequency, intervalCount = 1, dayOfMonth }) {
   const start = startOfDay(parseISO(startDate))
   const today = startOfDay(new Date())
@@ -69,24 +122,13 @@ export async function getRecurringTransactions() {
     .eq('user_id', userId)
     .order('next_run_date', { ascending: true })
 
-  assertNoError(error, 'Failed to load recurring transactions')
+  assertRecurringNoError(error, 'Failed to load recurring transactions')
   return data ?? []
 }
 
 export async function createRecurringTransaction(data) {
   const userId = await requireUserId()
-  const frequency = data.frequency ?? 'monthly'
-  const intervalCount = Math.max(1, Number(data.interval_count) || 1)
-  const startDate = data.start_date
-  const dayOfMonth =
-    frequency === 'monthly' ? Number(data.day_of_month) || parseISO(startDate).getDate() : null
-
-  const nextRunDate = computeInitialNextRunDate({
-    startDate,
-    frequency,
-    intervalCount,
-    dayOfMonth,
-  })
+  const schedule = normalizeRecurringSchedule(data)
 
   const { data: row, error } = await supabase
     .from('recurring_transactions')
@@ -98,18 +140,13 @@ export async function createRecurringTransaction(data) {
       amount: Number(data.amount),
       transfer_to_account_id: data.type === 'transfer' ? data.transfer_to_account_id : null,
       note: data.note ?? null,
-      frequency,
-      interval_count: intervalCount,
-      day_of_month: dayOfMonth,
-      start_date: startDate,
-      end_date: data.end_date ?? null,
-      next_run_date: nextRunDate,
+      ...schedule,
       is_paused: Boolean(data.is_paused),
     })
     .select()
     .single()
 
-  assertNoError(error, 'Failed to create recurring transaction')
+  assertRecurringNoError(error, 'Failed to create recurring transaction')
   return row
 }
 
@@ -120,6 +157,10 @@ export async function updateRecurringTransaction(id, patch) {
   delete safePatch.id
   delete safePatch.created_at
 
+  if (patchTouchesSchedule(safePatch)) {
+    Object.assign(safePatch, normalizeRecurringSchedule(safePatch))
+  }
+
   const { data, error } = await supabase
     .from('recurring_transactions')
     .update(safePatch)
@@ -128,7 +169,7 @@ export async function updateRecurringTransaction(id, patch) {
     .select()
     .single()
 
-  assertNoError(error, 'Failed to update recurring transaction')
+  assertRecurringNoError(error, 'Failed to update recurring transaction')
   return data
 }
 
@@ -139,7 +180,7 @@ export async function deleteRecurringTransaction(id) {
     .delete()
     .eq('id', id)
     .eq('user_id', userId)
-  assertNoError(error, 'Failed to delete recurring transaction')
+  assertRecurringNoError(error, 'Failed to delete recurring transaction')
 }
 
 export async function skipNextOccurrence(id) {
@@ -205,7 +246,7 @@ async function materializeRule(rule, upTo) {
 export async function deleteAllRecurringTransactions() {
   const userId = await requireUserId()
   const { error } = await supabase.from('recurring_transactions').delete().eq('user_id', userId)
-  assertNoError(error, 'Failed to clear recurring transactions')
+  assertRecurringNoError(error, 'Failed to clear recurring transactions')
 }
 
 export async function processDueRecurring({ upTo } = {}) {
