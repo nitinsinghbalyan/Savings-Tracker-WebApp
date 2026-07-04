@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-07-04 (v0.24)
+**Last updated:** 2026-07-04 (v0.25)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -112,7 +112,7 @@
 | F-105 | Summary tab (charts page) | done | `SummaryPage.jsx` at `/summary`; `SummarySection` charts-only (session 56) |
 | F-106 | Full-width spending chart | done | `CategoryBreakdownChart` `large` on Summary page (sessions 53–54) |
 | F-107 | Spending-by-category pie chart | superseded | SVG pie in `CategoryBreakdownChart` (session 57); **session 67:** heatmap tiles replace pie/donut — F-129 |
-| F-108 | Chart customization (settings gear) | done | Sort + show/hide list via `chartPreferences.js` (session 58); **session 67:** pie/donut/size options removed |
+| F-108 | Chart customization (settings gear) | done | Sort tiles via `chartPreferences.js` (session 58); **session 67:** pie/donut/size removed; **session 68:** category list toggle removed — sort only |
 | F-109 | Slice hover tooltip | done | Rich tooltip on hover/focus; dim other slices (session 60) |
 | F-110 | Resizable spending chart | superseded | Drag handle + settings slider session 61; **session 67:** removed with heatmap |
 | F-111 | Summary income list removed | done | “Income by category” card removed; Income total remains in stat grid (session 61) |
@@ -134,6 +134,7 @@
 | F-127 | Summary Overall / Monthly tabs | done | Segmented toggle in `SummarySection`; default Overall (session 66) |
 | F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
 | F-129 | Category spending heatmap | done | Flex tiles in `CategoryBreakdownChart`; intensity by relative spend; replaces pie/donut (session 67) |
+| F-130 | Heatmap category transactions modal | done | Click tile → `CategoryTransactionsModal`; 10/page pagination; filtered by category dedupe key + currency (session 68) |
 
 ## Backlog ideas
 
@@ -244,3 +245,17 @@
 | Idea | Status |
 |------|--------|
 | Category spending heatmap | **Done** — F-129 (session 67) |
+
+### Candidate features — status after session 68 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Heatmap tile → transaction modal | **Done** — F-130 (session 68) |
+| Category list below heatmap | **Removed** — heatmap-only chart (session 68) |
+
+### Candidate features — status after session 69 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Production deploy (heatmap bundle) | **Done** — `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV` (session 69) |
+| GitHub remote configured | **Done** — `origin` → `Savings-Tracker-WebApp` (session 69); push pending auth |

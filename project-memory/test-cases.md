@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-07-04 (v0.24)
+**Last updated:** 2026-07-04 (v0.25)
 
 ## Setup
 
@@ -524,6 +524,18 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 | TC-409 | Chart settings | Gear → sort + list toggle | No pie/donut or size slider | not-run | F-108 update |
 | TC-410 | Overall heatmap | Overall tab with history | Heatmap shows all-time category totals | not-run | F-127 + F-129 |
 
+### Heatmap category transactions modal (session 68)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-411 | Open modal | Click a heatmap tile on Summary | Modal opens with category name + tx count | not-run | F-130 |
+| TC-412 | Tx list content | Modal with transactions | Date, note/account, expense amount per row | not-run | F-130 |
+| TC-413 | Pagination | Category with >10 txs | 10 per page; Previous/Next; range label | not-run | F-130 |
+| TC-414 | Overall scope | Overall tab → click tile | Modal txs match all-time category total | not-run | F-128 + F-130 |
+| TC-415 | Monthly scope | Monthly tab → click tile | Modal txs limited to selected month | not-run | F-127 + F-130 |
+| TC-416 | Close modal | X or backdrop | Modal closes; heatmap still visible | not-run | F-130 |
+| TC-417 | No list below chart | Summary with expense data | Heatmap only; no category table under tiles | not-run | session 68 |
+
 ### Activity pagination (session 50)
 
 | ID | Area | Steps | Expected | Result | Notes |
@@ -656,3 +668,4 @@ _Add a row here after each release or bug fix._
 | 2026-07-04 | v0.22 Goals cards + Activity + Settings | `npm run build` pass locally; GoalCard grid; Summary first nav; Activity full-width + chip filters; Settings budgets removed (deploy pending) |
 | 2026-07-04 | v0.23 Summary Overall/Monthly tabs | `npm run build` pass locally; Overall default; all-time tx cache; lifetime goal totals (deploy pending) |
 | 2026-07-04 | v0.24 category spending heatmap | `npm run build` pass locally; heatmap replaces pie; simplified chart prefs (deploy pending) |
+| 2026-07-04 | v0.25 heatmap modal + production | `npm run build` pass locally; deployed `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV`; git `550a09e`; GitHub push pending auth |

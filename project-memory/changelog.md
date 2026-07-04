@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-07-04 (v0.24)
+**Last updated:** 2026-07-04 (v0.25)
 
 ## 2026-06-14
 
@@ -1357,3 +1357,46 @@
 ### Verified
 
 - `npm run build` passes locally
+
+---
+
+## 2026-07-04 (session 68 — heatmap category transactions modal)
+
+### Added
+
+- **`CategoryTransactionsModal.jsx`** — read-only modal listing transactions for a heatmap category; 10 per page with Previous/Next pagination
+- **`getTransactionExpenseCategoryKey()` / `filterTransactionsForHeatmapCategory()`** in `monthlySummary.js` — same dedupe-key bucketing as heatmap aggregation
+
+### Changed
+
+- **`CategoryBreakdownChart`** — heatmap tiles clickable; opens modal with filtered transactions scoped to Summary currency and view (Overall all-time vs Monthly month)
+- **`SummarySection`** — passes `transactions` prop into chart for modal filtering
+- **Chart settings** — sort tiles by amount/name only; **removed** category list below heatmap (`showLegend` pref dropped from `chartPreferences.js`)
+
+### Superseded
+
+- **Category list under heatmap** — heatmap-only layout (session 68); v0.24 note about toggling list is obsolete
+
+### Verified
+
+- `npm run build` passes locally
+
+---
+
+## 2026-07-04 (session 69 — production deploy + git remote)
+
+### Deployed
+
+- **Production:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV` (heatmap + Overall/Monthly Summary + category tx modal)
+- **Vercel build:** `npm run build` succeeded on iad1; Supabase env vars present for Production + Development
+
+### Git
+
+- **Commit:** `550a09e` on `master` — “Replace summary pie chart with heatmap and category transaction modal.”
+- **Remote added:** `origin` → `https://github.com/nitinsinghbalyan/Savings-Tracker-WebApp.git`
+
+### Not done (manual follow-up)
+
+- **`git push -u origin master`** — blocked without GitHub credentials in non-interactive shell; run locally after auth
+- **Remote divergence** — GitHub `master` at `3b3344f` may differ from local `550a09e`; reconcile before push if rejected
+- **Supabase migrations** (if not applied): `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql`

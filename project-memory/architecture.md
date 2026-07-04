@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-07-04 (v0.24)
+**Last updated:** 2026-07-04 (v0.25)
 
 ## Tech stack
 
@@ -712,3 +712,11 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - **Settings gear** — sort by amount/name; toggle list; no style or size controls
 - **`chartPreferences.js`** — `{ showLegend: true, sortBy: 'amount' }` only; legacy `style`/`size` from localStorage ignored
 - **Supersedes** — pie/donut chart (session 57), slice hover tooltip on pie (F-109), resizable chart (F-110)
+
+### Heatmap category transactions modal (v0.25, session 68)
+
+- **`CategoryTransactionsModal.jsx`** — `ModalShell` + scrollable list; `PAGE_SIZE = 10`; pagination footer when >10 txs
+- **Tile click** — `CategoryBreakdownChart` sets `selectedCategory`; filters via `filterTransactionsForHeatmapCategory(transactions, categoryId, currency)`
+- **`getTransactionExpenseCategoryKey(tx)`** — expense-only; excludes savings categories; uses `categoryDedupeKey` with `parent_id: null` (matches heatmap buckets)
+- **Scope** — Overall view uses all-time txs from `useTransactions({ allTime: true })`; Monthly uses month-scoped cache; currency filter matches summary block
+- **Chart settings** — sort only (`{ sortBy }` in `chartPreferences.js`); no category list below heatmap

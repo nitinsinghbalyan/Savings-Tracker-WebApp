@@ -143,6 +143,8 @@
 | 2026-07-04 | Hide budget lines on Overall chart | Monthly budgets meaningless for all-time totals | Show budget targets on Overall chart |
 | 2026-07-04 | Category heatmap instead of pie chart | User request; easier to compare categories at a glance; full-width tiles | Pie/donut SVG (sessions 57–61) |
 | 2026-07-04 | Drop chart resize + pie/donut prefs | Heatmap is responsive; style/size prefs obsolete | Keep pie settings in gear menu |
+| 2026-07-04 | Heatmap tile opens read-only tx modal | Drill-down without leaving Summary; 10/page pagination | Navigate to Activity tab with category filter |
+| 2026-07-04 | Remove category list under heatmap | Tiles are self-labeling; less duplicate UI | Toggle list via chart settings (v0.24) |
 
 ### Superseded (historical — do not delete rows)
 
@@ -174,6 +176,7 @@
 | 2026-07-04 | Summary monthly-only view | Overall + Monthly tabs session 66 — F-127 |
 | 2026-07-04 | Category pie/donut chart | Heatmap tiles session 67 — F-129 |
 | 2026-07-04 | Resizable chart (`prefs.size`) | Removed session 67 with heatmap — F-110 superseded |
+| 2026-07-04 | Category list under heatmap | Removed session 68 — heatmap-only chart |
 | 2026-06-23 | Charts on Goals/Home page | Moved to Summary tab session 56 — F-105 |
 | 2026-06-23 | Summary tab redirected to Goals (v0.12) | Restored as charts page session 56 |
 | 2026-06-23 | Vertical bar chart for category breakdown | Pie chart session 57 — F-107 |

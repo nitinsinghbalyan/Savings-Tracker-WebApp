@@ -570,3 +570,27 @@ Balance computed via `get_account_balances()` RPC (not stored).
 ### Production
 
 - Local build verified; not yet deployed
+
+## 26. v0.25 additions (append — does not replace §2–25)
+
+**Last updated:** 2026-07-04
+
+### Summary chart drill-down
+
+- Click a **heatmap tile** to open a modal with transactions in that category
+- Modal shows up to **10 transactions per page** with Previous/Next pagination
+- Transaction list is read-only (date, note/account, amount)
+- Scoped to the active Summary view (Overall all-time or selected month) and default currency
+
+### Chart UI
+
+- No category list below the heatmap; chart settings control **sort order only**
+
+### Production
+
+- **Deployed** — `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV` at [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app)
+
+### Git
+
+- Local `master` at commit `550a09e`
+- GitHub remote: `https://github.com/nitinsinghbalyan/Savings-Tracker-WebApp` — push pending authentication

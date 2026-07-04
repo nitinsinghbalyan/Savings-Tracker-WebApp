@@ -387,3 +387,15 @@ Persistent context for the **savings-tracker** app. Use this folder so agents an
 - **Not deployed:** session 62–67 local only
 - **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
 - **Deploy:** `npx vercel --prod --yes` after Supabase migrations
+
+## Current snapshot (2026-07-04, v0.25 heatmap modal + production)
+
+- **Live:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — latest **deployed** `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV` (session 69)
+- **Heatmap drill-down:** click tile → `CategoryTransactionsModal`; 10 txs/page; filtered by category dedupe key + currency (session 68 — F-130)
+- **Chart UI:** heatmap tiles only; settings = sort by amount/name; no category list below chart (session 68)
+- **Summary:** Overall (default) | Monthly tabs; all-time tx cache for Overall (session 66 — F-127/F-128)
+- **Navigation:** Summary · Goals · Activity · Settings; `/` → `/summary` (session 65 — F-120)
+- **Git:** `master` at `550a09e`; remote `origin` → `https://github.com/nitinsinghbalyan/Savings-Tracker-WebApp.git`; **push pending** GitHub auth
+- **Prior snapshot:** v0.24 (heatmap only; not deployed)
+- **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
