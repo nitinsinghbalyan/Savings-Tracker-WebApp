@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-07-04 (v0.22)
+**Last updated:** 2026-07-04 (v0.24)
 
 ## Tech stack
 
@@ -693,3 +693,22 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - **`SettingsPage`** — vertical `space-y-6` stack only; **Budgets** section removed
 - **`BudgetManager.jsx`** — retained in codebase; not mounted on Settings page
 - **`categories.monthly_budget`** — still in DB; Summary chart budget lines unchanged
+
+### Summary Overall / Monthly tabs (v0.23, session 66)
+
+- **`SummarySection`** — `view` state `'overall' | 'monthly'` (default `'overall'`); segmented control matches Activity type picker pattern
+- **Overall** — `useTransactions({ allTime: true })`; `groupSummariesByCurrency(..., { allTime: true })`; all-time goal contributions via `sumAllGoalContributions()`; chart `budgetTotal={0}`
+- **Monthly** — existing month picker + month-scoped transactions; budget lines on chart when set
+- **Total balance** — current account balances in both views (point-in-time, not summed over time)
+- **`buildOverallTransactionsCacheKey()`** — cache key `overall|{type}|{accountId}` in `app-data-context.js`
+- **`loadTransactions({ allTime: true })`** — fetches via `getTransactions()` with no `startDate`/`endDate`; invalidated with other tx caches on mutations
+- **`buildMonthlySummary(..., { includeBudgets })`** — budgets omitted when `includeBudgets: false` (Overall view)
+
+### Category spending heatmap (v0.24, session 67)
+
+- **`CategoryBreakdownChart`** — flex-wrap **heatmap tiles** instead of SVG pie/donut; tile `flexBasis` + `flexGrow` proportional to category spend share
+- **Color** — category `fill` at alpha `0.3–1.0` by relative amount; over-budget tiles use rose `#f43f5e`
+- **Interaction** — hover/focus tooltip (amount, %, budget); optional category list below (`showLegend` pref)
+- **Settings gear** — sort by amount/name; toggle list; no style or size controls
+- **`chartPreferences.js`** — `{ showLegend: true, sortBy: 'amount' }` only; legacy `style`/`size` from localStorage ignored
+- **Supersedes** — pie/donut chart (session 57), slice hover tooltip on pie (F-109), resizable chart (F-110)

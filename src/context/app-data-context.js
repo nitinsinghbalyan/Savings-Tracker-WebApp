@@ -14,6 +14,14 @@ export function buildTransactionsCacheKey({
   return [year, month, monthStartDay, type ?? 'all', accountId ?? 'all'].join(CACHE_KEY_SEP)
 }
 
+export function buildOverallTransactionsCacheKey({ type, accountId } = {}) {
+  return ['overall', type ?? 'all', accountId ?? 'all'].join(CACHE_KEY_SEP)
+}
+
+export function isOverallTransactionsCacheKey(key) {
+  return key.startsWith(`overall${CACHE_KEY_SEP}`)
+}
+
 export function parseTransactionsCacheKey(key) {
   const parts = key.split(CACHE_KEY_SEP)
   if (parts.length < 5) return null

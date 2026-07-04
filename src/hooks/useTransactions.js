@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useAppData } from '../context/AppDataContext'
 import { useAuth } from './useAuth'
-import { buildTransactionsCacheKey } from '../context/app-data-context'
+import { buildOverallTransactionsCacheKey, buildTransactionsCacheKey } from '../context/app-data-context'
 
 export function useTransactions({
   enabled = true,
@@ -10,6 +10,7 @@ export function useTransactions({
   monthStartDay = 1,
   type,
   accountId,
+  allTime = false,
 } = {}) {
   const { user } = useAuth()
   const showData = Boolean(user)
@@ -23,13 +24,16 @@ export function useTransactions({
 
   const cacheKey = useMemo(
     () =>
-      year && month
-        ? buildTransactionsCacheKey({ year, month, monthStartDay, type, accountId })
-        : null,
-    [year, month, monthStartDay, type, accountId],
+      allTime
+        ? buildOverallTransactionsCacheKey({ type, accountId })
+        : year && month
+          ? buildTransactionsCacheKey({ year, month, monthStartDay, type, accountId })
+          : null,
+    [allTime, year, month, monthStartDay, type, accountId],
   )
 
   const entry = getTransactionsEntry({
+    allTime,
     year,
     month,
     monthStartDay,
@@ -38,11 +42,18 @@ export function useTransactions({
   })
 
   useEffect(() => {
-    if (!enabled || !year || !month) return
+    if (!enabled) return
+    if (allTime) {
+      if (entry.data.length > 0 && !entry.stale) return
+      loadTransactions({ allTime: true, type, accountId, enabled: true })
+      return
+    }
+    if (!year || !month) return
     if (entry.data.length > 0 && !entry.stale) return
     loadTransactions({ year, month, monthStartDay, type, accountId, enabled: true })
   }, [
     enabled,
+    allTime,
     year,
     month,
     monthStartDay,
@@ -54,7 +65,12 @@ export function useTransactions({
   ])
 
   const refetch = useCallback(async () => {
-    if (!enabled || !year || !month) return
+    if (!enabled) return
+    if (allTime) {
+      await loadTransactions({ allTime: true, type, accountId, enabled: true, force: true })
+      return
+    }
+    if (!year || !month) return
     await loadTransactions({
       year,
       month,
@@ -64,7 +80,7 @@ export function useTransactions({
       enabled: true,
       force: true,
     })
-  }, [enabled, year, month, monthStartDay, type, accountId, loadTransactions])
+  }, [enabled, allTime, year, month, monthStartDay, type, accountId, loadTransactions])
 
   const txMeta = useMemo(
     () => ({ year, month, monthStartDay }),

@@ -9,7 +9,7 @@ export default function SummaryPage() {
 
   return (
     <>
-      <PageHeader title="Summary" subtitle="Charts and monthly breakdown" />
+      <PageHeader title="Summary" subtitle="Overall and monthly breakdown" />
       <main className="page-container">
         <SummarySection profile={profile} />
       </main>

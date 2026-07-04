@@ -11,20 +11,30 @@ import MonthPicker from './MonthPicker'
 import CategoryBreakdownChart from './CategoryBreakdownChart'
 import AccountCard from './AccountCard'
 
+const SUMMARY_VIEWS = [
+  { value: 'overall', label: 'Overall' },
+  { value: 'monthly', label: 'Monthly' },
+]
+
 function SummarySection({ profile }) {
   const { user, authReady } = useAuth()
   const now = new Date()
+  const [view, setView] = useState('overall')
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
+
+  const isMonthly = view === 'monthly'
+  const monthStartDay = profile?.month_start_day ?? 1
 
   const { accounts } = useAccounts({ enabled: Boolean(user) && authReady })
   const { categories } = useCategories({ enabled: Boolean(user) && authReady })
   const { goals } = useGoals({ enabled: Boolean(user) && authReady })
   const { transactions, loading, error } = useTransactions({
     enabled: Boolean(user) && authReady,
-    year,
-    month,
-    monthStartDay: profile?.month_start_day ?? 1,
+    allTime: !isMonthly,
+    year: isMonthly ? year : undefined,
+    month: isMonthly ? month : undefined,
+    monthStartDay,
   })
 
   const activeAccounts = useMemo(
@@ -39,18 +49,27 @@ function SummarySection({ profile }) {
     [activeAccounts, preferredCurrency],
   )
 
-  const monthStartDay = profile?.month_start_day ?? 1
-
   const summaries = useMemo(
     () =>
       groupSummariesByCurrency(transactions, categories, summaryAccounts, {
         goals,
-        year,
-        month,
+        year: isMonthly ? year : undefined,
+        month: isMonthly ? month : undefined,
         monthStartDay,
         preferredCurrency,
+        allTime: !isMonthly,
       }),
-    [transactions, categories, summaryAccounts, goals, year, month, monthStartDay, preferredCurrency],
+    [
+      transactions,
+      categories,
+      summaryAccounts,
+      goals,
+      isMonthly,
+      year,
+      month,
+      monthStartDay,
+      preferredCurrency,
+    ],
   )
 
   const monthKey = `${year}-${String(month).padStart(2, '0')}`
@@ -64,42 +83,71 @@ function SummarySection({ profile }) {
           items={summary.byExpenseCategory}
           total={summary.expenses}
           currency={summary.currency}
-          budgetTotal={summary.expenseBudgetTotal}
+          budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
+          transactions={transactions}
           large
         />
       </section>
     )
   }
 
+  const isEmpty = summaries.every(
+    (s) =>
+      s.income === 0 &&
+      s.expenses === 0 &&
+      s.categorySavings === 0 &&
+      s.goalSavings === 0 &&
+      s.balances === 0,
+  )
+
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-900 lg:text-base">Monthly summary</h2>
-        <MonthPicker
-          year={year}
-          month={month}
-          onChange={(y, m) => {
-            setYear(y)
-            setMonth(m)
-          }}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:w-56">
+          {SUMMARY_VIEWS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setView(option.value)}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                view === option.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {isMonthly && (
+          <MonthPicker
+            year={year}
+            month={month}
+            onChange={(y, m) => {
+              setYear(y)
+              setMonth(m)
+            }}
+          />
+        )}
       </div>
+
+      <h2 className="text-sm font-semibold text-slate-900 lg:text-base">
+        {isMonthly ? 'Monthly summary' : 'Overall summary'}
+      </h2>
 
       {error && <p className="alert-error">{error}</p>}
 
       {loading && transactions.length === 0 ? (
         <div className="card animate-pulse h-64" />
-      ) : summaries.every(
-          (s) =>
-            s.income === 0 &&
-            s.expenses === 0 &&
-            s.categorySavings === 0 &&
-            s.goalSavings === 0 &&
-            s.balances === 0,
-        ) ? (
+      ) : isEmpty ? (
         <section className="card py-8 text-center">
-          <p className="text-sm text-slate-500">No income or expenses recorded this month.</p>
-          <Link to={`/transactions?month=${monthKey}`} className="btn-primary mt-4 inline-flex px-5">
+          <p className="text-sm text-slate-500">
+            {isMonthly
+              ? 'No income or expenses recorded this month.'
+              : 'No income or expenses recorded yet.'}
+          </p>
+          <Link
+            to={isMonthly ? `/transactions?month=${monthKey}` : '/transactions'}
+            className="btn-primary mt-4 inline-flex px-5"
+          >
             Add transaction
           </Link>
         </section>
@@ -166,10 +214,10 @@ function SummarySection({ profile }) {
       </div>
 
       <Link
-        to={`/transactions?month=${monthKey}`}
+        to={isMonthly ? `/transactions?month=${monthKey}` : '/transactions'}
         className="btn-secondary flex w-full justify-center"
       >
-        View transactions this month
+        {isMonthly ? 'View transactions this month' : 'View all transactions'}
       </Link>
     </section>
   )

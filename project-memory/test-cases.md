@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-07-04 (v0.22)
+**Last updated:** 2026-07-04 (v0.24)
 
 ## Setup
 
@@ -500,6 +500,30 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 | TC-395 | No Settings budgets | Settings page | No Budgets section | not-run | F-126 |
 | TC-396 | Settings vertical | Settings @ desktop | Sections stacked vertically | not-run | F-125 |
 
+### Summary Overall / Monthly tabs (session 66)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-397 | Default Overall tab | Open Summary | Overall tab selected; no month picker | not-run | F-127 |
+| TC-398 | Switch to Monthly | Tap Monthly tab | Month picker appears; stats scoped to month | not-run | F-127 |
+| TC-399 | Overall all-time stats | Overall with historical tx | Income/expenses reflect all transactions | not-run | F-128 |
+| TC-400 | Overall goal total | Overall with goal contributions | Goals column shows lifetime contributions | not-run | F-128 |
+| TC-401 | Overall chart no budget | Overall view with budgets set | Chart has no budget target lines | not-run | F-128 |
+| TC-402 | Monthly chart budget | Monthly view with budgets | Budget lines/over-budget still shown | not-run | F-76 + F-127 |
+| TC-403 | Footer link Overall | Overall tab | “View all transactions” → `/transactions` | not-run | |
+| TC-404 | Footer link Monthly | Monthly tab | “View transactions this month” with `?month=` | not-run | |
+
+### Category spending heatmap (session 67)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-405 | Heatmap renders | Summary with expense data | Colored tiles per category; no pie chart | not-run | F-129 |
+| TC-406 | Tile size by spend | Categories with unequal amounts | Larger share → wider tile | not-run | F-129 |
+| TC-407 | Over-budget tile | Category over monthly budget | Tile rose-colored; list badge | not-run | F-129 |
+| TC-408 | Heatmap tooltip | Hover/focus a tile | Amount, %, budget details | not-run | F-129 |
+| TC-409 | Chart settings | Gear → sort + list toggle | No pie/donut or size slider | not-run | F-108 update |
+| TC-410 | Overall heatmap | Overall tab with history | Heatmap shows all-time category totals | not-run | F-127 + F-129 |
+
 ### Activity pagination (session 50)
 
 | ID | Area | Steps | Expected | Result | Notes |
@@ -630,3 +654,5 @@ _Add a row here after each release or bug fix._
 | 2026-07-04 | v0.20 separate tabs + snapshots | `npm run build` pass locally; 4-tab nav; all-currency goals; category snapshot on transactions (deploy pending) |
 | 2026-07-04 | v0.21 Activity table polish | `npm run build` pass locally; bottom-only pagination; aligned columns; icon edit/delete (deploy pending) |
 | 2026-07-04 | v0.22 Goals cards + Activity + Settings | `npm run build` pass locally; GoalCard grid; Summary first nav; Activity full-width + chip filters; Settings budgets removed (deploy pending) |
+| 2026-07-04 | v0.23 Summary Overall/Monthly tabs | `npm run build` pass locally; Overall default; all-time tx cache; lifetime goal totals (deploy pending) |
+| 2026-07-04 | v0.24 category spending heatmap | `npm run build` pass locally; heatmap replaces pie; simplified chart prefs (deploy pending) |

@@ -26,6 +26,27 @@ function resolveCategoryBucket(tx) {
   }
 }
 
+/** Dedupe key for expense heatmap tiles (excludes savings categories). */
+export function getTransactionExpenseCategoryKey(tx) {
+  if (tx.type !== 'expense') return null
+  const bucket = resolveCategoryBucket(tx)
+  if (bucket.isSavings) return null
+  return bucket.categoryId
+}
+
+export function filterTransactionsForHeatmapCategory(transactions, categoryKey, currency) {
+  return transactions
+    .filter((tx) => {
+      if ((tx.account?.currency ?? 'INR') !== currency) return false
+      return getTransactionExpenseCategoryKey(tx) === categoryKey
+    })
+    .sort((a, b) => {
+      const dateCmp = b.transaction_date.localeCompare(a.transaction_date)
+      if (dateCmp !== 0) return dateCmp
+      return new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0)
+    })
+}
+
 function addToBucket(map, bucket, amount) {
   const existing = map.get(bucket.categoryId) ?? {
     categoryId: bucket.categoryId,
@@ -37,7 +58,7 @@ function addToBucket(map, bucket, amount) {
   map.set(bucket.categoryId, existing)
 }
 
-export function buildMonthlySummary(transactions, categories, { currency } = {}) {
+export function buildMonthlySummary(transactions, categories, { currency, includeBudgets = true } = {}) {
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
 
   const expenseBudgets = new Map()
@@ -80,11 +101,16 @@ export function buildMonthlySummary(transactions, categories, { currency } = {})
   const sortByTotal = (a, b) => b.total - a.total
 
   const expenseItems = [...byExpenseCategory.values()]
-    .map((item) => ({ ...item, budget: expenseBudgets.get(item.categoryId) ?? 0 }))
+    .map((item) => ({
+      ...item,
+      budget: includeBudgets ? (expenseBudgets.get(item.categoryId) ?? 0) : 0,
+    }))
     .sort(sortByTotal)
 
   let expenseBudgetTotal = 0
-  for (const budget of expenseBudgets.values()) expenseBudgetTotal += budget
+  if (includeBudgets) {
+    for (const budget of expenseBudgets.values()) expenseBudgetTotal += budget
+  }
 
   return {
     income,
@@ -123,6 +149,28 @@ function sumGoalContributionsInRange(goals, currency, startDate, endDate) {
   return { total, byGoal }
 }
 
+function sumAllGoalContributions(goals, currency) {
+  let total = 0
+  const byGoal = []
+
+  for (const goal of goals) {
+    if ((goal.currency ?? 'INR') !== currency) continue
+
+    let goalTotal = 0
+    for (const contribution of goal.contributions ?? []) {
+      goalTotal += Number(contribution.amount) || 0
+    }
+
+    if (goalTotal > 0) {
+      byGoal.push({ goalId: goal.id, name: goal.name, total: goalTotal })
+      total += goalTotal
+    }
+  }
+
+  byGoal.sort((a, b) => b.total - a.total)
+  return { total, byGoal }
+}
+
 function sumBalancesForCurrency(accounts, currency) {
   return accounts
     .filter((a) => !a.is_archived && (a.currency ?? 'INR') === currency)
@@ -133,10 +181,10 @@ export function groupSummariesByCurrency(
   transactions,
   categories,
   accounts = [],
-  { goals = [], year, month, monthStartDay = 1, preferredCurrency } = {},
+  { goals = [], year, month, monthStartDay = 1, preferredCurrency, allTime = false } = {},
 ) {
   const { start, end } =
-    year && month ? getMonthRange(year, month, monthStartDay) : { start: null, end: null }
+    !allTime && year && month ? getMonthRange(year, month, monthStartDay) : { start: null, end: null }
 
   const currencies = new Set()
   for (const tx of transactions) {
@@ -157,10 +205,14 @@ export function groupSummariesByCurrency(
       : ['INR']
 
   return currencyList.map((currency) => {
-    const summary = buildMonthlySummary(transactions, categories, { currency })
+    const summary = buildMonthlySummary(transactions, categories, {
+      currency,
+      includeBudgets: !allTime,
+    })
     const balances = sumBalancesForCurrency(accounts, currency)
-    const goalContributions =
-      start && end
+    const goalContributions = allTime
+      ? sumAllGoalContributions(goals, currency)
+      : start && end
         ? sumGoalContributionsInRange(goals, currency, start, end)
         : { total: 0, byGoal: [] }
     const goalSavings = goalContributions.total

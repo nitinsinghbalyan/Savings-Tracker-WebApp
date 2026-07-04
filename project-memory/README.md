@@ -367,3 +367,23 @@ Persistent context for the **savings-tracker** app. Use this folder so agents an
 - **Not deployed:** session 62–65 local only
 - **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
 - **Deploy:** `npx vercel --prod --yes` after Supabase migrations
+
+## Current snapshot (2026-07-04, v0.23 Summary Overall / Monthly)
+
+- **Summary tab:** **Overall** | **Monthly** segmented tabs; default **Overall** (all-time stats + chart)
+- **Monthly view:** month picker, per-month stats, budget lines on chart when set
+- **All-time data:** `useTransactions({ allTime: true })` + lifetime goal contributions
+- **Prior snapshot:** v0.22 (GoalCard grid, Summary-first nav, Activity/Settings polish)
+- **Git:** `master` at `3a07ec1` (session 65 commit) + session 66+ local changes uncommitted
+- **Not deployed:** session 62–66 local only
+- **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
+- **Deploy:** `npx vercel --prod --yes` after Supabase migrations
+
+## Current snapshot (2026-07-04, v0.24 category spending heatmap)
+
+- **Summary chart:** spending by category as **heatmap tiles** (size + color intensity by spend share); replaces pie/donut
+- **Chart settings:** sort tiles, toggle category list; no style/resize options
+- **Prior snapshot:** v0.23 (Overall/Monthly Summary tabs, all-time data)
+- **Not deployed:** session 62–67 local only
+- **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
+- **Deploy:** `npx vercel --prod --yes` after Supabase migrations

@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-07-04 (v0.22)
+**Last updated:** 2026-07-04 (v0.24)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -79,7 +79,7 @@
 | F-73 | Goals separate in summary | done | **Goals** column + “Goals this month” list; **Savings** = category savings only |
 | F-74 | Total balance matches Settings | done | Summary total = sum of `get_account_balances()` per currency (not balances − expenses) |
 | F-75 | Spending-by-category bar charts | superseded | Was vertical bars (session 32); **pie chart** session 57 — see F-107 |
-| F-76 | Category budgets | done | `categories.monthly_budget`; chart budget/over-budget in Summary (session 34); **session 65:** Settings Budgets UI removed — values still in DB + charts |
+| F-76 | Category budgets | done | `categories.monthly_budget`; chart budget/over-budget in Summary **Monthly** tab (session 34); Settings UI removed session 65; Overall tab hides budget lines (session 66) |
 | F-77 | Summary scoped to default currency | done | `preferredCurrency` in `groupSummariesByCurrency`; summary + balance list use `profile.default_currency` (session 37) |
 | F-77 deploy | Summary default currency live | done | Production `dpl_3vXo8iDvn63rboSRJ5ZLwWY5DMrT` (session 37 deploy) |
 | F-78 | Goal save resilience | done | Two-query load; optimistic merge; contribution RLS backfill (session 38) |
@@ -111,10 +111,10 @@
 | F-104 | Merged Home tab (goals + activity) | superseded | `HomePage.jsx`; `TransactionsPage` `embedded` mode (session 56); **session 63:** separate Goals + Activity tabs restored |
 | F-105 | Summary tab (charts page) | done | `SummaryPage.jsx` at `/summary`; `SummarySection` charts-only (session 56) |
 | F-106 | Full-width spending chart | done | `CategoryBreakdownChart` `large` on Summary page (sessions 53–54) |
-| F-107 | Spending-by-category pie chart | done | SVG pie in `CategoryBreakdownChart`; `COLOR_PALETTES.fill`; over-budget rose slices (session 57) |
-| F-108 | Chart customization (settings gear) | done | Pie/donut, legend sort, show/hide list; `chartPreferences.js` + `localStorage` (session 58) |
+| F-107 | Spending-by-category pie chart | superseded | SVG pie in `CategoryBreakdownChart` (session 57); **session 67:** heatmap tiles replace pie/donut — F-129 |
+| F-108 | Chart customization (settings gear) | done | Sort + show/hide list via `chartPreferences.js` (session 58); **session 67:** pie/donut/size options removed |
 | F-109 | Slice hover tooltip | done | Rich tooltip on hover/focus; dim other slices (session 60) |
-| F-110 | Resizable spending chart | done | Drag handle + settings slider; `prefs.size` 200–560px default 380 (session 61) |
+| F-110 | Resizable spending chart | superseded | Drag handle + settings slider session 61; **session 67:** removed with heatmap |
 | F-111 | Summary income list removed | done | “Income by category” card removed; Income total remains in stat grid (session 61) |
 | F-112 | Separate Goals + Activity tabs | done | 4-tab nav: Goals `/goals`, Activity `/transactions`, Summary, Settings (session 63) |
 | F-113 | All goals visible regardless of currency | done | Removed `preferredCurrency` filter from `GoalsProgressBars` (session 63) |
@@ -131,13 +131,16 @@
 | F-124 | Flat category chips in tx forms | done | Single wrap row in `TransactionForm` + `RecurringTransactionForm`; `categoryChipLabel()` (session 65) |
 | F-125 | Settings vertical layout | done | Single-column sections; no 2-col grid (session 65) |
 | F-126 | Settings Budgets UI removed | done | `BudgetManager` no longer on Settings page; DB/chart budgets retained (session 65) |
+| F-127 | Summary Overall / Monthly tabs | done | Segmented toggle in `SummarySection`; default Overall (session 66) |
+| F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
+| F-129 | Category spending heatmap | done | Flex tiles in `CategoryBreakdownChart`; intensity by relative spend; replaces pie/donut (session 67) |
 
 ## Backlog ideas
 
 - Dark mode toggle
 - Goal completion celebration / badge — **partial:** `Celebration` component on 100%+ contribution
 - Recurring contribution reminders (requires notifications — likely out of scope)
-- Charts (monthly savings trend) — **partial:** Summary tab has category **pie chart** (session 57; was bar charts session 32)
+- Charts (monthly savings trend) — **partial:** Summary tab has category **heatmap** (session 67; was pie session 57)
 - Dashboard sort/filter (deadline, priority, %) — was in early dashboard spec; not in current UI
 - More currencies beyond INR/USD
 - Custom category (free text) in addition to chips
@@ -228,3 +231,16 @@
 | Activity full-width table | **Done** — F-121 (session 65) |
 | Activity chip-only filters | **Done** — F-122 (session 65) |
 | Settings budgets UI removed | **Done** — F-126 (session 65) |
+
+### Candidate features — status after session 66 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Summary Overall vs Monthly toggle | **Done** — F-127 (session 66) |
+| All-time summary stats + chart | **Done** — F-128 (session 66) |
+
+### Candidate features — status after session 67 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Category spending heatmap | **Done** — F-129 (session 67) |

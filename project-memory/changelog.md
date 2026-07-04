@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-07-04 (v0.22)
+**Last updated:** 2026-07-04 (v0.24)
 
 ## 2026-06-14
 
@@ -1308,6 +1308,51 @@
 - **Settings Budgets UI** — removed from Settings page; `categories.monthly_budget` + chart budget display unchanged (F-76 data layer retained)
 - **Default landing tab** — was `/goals`; now `/summary` (session 65)
 - **Activity advanced filters** — search/account/amount removed (session 65)
+
+### Verified
+
+- `npm run build` passes locally
+
+---
+
+## 2026-07-04 (session 66 — Summary Overall / Monthly tabs)
+
+### Added
+
+- **Summary view toggle** — segmented **Overall** | **Monthly** tabs in `SummarySection`; default **Overall**
+- **All-time transaction cache** — `buildOverallTransactionsCacheKey()`; `useTransactions({ allTime: true })` loads full history via `getTransactions()` without date bounds
+- **`sumAllGoalContributions()`** — lifetime goal savings in Overall view
+
+### Changed
+
+- **`SummarySection`** — Overall shows all-time income/expenses/savings/goals + spending chart; Monthly keeps month picker and per-month stats
+- **`groupSummariesByCurrency()`** — `allTime` flag; skips monthly budget lines on Overall chart (`includeBudgets: false`)
+- **`AppDataContext.loadTransactions`** — supports `allTime` branch alongside month-scoped fetch
+- **`SummaryPage`** subtitle — “Overall and monthly breakdown”
+
+### Superseded
+
+- **Summary monthly-only** — user picks Overall or Monthly tab (session 66)
+
+### Verified
+
+- `npm run build` passes locally
+
+---
+
+## 2026-07-04 (session 67 — category spending heatmap)
+
+### Changed
+
+- **`CategoryBreakdownChart`** — spending by category shown as a **heatmap** (flex tiles sized by share of total; color intensity by relative spend); replaces pie/donut SVG chart
+- **Heatmap tiles** — category name, amount, % on each cell; hover/focus tooltip with budget/over-by; over-budget categories in rose
+- **Chart settings** — sort tiles by amount/name; show/hide category list; removed pie/donut style toggle and resize handle/slider
+- **`chartPreferences.js`** — prefs simplified to `{ showLegend, sortBy }`; legacy pie/donut/size keys ignored on load
+
+### Superseded
+
+- **Category pie/donut chart** — heatmap session 67 (F-129); pie code removed from `CategoryBreakdownChart.jsx`
+- **Resizable chart size** — removed with heatmap (session 61 `prefs.size` no longer used)
 
 ### Verified
 

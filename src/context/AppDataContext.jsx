@@ -22,7 +22,7 @@ import {
   transactionMatchesCacheFilters,
   updateTransaction,
 } from '../lib/transactions'
-import { AppDataContext, buildTransactionsCacheKey, buildTransactionsCachePrefix, parseTransactionsCacheKey } from './app-data-context'
+import { AppDataContext, buildOverallTransactionsCacheKey, buildTransactionsCacheKey, buildTransactionsCachePrefix, parseTransactionsCacheKey } from './app-data-context'
 
 function toErrorMessage(err, fallback) {
   if (err instanceof Error) return err.message
@@ -390,13 +390,16 @@ export function AppDataProvider({ children }) {
       monthStartDay = 1,
       type,
       accountId,
+      allTime = false,
       enabled: loadEnabled = true,
       force = false,
     }) => {
-      if (!loadEnabled || !year || !month) return
+      if (!loadEnabled) return
+      if (!allTime && (!year || !month)) return
 
-      const key = buildTransactionsCacheKey({ year, month, monthStartDay, type, accountId })
-      const range = getMonthRange(year, month, monthStartDay)
+      const key = allTime
+        ? buildOverallTransactionsCacheKey({ type, accountId })
+        : buildTransactionsCacheKey({ year, month, monthStartDay, type, accountId })
 
       let shouldFetch = force
 
@@ -424,12 +427,14 @@ export function AppDataProvider({ children }) {
       if (!shouldFetch) return
 
       try {
-        const data = await getTransactions({
-          startDate: range.start,
-          endDate: range.end,
-          type,
-          accountId,
-        })
+        const data = allTime
+          ? await getTransactions({ type, accountId })
+          : await getTransactions({
+              startDate: getMonthRange(year, month, monthStartDay).start,
+              endDate: getMonthRange(year, month, monthStartDay).end,
+              type,
+              accountId,
+            })
         setTxCache((prev) => ({
           ...prev,
           [key]: { data, loading: false, refreshing: false, error: null, stale: false },
@@ -455,10 +460,12 @@ export function AppDataProvider({ children }) {
 
   const getTransactionsEntry = useCallback(
     (params) => {
-      const key = buildTransactionsCacheKey(params)
+      const key = params.allTime
+        ? buildOverallTransactionsCacheKey(params)
+        : buildTransactionsCacheKey(params)
       return txCache[key] ?? {
         ...EMPTY_TX_ENTRY,
-        loading: enabled && Boolean(params.year && params.month),
+        loading: enabled && Boolean(params.allTime || (params.year && params.month)),
         stale: false,
       }
     },

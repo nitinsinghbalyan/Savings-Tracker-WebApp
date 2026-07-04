@@ -535,3 +535,38 @@ Balance computed via `get_account_balances()` RPC (not stored).
 ### Production
 
 - Local build verified; not yet deployed
+
+## 24. v0.23 additions (append — does not replace §2–23)
+
+**Last updated:** 2026-07-04
+
+### Summary tab
+
+- **Overall** and **Monthly** views as segmented tabs; **Overall** is the default
+- **Overall:** all-time income, expenses, category savings, goal contributions, and spending-by-category chart
+- **Monthly:** selected calendar month with month picker; monthly budgets shown on chart when configured
+- **Total balance:** current account balances (same in both views)
+
+### Data loading
+
+- All-time summary uses cached full transaction fetch (`allTime: true` on `useTransactions`)
+- Monthly summary unchanged (month-scoped fetch)
+
+### Production
+
+- Local build verified; not yet deployed
+
+## 25. v0.24 additions (append — does not replace §2–24)
+
+**Last updated:** 2026-07-04
+
+### Summary chart
+
+- **Spending by category** shown as a **heatmap** (colored tiles), not a pie or donut chart
+- Tile size reflects share of total spending; color intensity reflects relative amount
+- Over-budget categories highlighted in rose (Monthly view when budgets set)
+- Chart settings: sort tiles, toggle category list; no pie/donut or resize options
+
+### Production
+
+- Local build verified; not yet deployed
