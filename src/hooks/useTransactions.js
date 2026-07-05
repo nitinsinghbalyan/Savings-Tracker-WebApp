@@ -44,12 +44,12 @@ export function useTransactions({
   useEffect(() => {
     if (!enabled) return
     if (allTime) {
-      if (entry.data.length > 0 && !entry.stale) return
+      if (entry.loaded && !entry.stale) return
       loadTransactions({ allTime: true, type, accountId, enabled: true })
       return
     }
     if (!year || !month) return
-    if (entry.data.length > 0 && !entry.stale) return
+    if (entry.loaded && !entry.stale) return
     loadTransactions({ year, month, monthStartDay, type, accountId, enabled: true })
   }, [
     enabled,
@@ -60,7 +60,7 @@ export function useTransactions({
     type,
     accountId,
     loadTransactions,
-    entry.data.length,
+    entry.loaded,
     entry.stale,
   ])
 

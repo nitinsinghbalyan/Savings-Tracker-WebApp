@@ -1,7 +1,7 @@
 import { format, endOfMonth, parseISO, startOfMonth } from 'date-fns'
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
-import { assertNoError } from './errors'
+import { assertNoError, isMissingSnapshotColumnError } from './errors'
 import { fetchCategorySnapshot } from './transactionCategory'
 
 /** Calendar month bucket used by MonthPicker / getMonthRange for a transaction date */
@@ -104,21 +104,30 @@ export async function createTransaction(data) {
   const snapshot =
     data.type === 'transfer' ? {} : await fetchCategorySnapshot(userId, data.category_id)
 
-  const { data: tx, error } = await supabase
+  const payload = {
+    user_id: userId,
+    account_id: data.account_id,
+    category_id: data.category_id,
+    type: data.type,
+    amount: Number(data.amount),
+    note: data.note ?? null,
+    transaction_date: data.transaction_date,
+    ...(data.recurring_id ? { recurring_id: data.recurring_id } : {}),
+  }
+
+  let { data: tx, error } = await supabase
     .from('transactions')
-    .insert({
-      user_id: userId,
-      account_id: data.account_id,
-      category_id: data.category_id,
-      type: data.type,
-      amount: Number(data.amount),
-      note: data.note ?? null,
-      transaction_date: data.transaction_date,
-      ...snapshot,
-      ...(data.recurring_id ? { recurring_id: data.recurring_id } : {}),
-    })
+    .insert({ ...payload, ...snapshot })
     .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
     .single()
+
+  if (error && isMissingSnapshotColumnError(error)) {
+    ;({ data: tx, error } = await supabase
+      .from('transactions')
+      .insert(payload)
+      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+      .single())
+  }
 
   assertNoError(error, 'Failed to create transaction')
   return tx
@@ -137,17 +146,32 @@ export async function updateTransaction(id, patch) {
   delete safePatch.created_at
   delete safePatch.transfer_to_account_id
 
+  let snapshot = {}
   if (Object.prototype.hasOwnProperty.call(safePatch, 'category_id')) {
-    Object.assign(safePatch, await fetchCategorySnapshot(userId, safePatch.category_id))
+    snapshot = await fetchCategorySnapshot(userId, safePatch.category_id)
+    Object.assign(safePatch, snapshot)
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('transactions')
     .update(safePatch)
     .eq('id', id)
     .eq('user_id', userId)
     .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
     .single()
+
+  if (error && isMissingSnapshotColumnError(error) && Object.keys(snapshot).length > 0) {
+    for (const key of Object.keys(snapshot)) {
+      delete safePatch[key]
+    }
+    ;({ data, error } = await supabase
+      .from('transactions')
+      .update(safePatch)
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+      .single())
+  }
 
   assertNoError(error, 'Failed to update transaction')
   return data
@@ -176,7 +200,9 @@ export function groupTransactionsByDate(transactions) {
 }
 
 export function formatTransactionDateLabel(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return 'Unknown date'
   const date = parseISO(dateStr)
+  if (Number.isNaN(date.getTime())) return dateStr
   const today = format(new Date(), 'yyyy-MM-dd')
   const yesterday = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd')
   if (dateStr === today) return 'Today'

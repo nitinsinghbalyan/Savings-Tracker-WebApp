@@ -126,7 +126,7 @@ export default function TransactionsPage({ isTabActive = true }) {
     navigate(month ? `/transactions?month=${month}` : '/transactions', { replace: true })
   }, [formOpen, navigate, searchParams])
 
-  const showTransactionForm = formOpen || isTabActive
+  const showTransactionForm = formOpen
 
   const handleMonthChange = (y, m) => {
     setYear(y)

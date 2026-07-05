@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
-import { assertNoError } from './errors'
+import { assertNoError, isMissingSnapshotColumnError } from './errors'
 import { categorySnapshotFromRow } from './transactionCategory'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from './constants'
 
@@ -280,7 +280,10 @@ async function freezeTransactionSnapshotsForCategories(userId, categoryIds) {
       .eq('category_id', catId)
       .eq('user_id', userId)
 
-    assertNoError(updateError, 'Failed to preserve transaction categories')
+    if (updateError) {
+      if (isMissingSnapshotColumnError(updateError)) continue
+      assertNoError(updateError, 'Failed to preserve transaction categories')
+    }
   }
 }
 

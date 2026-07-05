@@ -95,7 +95,7 @@ function preserveContributionsOnRefresh(prevGoals, nextGoals) {
   })
 }
 
-const EMPTY_TX_ENTRY = { data: [], loading: false, error: null, refreshing: false, stale: false }
+const EMPTY_TX_ENTRY = { data: [], loading: false, error: null, refreshing: false, stale: false, loaded: false }
 
 function mergeTransactionIntoCache(cache, tx) {
   if (!tx?.id) return cache
@@ -128,6 +128,7 @@ function mergeTransactionIntoCache(cache, tx) {
       refreshing: false,
       error: null,
       stale: false,
+      loaded: true,
     }
     changed = true
   }
@@ -407,7 +408,7 @@ export function AppDataProvider({ children }) {
         const existing = prev[key] ?? EMPTY_TX_ENTRY
         const hasData = existing.data.length > 0
 
-        if (!force && hasData && !existing.stale) {
+        if (!force && existing.loaded && !existing.stale) {
           shouldFetch = false
           return prev
         }
@@ -437,7 +438,7 @@ export function AppDataProvider({ children }) {
             })
         setTxCache((prev) => ({
           ...prev,
-          [key]: { data, loading: false, refreshing: false, error: null, stale: false },
+          [key]: { data, loading: false, refreshing: false, error: null, stale: false, loaded: true },
         }))
         return data
       } catch (err) {
@@ -450,6 +451,7 @@ export function AppDataProvider({ children }) {
             refreshing: false,
             error: message,
             stale: false,
+            loaded: true,
           },
         }))
         throw err
@@ -467,6 +469,7 @@ export function AppDataProvider({ children }) {
         ...EMPTY_TX_ENTRY,
         loading: enabled && Boolean(params.allTime || (params.year && params.month)),
         stale: false,
+        loaded: false,
       }
     },
     [txCache, enabled],

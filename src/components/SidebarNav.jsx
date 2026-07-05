@@ -6,7 +6,8 @@ import RupeeIcon from './icons/RupeeIcon'
 const tabs = [
   { to: '/summary', label: 'Summary', icon: BarChart3 },
   { to: '/goals', label: 'Goals', icon: Target },
-  { to: '/transactions', label: 'Activity', icon: RupeeIcon },  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/transactions', label: 'Activity', icon: RupeeIcon },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function SidebarNav() {
