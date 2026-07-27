@@ -145,6 +145,11 @@
 | 2026-07-04 | Drop chart resize + pie/donut prefs | Heatmap is responsive; style/size prefs obsolete | Keep pie settings in gear menu |
 | 2026-07-04 | Heatmap tile opens read-only tx modal | Drill-down without leaving Summary; 10/page pagination | Navigate to Activity tab with category filter |
 | 2026-07-04 | Remove category list under heatmap | Tiles are self-labeling; less duplicate UI | Toggle list via chart settings (v0.24) |
+| 2026-07-05 | Retry tx writes without snapshot columns | Activity must work before migration applied; snapshot still preferred when columns exist | Hard-require `add_transaction_category_snapshot.sql` |
+| 2026-07-05 | Tx cache `loaded` flag | Distinguish “fetched empty month” from “not fetched yet” | Use `data.length > 0` as fetch guard |
+| 2026-07-06 | Goal-tagged tx excluded from category Savings | Avoid double count when savings category + goal chip on same expense | Count in both Savings and Goals |
+| 2026-07-06 | Green Activity row for savings + goal txs | Visual distinction for savings-related ledger entries | No row styling |
+| 2026-07-06 | Delete linked contributions before tx row | `ON DELETE SET NULL` on `source_transaction_id` leaves orphan contributions | Rely on DB cascade only |
 
 ### Superseded (historical — do not delete rows)
 

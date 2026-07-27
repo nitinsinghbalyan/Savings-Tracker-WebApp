@@ -21,7 +21,7 @@ export function TransactionTableHeader() {
   )
 }
 
-function TransactionRow({ transaction, onEdit, onDelete }) {
+function TransactionRow({ transaction, highlightSavingsOrGoal = false, onEdit, onDelete }) {
   const { type, amount, account, transfer_to: transferTo, note } = transaction
   const category = resolveTransactionCategory(transaction)
   const palette = category ? getColorPalette(category.color) : null
@@ -39,7 +39,11 @@ function TransactionRow({ transaction, onEdit, onDelete }) {
   const prefix = type === 'income' ? '+' : type === 'expense' ? '−' : ''
 
   return (
-    <div className={`flex items-center gap-3 py-3 ${TRANSACTION_TABLE_GRID}`}>
+    <div
+      className={`flex items-center gap-3 py-3 ${TRANSACTION_TABLE_GRID} ${
+        highlightSavingsOrGoal ? '-mx-2 rounded-xl bg-emerald-50 px-2 ring-1 ring-emerald-100' : ''
+      }`}
+    >
       <span
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
           type === 'transfer' ? 'bg-slate-100 text-slate-600' : palette ? palette.chip : 'bg-slate-100'

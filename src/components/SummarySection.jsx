@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useAppData } from '../context/AppDataContext'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useTransactions } from '../hooks/useTransactions'
@@ -18,19 +19,21 @@ const SUMMARY_VIEWS = [
 
 function SummarySection({ profile }) {
   const { user, authReady } = useAuth()
+  const { bootstrapping } = useAppData()
   const now = new Date()
   const [view, setView] = useState('overall')
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
 
   const isMonthly = view === 'monthly'
+  const dataReady = Boolean(user) && authReady && !bootstrapping && Boolean(profile)
   const monthStartDay = profile?.month_start_day ?? 1
 
-  const { accounts } = useAccounts({ enabled: Boolean(user) && authReady })
-  const { categories } = useCategories({ enabled: Boolean(user) && authReady })
-  const { goals } = useGoals({ enabled: Boolean(user) && authReady })
-  const { transactions, loading, error } = useTransactions({
-    enabled: Boolean(user) && authReady,
+  const { accounts } = useAccounts({ enabled: dataReady })
+  const { categories } = useCategories({ enabled: dataReady })
+  const { goals } = useGoals({ enabled: dataReady })
+  const { transactions, initialLoading, error } = useTransactions({
+    enabled: dataReady,
     allTime: !isMonthly,
     year: isMonthly ? year : undefined,
     month: isMonthly ? month : undefined,
@@ -135,7 +138,7 @@ function SummarySection({ profile }) {
 
       {error && <p className="alert-error">{error}</p>}
 
-      {loading && transactions.length === 0 ? (
+      {initialLoading ? (
         <div className="card animate-pulse h-64" />
       ) : isEmpty ? (
         <section className="card py-8 text-center">

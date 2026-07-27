@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-07-04 (v0.25)
+**Last updated:** 2026-07-06 (v0.28)
 
 ## Tech stack
 
@@ -720,3 +720,31 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - **`getTransactionExpenseCategoryKey(tx)`** — expense-only; excludes savings categories; uses `categoryDedupeKey` with `parent_id: null` (matches heatmap buckets)
 - **Scope** — Overall view uses all-time txs from `useTransactions({ allTime: true })`; Monthly uses month-scoped cache; currency filter matches summary block
 - **Chart settings** — sort only (`{ sortBy }` in `chartPreferences.js`); no category list below heatmap
+
+### Activity snapshot migration fallback (v0.26, session 70)
+
+- **`isMissingSnapshotColumnError(error)`** — `errors.js`; matches missing `category_*` snapshot columns
+- **Write path** — `createTransaction` / `updateTransaction` insert/update with snapshot first; on column error, retry without snapshot fields
+- **Category delete** — `freezeTransactionSnapshotsForCategories` skips update when columns absent (session 70)
+- **Tx cache** — `EMPTY_TX_ENTRY` includes `loaded: boolean`; `loadTransactions` sets `loaded: true` on success or error; skip refetch when `loaded && !stale`
+- **`useTransactions`** — depends on `entry.loaded` instead of `entry.data.length` (empty months no longer infinite loading)
+- **`TransactionsPage`** — `TransactionForm` rendered only when `formOpen` (reduces hidden-tab mount issues)
+- **`formatTransactionDateLabel`** — safe for null/invalid `transaction_date`
+
+### Goal-linked transactions + savings highlight (v0.27, session 72)
+
+- **Migration** — `add_transaction_goal_link.sql`: `transactions.goal_id` → `goals`; `contributions.source_transaction_id` → `transactions`
+- **Create flow** — `createTransaction({ goal_id })` when user picks goal chip; `addContribution(..., sourceTransactionId)` after tx insert
+- **`buildGoalLinkedTransactionIds(transactions, goals)`** — set of tx ids from `goal_id`, `source_transaction_id`, or legacy contribution note match
+- **`countsAsCategorySavings(tx, goalLinkedIds)`** — savings category expense **unless** goal-linked (Summary **Savings** stat)
+- **`shouldHighlightSavingsOrGoal(tx, goalLinkedIds)`** — Activity row `bg-emerald-50` when savings category or goal-linked
+- **Fallback** — `isMissingGoalLinkColumnError()` strips `goal_id` / `source_transaction_id` on insert if columns missing
+
+### Goal contribution cleanup on transaction delete (v0.28, session 74)
+
+- **`findLinkedContributionIds(transaction, goals)`** — `source_transaction_id` match + legacy “From expense/income transaction” note match
+- **`getContributionIdsBySourceTransactionId()`** — DB lookup when goals cache may be stale
+- **`deleteContributionsForTransaction()`** — deletes all linked contributions, then tx row is removed
+- **`deleteTransaction(id, { goals })`** — orchestrates contribution cleanup + tx delete; returns `deletedContributionIds`
+- **`AppDataContext.deleteTransaction`** — optimistic `mergeDeletedContribution` + `refreshGoals()` when contributions removed
+- **Why needed** — migration FK `ON DELETE SET NULL` does not remove contributions; goal balance would stay inflated

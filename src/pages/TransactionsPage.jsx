@@ -11,7 +11,7 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useToast } from '../hooks/useToast'
 import { useGoals } from '../hooks/useGoals'
 import { groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate } from '../lib/transactions'
-import { buildGoalContributionFromTransaction } from '../lib/transactionGoal'
+import { buildGoalContributionFromTransaction, buildGoalLinkedTransactionIds, shouldHighlightSavingsOrGoal } from '../lib/transactionGoal'
 import PageHeader from '../components/PageHeader'
 import MonthPicker from '../components/MonthPicker'
 import TransactionRow, { TransactionTableHeader } from '../components/TransactionRow'
@@ -40,7 +40,7 @@ export default function TransactionsPage({ isTabActive = true }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const now = new Date()
 
-  const { consumeRecurringPosted } = useAppData()
+  const { consumeRecurringPosted, bootstrapping } = useAppData()
 
   useEffect(() => {
     if (!isTabActive) return
@@ -59,13 +59,16 @@ export default function TransactionsPage({ isTabActive = true }) {
   const [formOpen, setFormOpen] = useState(false)
   const [editingTx, setEditingTx] = useState(null)
 
-  const { profile } = useProfile({ enabled: Boolean(user) && authReady })
-  const { accounts } = useAccounts({ enabled: Boolean(user) && authReady })
-  const { categories } = useCategories({ enabled: Boolean(user) && authReady })
-  const { goals, addContribution } = useGoals({ enabled: Boolean(user) && authReady })
+  const dataReady = Boolean(user) && authReady && !bootstrapping
+  const { profile } = useProfile({ enabled: dataReady })
+  const { accounts } = useAccounts({ enabled: dataReady })
+  const { categories } = useCategories({ enabled: dataReady })
+  const { goals, addContribution } = useGoals({ enabled: dataReady })
 
+  // Wait for profile so month_start_day is stable (avoids cache-key thrash)
   const monthStartDay = profile?.month_start_day ?? 1
   const defaultCurrency = profile?.default_currency ?? 'INR'
+  const txEnabled = dataReady && Boolean(profile)
 
   const expenseCategories = useMemo(
     () => categories.filter((c) => c.kind === 'expense'),
@@ -78,18 +81,25 @@ export default function TransactionsPage({ isTabActive = true }) {
 
   const {
     transactions,
-    loading,
+    initialLoading,
+    stale,
     error,
+    refetch,
     createTransaction,
     updateTransaction,
     deleteTransaction,
   } = useTransactions({
-    enabled: Boolean(user) && authReady,
+    enabled: txEnabled,
     year,
     month,
     monthStartDay,
     type: filterType || undefined,
   })
+
+  useEffect(() => {
+    if (!isTabActive || !txEnabled || !stale) return
+    refetch()
+  }, [isTabActive, txEnabled, stale, refetch])
 
   const totalPages = Math.max(1, Math.ceil(transactions.length / pageSize))
 
@@ -101,6 +111,11 @@ export default function TransactionsPage({ isTabActive = true }) {
   const groups = useMemo(
     () => groupTransactionsByDate(paginatedTransactions),
     [paginatedTransactions],
+  )
+
+  const goalLinkedTxIds = useMemo(
+    () => buildGoalLinkedTransactionIds(transactions, goals),
+    [transactions, goals],
   )
 
   useEffect(() => {
@@ -149,7 +164,7 @@ export default function TransactionsPage({ isTabActive = true }) {
       return
     }
 
-    await createTransaction(data)
+    const tx = await createTransaction({ ...data, goal_id: options.goalId || undefined })
 
     const period = getPeriodForDate(data.transaction_date, monthStartDay)
     if (period.year !== year || period.month !== month) {
@@ -177,7 +192,7 @@ export default function TransactionsPage({ isTabActive = true }) {
         if (!contribution.amount || contribution.amount <= 0) {
           throw new Error('Converted goal amount must be greater than 0')
         }
-        await addContribution(contribution.goalId, contribution.amount, contribution.note)
+        await addContribution(contribution.goalId, contribution.amount, contribution.note, tx.id)
         toast.success('Transaction added and applied to goal')
         return
       } catch (err) {
@@ -206,7 +221,7 @@ export default function TransactionsPage({ isTabActive = true }) {
     setFormOpen(true)
   }
 
-  const showSkeleton = loading && transactions.length === 0
+  const showSkeleton = initialLoading
 
   const filterChips = (
     <div className="flex flex-wrap gap-2">
@@ -322,6 +337,7 @@ export default function TransactionsPage({ isTabActive = true }) {
               <TransactionRow
                 key={tx.id}
                 transaction={tx}
+                highlightSavingsOrGoal={shouldHighlightSavingsOrGoal(tx, goalLinkedTxIds)}
                 onEdit={(t) => {
                   setEditingTx(t)
                   setFormOpen(true)

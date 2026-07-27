@@ -399,3 +399,36 @@ Persistent context for the **savings-tracker** app. Use this folder so agents an
 - **Prior snapshot:** v0.24 (heatmap only; not deployed)
 - **Migrations to run:** `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql` (if not yet applied)
 - **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
+
+## Current snapshot (2026-07-06, v0.26 Activity fix + production)
+
+- **Live:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — latest **deployed** `dpl_9Vx2e5VejXN4teqtWqYvvogPKu56` (session 71)
+- **Activity fix:** tx create/update works without snapshot migration; empty months load; invalid dates don’t crash list (session 70 — F-131)
+- **Heatmap drill-down:** click tile → `CategoryTransactionsModal`; 10 txs/page (session 68 — F-130)
+- **Summary:** Overall (default) | Monthly tabs (session 66 — F-127/F-128)
+- **Navigation:** Summary · Goals · Activity · Settings; `/` → `/summary` (session 65 — F-120)
+- **Git:** `master` at `b1a24b3`; remote `origin` → `https://github.com/nitinsinghbalyan/Savings-Tracker-WebApp.git`; **push pending** GitHub auth
+- **Prior snapshot:** v0.25 (`dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV`)
+- **Migrations recommended:** `add_transaction_category_snapshot.sql` (app works without; labels won’t freeze on category delete until applied); `add_recurring_daily_frequency.sql` if daily recurring needed
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
+
+## Current snapshot (2026-07-06, v0.27 savings/goal highlight + production)
+
+- **Live:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — latest **deployed** `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx` (session 73)
+- **Activity highlight:** light green rows for savings-category expenses and goal-linked transactions (session 72 — F-132)
+- **No double count:** goal-tagged txs excluded from Summary **Savings**; count only under **Goals** (session 72 — F-133)
+- **Activity fix:** snapshot migration fallback (session 70 — F-131); heatmap modal (F-130); Overall/Monthly Summary (F-127/F-128)
+- **Git:** `master` at `b1a24b3`; session 72 changes **deployed but uncommitted**; GitHub push pending auth
+- **Prior snapshot:** v0.26 (`dpl_9Vx2e5VejXN4teqtWqYvvogPKu56`)
+- **Migrations recommended:** `add_transaction_goal_link.sql` (goal↔tx link); `add_transaction_category_snapshot.sql`; `add_recurring_daily_frequency.sql`
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
+
+## Current snapshot (2026-07-06, v0.28 goal delete sync)
+
+- **Live:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — production `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx` (session 73); session 74 **not deployed**
+- **Goal delete sync:** deleting a goal-linked transaction removes its contribution; goals refresh (session 74 — F-134)
+- **Activity highlight:** light green rows for savings/goal txs (session 72 — F-132/F-133)
+- **Git:** `master` at `b1a24b3`; sessions 72–74 **uncommitted**; GitHub push pending auth
+- **Prior snapshot:** v0.27 (`dpl_9aLjkrW34G3jPFw9j4drawmRLGcx`)
+- **Migrations recommended:** `add_transaction_goal_link.sql`; `add_transaction_category_snapshot.sql`; `add_recurring_daily_frequency.sql`
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`

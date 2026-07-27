@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
 import { assertNoError } from './errors'
+import { archiveGoalCategory, ensureGoalCategory, syncGoalCategory } from './goalCategory'
 
 export async function getGoals() {
   const userId = await requireUserId()
@@ -59,7 +60,17 @@ export async function createGoal(data) {
     .single()
 
   assertNoError(error, 'Failed to create goal')
-  return goal
+
+  try {
+    const category = await ensureGoalCategory(goal)
+    if (category) {
+      return { ...goal, linked_category_id: category.id, contributions: [] }
+    }
+  } catch {
+    // Category link is best-effort when migration is missing
+  }
+
+  return { ...goal, contributions: [] }
 }
 
 export async function updateGoal(id, patch) {
@@ -79,11 +90,24 @@ export async function updateGoal(id, patch) {
     .single()
 
   assertNoError(error, 'Failed to update goal')
+
+  try {
+    await syncGoalCategory(goal)
+  } catch {
+    // Best-effort sync
+  }
+
   return goal
 }
 
 export async function deleteGoal(id) {
   const userId = await requireUserId()
+
+  try {
+    await archiveGoalCategory(id)
+  } catch {
+    // Best-effort; CASCADE may still remove the category
+  }
 
   const { error } = await supabase
     .from('goals')

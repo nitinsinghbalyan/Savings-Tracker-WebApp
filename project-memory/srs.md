@@ -594,3 +594,60 @@ Balance computed via `get_account_balances()` RPC (not stored).
 
 - Local `master` at commit `550a09e`
 - GitHub remote: `https://github.com/nitinsinghbalyan/Savings-Tracker-WebApp` — push pending authentication
+
+## 27. v0.26 additions (append — does not replace §2–26)
+
+**Last updated:** 2026-07-06
+
+### Activity tab reliability
+
+- Activity must work even when `add_transaction_category_snapshot.sql` has **not** been applied
+- Transaction create/update retries without snapshot columns when DB reports missing columns
+- Empty months load correctly (no infinite skeleton when a month has zero transactions)
+
+### Production
+
+- **Deployed** — `dpl_9Vx2e5VejXN4teqtWqYvvogPKu56` at [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app)
+
+### Git
+
+- Local `master` at commit `b1a24b3`
+- GitHub push still pending authentication
+
+## 28. v0.27 additions (append — does not replace §2–27)
+
+**Last updated:** 2026-07-06
+
+### Activity tab
+
+- Transactions in a **savings category** or **linked to a goal** show a **light green** row background
+
+### Summary savings vs goals
+
+- When a transaction is tagged to a **goal**, it does **not** also count toward **category Savings**, even if the category is marked savings
+- Goal amount still counts under **Goals** via the contribution
+
+### Data model
+
+- Optional `transactions.goal_id` and `contributions.source_transaction_id` (migration `add_transaction_goal_link.sql`)
+
+### Production
+
+- **Deployed** — `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx` at [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app)
+
+### Git
+
+- Session 72 changes deployed from local working tree; **not yet committed** on `master` (still at `b1a24b3`)
+
+## 29. v0.28 additions (append — does not replace §2–28)
+
+**Last updated:** 2026-07-06
+
+### Transaction ↔ goal sync
+
+- Deleting a **goal-linked transaction** also removes its **goal contribution** (goal balance updates)
+- Adding a goal-linked transaction still creates a contribution (unchanged from session 72)
+
+### Production
+
+- Session 74 fix local only; production still at `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx` until redeployed

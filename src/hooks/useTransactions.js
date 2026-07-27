@@ -110,10 +110,16 @@ export function useTransactions({
     [deleteTransaction, txMeta],
   )
 
+  const initialLoading =
+    enabled && !entry.loaded && (entry.loading || entry.refreshing)
+
   return {
     transactions: showData ? entry.data : [],
-    loading: enabled && entry.loading && entry.data.length === 0,
+    loading: initialLoading,
+    initialLoading,
     refreshing: enabled && entry.refreshing,
+    stale: enabled && entry.stale,
+    loaded: entry.loaded,
     error: enabled ? entry.error : null,
     refetch,
     createTransaction: handleCreate,

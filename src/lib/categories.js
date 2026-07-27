@@ -58,10 +58,21 @@ export function buildCategoryTree(categories, kind) {
   }))
 }
 
-/** Picker groups: parents with children are headers; leaf parents and children are selectable */
+/** Picker groups: goal-linked savings categories first, then normal tree */
 export function buildCategoryPickerTree(categories, kind) {
-  const tree = buildCategoryTree(categories, kind)
+  const filtered = dedupeCategoriesForDisplay(categories).filter((c) => c.kind === kind)
+  const goalCategories = filtered
+    .filter((c) => c.goal_id)
+    .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+  const nonGoal = filtered.filter((c) => !c.goal_id)
+
   const groups = []
+
+  if (kind === 'expense' && goalCategories.length > 0) {
+    groups.push({ label: 'Goals', parentId: null, items: goalCategories, isGoalsGroup: true })
+  }
+
+  const tree = buildCategoryTree(nonGoal, kind)
 
   for (const { parent, children } of tree) {
     if (children.length > 0) {
@@ -71,8 +82,8 @@ export function buildCategoryPickerTree(categories, kind) {
     }
   }
 
-  const orphanChildren = dedupeCategoriesForDisplay(categories).filter(
-    (c) => c.kind === kind && c.parent_id && !tree.some((t) => t.parent.id === c.parent_id),
+  const orphanChildren = nonGoal.filter(
+    (c) => c.parent_id && !tree.some((t) => t.parent.id === c.parent_id),
   )
   if (orphanChildren.length > 0) {
     groups.push({ label: 'Other', parentId: null, items: orphanChildren })
@@ -209,6 +220,7 @@ export async function createCategory(data) {
       is_system: false,
       is_savings: Boolean(data.is_savings) && kind === 'expense',
       monthly_budget: kind === 'expense' ? Math.max(0, Number(data.monthly_budget) || 0) : 0,
+      ...(data.goal_id ? { goal_id: data.goal_id } : {}),
     })
     .select()
     .single()

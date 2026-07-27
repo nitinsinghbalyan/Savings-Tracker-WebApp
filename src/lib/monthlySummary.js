@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { categoryDedupeKey, dedupeCategoriesForDisplay } from './categories'
 import { getMonthRange } from './transactions'
 import { resolveTransactionCategory } from './transactionCategory'
+import { buildGoalLinkedTransactionIds, countsAsCategorySavings } from './transactionGoal'
 
 function resolveCategoryBucket(tx) {
   const resolved = resolveTransactionCategory(tx)
@@ -58,7 +59,11 @@ function addToBucket(map, bucket, amount) {
   map.set(bucket.categoryId, existing)
 }
 
-export function buildMonthlySummary(transactions, categories, { currency, includeBudgets = true } = {}) {
+export function buildMonthlySummary(
+  transactions,
+  categories,
+  { currency, includeBudgets = true, goals = [] } = {},
+) {
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
 
   const expenseBudgets = new Map()
@@ -73,6 +78,8 @@ export function buildMonthlySummary(transactions, categories, { currency, includ
   if (currency) {
     filtered = transactions.filter((tx) => tx.account?.currency === currency)
   }
+
+  const goalLinkedTxIds = buildGoalLinkedTransactionIds(filtered, goals)
 
   let income = 0
   let expenses = 0
@@ -89,8 +96,10 @@ export function buildMonthlySummary(transactions, categories, { currency, includ
     } else if (tx.type === 'expense') {
       const bucket = resolveCategoryBucket(tx)
       if (bucket.isSavings) {
-        categorySavings += amount
-        addToBucket(bySavingsCategory, bucket, amount)
+        if (countsAsCategorySavings(tx, goalLinkedTxIds)) {
+          categorySavings += amount
+          addToBucket(bySavingsCategory, bucket, amount)
+        }
       } else {
         expenses += amount
         addToBucket(byExpenseCategory, bucket, amount)
@@ -208,6 +217,7 @@ export function groupSummariesByCurrency(
     const summary = buildMonthlySummary(transactions, categories, {
       currency,
       includeBudgets: !allTime,
+      goals,
     })
     const balances = sumBalancesForCurrency(accounts, currency)
     const goalContributions = allTime

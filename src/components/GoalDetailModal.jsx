@@ -38,8 +38,8 @@ export default function GoalDetailModal({
   onDeleteContribution,
 }) {
   const titleId = useId()
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
   const [confirmingContributionId, setConfirmingContributionId] = useState(null)
   const [deletingContributionId, setDeletingContributionId] = useState(null)
 
@@ -62,18 +62,23 @@ export default function GoalDetailModal({
   const currencyLabel = CURRENCIES.find((c) => c.code === currency)?.label ?? currency
 
   const handleDelete = async () => {
-    if (!confirmingDelete) {
-      setConfirmingDelete(true)
+    if (
+      !window.confirm(
+        `Delete “${goal.name}” and all its contributions? This cannot be undone.`,
+      )
+    ) {
       return
     }
 
     setDeleting(true)
+    setDeleteError(null)
     try {
       await onDelete(goal.id)
       onClose()
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete goal')
     } finally {
       setDeleting(false)
-      setConfirmingDelete(false)
     }
   }
 
@@ -285,26 +290,15 @@ export default function GoalDetailModal({
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              aria-label={
-                deleting
-                  ? 'Deleting goal'
-                  : confirmingDelete
-                    ? 'Confirm delete goal'
-                    : 'Delete goal'
-              }
-              className={`btn-icon shrink-0 rounded-xl disabled:opacity-60 ${
-                confirmingDelete
-                  ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                  : 'text-rose-600 hover:bg-rose-50 hover:text-rose-700'
-              }`}
+              aria-label={deleting ? 'Deleting goal' : 'Delete goal'}
+              className="btn-icon shrink-0 rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          {confirmingDelete && !deleting && (
-            <p className="mt-2 text-center text-xs text-slate-500">
-              Tap the <span className="font-medium text-rose-600">delete icon</span> again to
-              remove this goal.
+          {deleteError && (
+            <p role="alert" className="mt-2 text-center text-xs text-rose-600">
+              {deleteError}
             </p>
           )}
         </div>

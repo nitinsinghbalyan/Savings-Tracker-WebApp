@@ -1,8 +1,9 @@
 import { format, endOfMonth, parseISO, startOfMonth } from 'date-fns'
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
-import { assertNoError, isMissingSnapshotColumnError } from './errors'
+import { assertNoError, isMissingGoalLinkColumnError, isMissingSnapshotColumnError } from './errors'
 import { fetchCategorySnapshot } from './transactionCategory'
+import { deleteContributionsForTransaction } from './contributions'
 
 /** Calendar month bucket used by MonthPicker / getMonthRange for a transaction date */
 export function getPeriodForDate(dateStr, monthStartDay = 1) {
@@ -113,18 +114,30 @@ export async function createTransaction(data) {
     note: data.note ?? null,
     transaction_date: data.transaction_date,
     ...(data.recurring_id ? { recurring_id: data.recurring_id } : {}),
+    ...(data.goal_id ? { goal_id: data.goal_id } : {}),
   }
 
+  let insertRow = { ...payload, ...snapshot }
   let { data: tx, error } = await supabase
     .from('transactions')
-    .insert({ ...payload, ...snapshot })
+    .insert(insertRow)
     .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
     .single()
 
   if (error && isMissingSnapshotColumnError(error)) {
+    insertRow = { ...payload }
     ;({ data: tx, error } = await supabase
       .from('transactions')
-      .insert(payload)
+      .insert(insertRow)
+      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+      .single())
+  }
+
+  if (error && isMissingGoalLinkColumnError(error) && payload.goal_id) {
+    const { goal_id: _goalId, ...withoutGoal } = insertRow
+    ;({ data: tx, error } = await supabase
+      .from('transactions')
+      .insert(withoutGoal)
       .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
       .single())
   }
@@ -177,10 +190,26 @@ export async function updateTransaction(id, patch) {
   return data
 }
 
-export async function deleteTransaction(id) {
+export async function deleteTransaction(id, { goals = [] } = {}) {
   const userId = await requireUserId()
+
+  const { data: tx, error: fetchError } = await supabase
+    .from('transactions')
+    .select(
+      '*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)',
+    )
+    .eq('id', id)
+    .eq('user_id', userId)
+    .single()
+
+  assertNoError(fetchError, 'Failed to load transaction')
+
+  const deletedContributionIds = await deleteContributionsForTransaction(tx, goals)
+
   const { error } = await supabase.from('transactions').delete().eq('id', id).eq('user_id', userId)
   assertNoError(error, 'Failed to delete transaction')
+
+  return { id, deletedContributionIds }
 }
 
 export async function deleteAllTransactions() {

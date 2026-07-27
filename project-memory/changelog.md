@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-07-04 (v0.25)
+**Last updated:** 2026-07-06 (v0.28)
 
 ## 2026-06-14
 
@@ -1400,3 +1400,105 @@
 - **`git push -u origin master`** — blocked without GitHub credentials in non-interactive shell; run locally after auth
 - **Remote divergence** — GitHub `master` at `3b3344f` may differ from local `550a09e`; reconcile before push if rejected
 - **Supabase migrations** (if not applied): `add_recurring_daily_frequency.sql`, `add_transaction_category_snapshot.sql`
+
+---
+
+## 2026-07-05 (session 70 — Activity page fix)
+
+### Fixed
+
+- **Activity broken without snapshot migration** — create/update transaction failed when `category_name`/`category_color`/`category_is_savings` columns missing on `transactions`
+- **`isMissingSnapshotColumnError()`** in `errors.js` — detects Postgres `42703` / PostgREST `PGRST204`
+- **`createTransaction` / `updateTransaction`** — retry insert/update without snapshot fields when columns absent
+- **`freezeTransactionSnapshotsForCategories`** — skip snapshot freeze on delete when columns absent
+- **Empty month stuck loading** — tx cache entries track `loaded`; `useTransactions` refetches only when `!loaded || stale`
+- **Invalid transaction dates** — `formatTransactionDateLabel()` guards null/invalid dates (no list crash)
+- **`TransactionsPage`** — mount `TransactionForm` only when `formOpen` (not on every tab visit)
+
+### Changed
+
+- **`SidebarNav.jsx`** — fix malformed tabs array (Activity + Settings on separate lines)
+
+### Verified
+
+- `npm run build` passes locally
+
+---
+
+## 2026-07-06 (session 71 — production deploy)
+
+### Deployed
+
+- **Production:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — `dpl_9Vx2e5VejXN4teqtWqYvvogPKu56` (Activity snapshot fallback)
+- **Prior deploy:** `dpl_FL8ipthCHE6tsPMVBhRymfKvuEvq` (same fix bundle, session 70)
+- **Vercel build:** `npm run build` succeeded on iad1
+
+### Git
+
+- **Commit:** `b1a24b3` on `master` — “Fix Activity page when category snapshot migration is missing.”
+- **Push:** still pending GitHub auth in non-interactive shell
+
+### Not done (manual follow-up)
+
+- **`git push -u origin master`** — run locally after `gh auth login` or credential helper
+- **Recommended migration:** `add_transaction_category_snapshot.sql` — fallback works but labels won’t freeze on category delete until applied
+
+---
+
+## 2026-07-06 (session 72 — savings/goal Activity highlight + no double count)
+
+### Added
+
+- **`supabase/add_transaction_goal_link.sql`** — `transactions.goal_id`; `contributions.source_transaction_id`
+- **`transactionGoal.js`** — `buildGoalLinkedTransactionIds()`, `countsAsCategorySavings()`, `shouldHighlightSavingsOrGoal()`, `isSavingsCategoryTransaction()`
+- **`isMissingGoalLinkColumnError()`** — graceful fallback when goal link columns absent
+
+### Changed
+
+- **Activity rows** — light green background (`bg-emerald-50`) for savings-category expenses and goal-linked transactions (`TransactionRow.highlightSavingsOrGoal`)
+- **Summary savings** — goal-tagged transactions excluded from **category Savings** (counts only in **Goals** via contribution); fixes double count when savings category + goal chip used together
+- **`createTransaction`** — stores optional `goal_id` when user tags a goal
+- **`addContribution`** — stores optional `source_transaction_id` linking back to ledger tx
+- **`buildMonthlySummary`** — uses `countsAsCategorySavings()` with goal-linked tx set from goals + transactions
+
+### Verified
+
+- `npm run build` passes locally
+
+---
+
+## 2026-07-06 (session 73 — production deploy)
+
+### Deployed
+
+- **Production:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx` (savings/goal highlight + no double count)
+- **Vercel build:** `npm run build` succeeded on iad1
+
+### Not done (manual follow-up)
+
+- **Git commit/push** — session 72 changes deployed from local working tree; not yet committed on `master`
+- **Supabase migration:** run `add_transaction_goal_link.sql` for durable goal↔tx linking (app has column-missing fallback)
+
+---
+
+## 2026-07-06 (session 74 — delete tx syncs goal contributions)
+
+### Fixed
+
+- **Goal not updated on transaction delete** — deleting a goal-linked transaction left the contribution in place (`source_transaction_id` FK is `ON DELETE SET NULL`, not cascade)
+- **`deleteContributionsForTransaction()`** — removes contributions linked by `source_transaction_id` or legacy note/date/amount match before deleting the tx
+- **`findLinkedContributionIds()`** — resolves contribution ids for a ledger transaction
+- **`deleteTransaction(id, { goals })`** — returns `{ id, deletedContributionIds }`; `AppDataContext` optimistically removes contributions and `refreshGoals()`
+
+### Changed
+
+- **`runTransactionsMutation`** — only merges create/update results into tx cache (`type` + `transaction_date` guard); delete result no longer corrupts cache
+
+### Verified
+
+- `npm run build` passes locally
+
+### Not done (manual follow-up)
+
+- **Production deploy** — session 74 local only
+- **Git commit** — sessions 72–74 still uncommitted on `master` (at `b1a24b3`)

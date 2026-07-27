@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Target } from 'lucide-react'
 import { percentComplete, savedAmount } from '../lib/contributions'
-import { formatCurrency } from '../lib/format'
 import { useAuth } from '../hooks/useAuth'
 import { useGoals } from '../hooks/useGoals'
 import { useProfile } from '../hooks/useProfile'
+import { useAccounts } from '../hooks/useAccounts'
+import { useAppData } from '../context/AppDataContext'
 import { useToast } from '../hooks/useToast'
+import { ensureGoalCategory } from '../lib/goalCategory'
 import PageHeader from '../components/PageHeader'
 import GoalCard from '../components/GoalCard'
 import GoalForm from '../components/GoalForm'
@@ -17,7 +19,9 @@ import Celebration from '../components/Celebration'
 export default function HomePage({ isTabActive = true }) {
   const toast = useToast()
   const { user, authReady } = useAuth()
+  const { createTransaction, refreshCategories } = useAppData()
   const { profile } = useProfile({ enabled: Boolean(user) && authReady })
+  const { accounts } = useAccounts({ enabled: Boolean(user) && authReady })
   const {
     goals,
     loading,
@@ -77,15 +81,44 @@ export default function HomePage({ isTabActive = true }) {
     }
   }
 
-  const handleAddMoney = async (goal, amount, note) => {
+  const handleAddMoney = async (goal, contributionAmount, contributionNote, meta = {}) => {
     const before = percentComplete(goal)
     const target = Number(goal.target_amount)
     const projected = target > 0
-      ? Math.min(100, ((savedAmount(goal) + amount) / target) * 100)
+      ? Math.min(100, ((savedAmount(goal) + contributionAmount) / target) * 100)
       : 0
 
-    await addContribution(goal.id, amount, note)
-    toast.success(`${formatCurrency(amount, goal.currency)} added`)
+    const { accountId, transactionDate, sourceAmount } = meta
+    if (!accountId) {
+      throw new Error('Select an account')
+    }
+
+    const category = await ensureGoalCategory(goal)
+    if (!category?.id) {
+      throw new Error(
+        'Could not link this goal to a category. Run the goal-category migration in Supabase, then try again.',
+      )
+    }
+
+    await refreshCategories({ background: true }).catch(() => {})
+
+    const txAmount = sourceAmount ?? contributionAmount
+    const tx = await createTransaction(
+      {
+        type: 'expense',
+        amount: txAmount,
+        account_id: accountId,
+        category_id: category.id,
+        goal_id: goal.id,
+        transfer_to_account_id: null,
+        transaction_date: transactionDate,
+        note: contributionNote,
+      },
+      { transactionDate },
+    )
+
+    await addContribution(goal.id, contributionAmount, contributionNote, tx?.id)
+    toast.success('Added to goal and Activity')
 
     if (before < 100 && projected >= 100) {
       setCelebrationMessage(`You reached your ${goal.name} goal!`)
@@ -214,6 +247,7 @@ export default function HomePage({ isTabActive = true }) {
           open={Boolean(addMoneyGoal)}
           onClose={() => setAddMoneyGoal(null)}
           goal={addMoneyGoal}
+          accounts={accounts}
           defaultCurrency={profile?.default_currency ?? 'INR'}
           onSubmit={handleAddMoney}
           onError={(message) => toast.error(message)}

@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-07-04 (v0.25)
+**Last updated:** 2026-07-06 (v0.28)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -135,6 +135,10 @@
 | F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
 | F-129 | Category spending heatmap | done | Flex tiles in `CategoryBreakdownChart`; intensity by relative spend; replaces pie/donut (session 67) |
 | F-130 | Heatmap category transactions modal | done | Click tile → `CategoryTransactionsModal`; 10/page pagination; filtered by category dedupe key + currency (session 68) |
+| F-131 | Activity without snapshot migration | done | `isMissingSnapshotColumnError()` + retry without snapshot columns; tx cache `loaded` flag (session 70) |
+| F-132 | Savings/goal Activity row highlight | done | Light green row for savings-category or goal-linked txs (session 72) |
+| F-133 | Goal-tagged tx excluded from category Savings | done | `countsAsCategorySavings()`; `goal_id` + `source_transaction_id` link (session 72) |
+| F-134 | Delete tx removes linked goal contribution | done | `deleteContributionsForTransaction()` before tx delete; goals refresh (session 74) |
 
 ## Backlog ideas
 
@@ -259,3 +263,34 @@
 |------|--------|
 | Production deploy (heatmap bundle) | **Done** — `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV` (session 69) |
 | GitHub remote configured | **Done** — `origin` → `Savings-Tracker-WebApp` (session 69); push pending auth |
+
+### Candidate features — status after session 70 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Activity page snapshot migration fallback | **Done** — F-131 (session 70) |
+
+### Candidate features — status after session 71 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Production deploy (Activity fix) | **Done** — `dpl_9Vx2e5VejXN4teqtWqYvvogPKu56` (session 71) |
+
+### Candidate features — status after session 72 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Savings/goal green rows on Activity | **Done** — F-132 (session 72) |
+| No double count savings + goal on same tx | **Done** — F-133 (session 72) |
+
+### Candidate features — status after session 73 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Production deploy (savings/goal highlight) | **Done** — `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx` (session 73) |
+
+### Candidate features — status after session 74 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Goal sync on transaction delete | **Done** — F-134 (session 74) |

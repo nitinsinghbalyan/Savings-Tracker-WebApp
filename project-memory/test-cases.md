@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-07-04 (v0.25)
+**Last updated:** 2026-07-06 (v0.28)
 
 ## Setup
 
@@ -536,6 +536,34 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 | TC-416 | Close modal | X or backdrop | Modal closes; heatmap still visible | not-run | F-130 |
 | TC-417 | No list below chart | Summary with expense data | Heatmap only; no category table under tiles | not-run | session 68 |
 
+### Activity snapshot fallback (session 70)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-418 | Add tx without migration | DB without snapshot columns | Expense/income saves successfully | not-run | F-131 |
+| TC-419 | Edit tx without migration | Edit existing transaction | Update saves without column error | not-run | F-131 |
+| TC-420 | Empty month loads | Activity → month with no txs | Shows empty state, not infinite skeleton | not-run | F-131 |
+| TC-421 | Invalid tx date | Transaction with bad `transaction_date` | List renders; date shows fallback label | not-run | session 70 |
+| TC-422 | Form not pre-mounted | Visit Activity tab | No transaction modal until Add clicked | not-run | session 70 |
+
+### Savings/goal Activity highlight (session 72)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-423 | Savings row highlight | Expense in savings category | Light green row on Activity | not-run | F-132 |
+| TC-424 | Goal row highlight | Expense/income tagged to goal | Light green row on Activity | not-run | F-132 |
+| TC-425 | No savings double count | Savings category + goal chip on new expense | Summary Savings unchanged; Goals increases | not-run | F-133 |
+| TC-426 | Savings without goal | Expense in savings category, no goal | Counts in Summary Savings; green row | not-run | F-132 + F-76 |
+| TC-427 | Goal link migration | After `add_transaction_goal_link.sql` | `goal_id` on tx; contribution has `source_transaction_id` | not-run | session 72 |
+
+### Goal sync on transaction delete (session 74)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-428 | Delete goal-linked tx | Activity → delete expense with goal chip | Tx removed; goal saved amount decreases | not-run | F-134 |
+| TC-429 | Delete savings+goal tx | Delete savings category tx tagged to goal | Contribution removed; Summary/Goals update | not-run | F-134 |
+| TC-430 | Legacy linked delete | Delete tx linked only by contribution note | Matching contribution removed | not-run | F-134 |
+
 ### Activity pagination (session 50)
 
 | ID | Area | Steps | Expected | Result | Notes |
@@ -669,3 +697,8 @@ _Add a row here after each release or bug fix._
 | 2026-07-04 | v0.23 Summary Overall/Monthly tabs | `npm run build` pass locally; Overall default; all-time tx cache; lifetime goal totals (deploy pending) |
 | 2026-07-04 | v0.24 category spending heatmap | `npm run build` pass locally; heatmap replaces pie; simplified chart prefs (deploy pending) |
 | 2026-07-04 | v0.25 heatmap modal + production | `npm run build` pass locally; deployed `dpl_7xNLvAb4tVxRCePmp1A88cM7S9hV`; git `550a09e`; GitHub push pending auth |
+| 2026-07-05 | v0.26 Activity snapshot fallback | `npm run build` pass locally; Activity fix committed `b1a24b3` (deploy pending) |
+| 2026-07-06 | v0.26 production deploy | `npm run build` pass locally + Vercel iad1; deployed `dpl_9Vx2e5VejXN4teqtWqYvvogPKu56`; GitHub push pending auth |
+| 2026-07-06 | v0.27 savings/goal highlight | `npm run build` pass locally; green Activity rows + no savings double count (deploy pending) |
+| 2026-07-06 | v0.27 production deploy | `npm run build` pass + Vercel iad1; deployed `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx`; git uncommitted |
+| 2026-07-06 | v0.28 goal delete sync | `npm run build` pass locally; delete tx removes linked contribution (deploy pending) |

@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
+import { format } from 'date-fns'
 import { X } from 'lucide-react'
 import { getCurrencySymbol } from '../lib/constants'
 import { formatMoney } from '../lib/format'
@@ -9,10 +10,14 @@ import {
 } from '../lib/exchangeRate'
 import ModalShell from './ModalShell'
 
+const chipBase =
+  'inline-flex min-h-10 items-center justify-center rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition'
+
 export default function AddMoneyModal({
   open,
   onClose,
   goal,
+  accounts = [],
   defaultCurrency = 'INR',
   onSubmit,
   onError,
@@ -20,15 +25,24 @@ export default function AddMoneyModal({
   const titleId = useId()
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [accountId, setAccountId] = useState('')
+  const [transactionDate, setTransactionDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
   const [amountError, setAmountError] = useState(null)
+  const [accountError, setAccountError] = useState(null)
   const [submitError, setSubmitError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [rateInfo, setRateInfo] = useState(null)
   const [rateLoading, setRateLoading] = useState(false)
   const [rateError, setRateError] = useState(null)
 
+  const activeAccounts = useMemo(
+    () => accounts.filter((a) => !a.is_archived),
+    [accounts],
+  )
+
+  const selectedAccount = activeAccounts.find((a) => a.id === accountId)
   const goalCurrency = goal?.currency ?? 'INR'
-  const inputCurrency = defaultCurrency ?? 'INR'
+  const inputCurrency = selectedAccount?.currency ?? defaultCurrency ?? 'INR'
   const needsConversion = goalCurrency !== inputCurrency
 
   useEffect(() => {
@@ -37,12 +51,19 @@ export default function AddMoneyModal({
     setAmount('')
     setNote('')
     setAmountError(null)
+    setAccountError(null)
     setSubmitError(null)
     setSubmitting(false)
     setRateInfo(null)
     setRateLoading(false)
     setRateError(null)
-  }, [open, goal])
+    setTransactionDate(format(new Date(), 'yyyy-MM-dd'))
+
+    const preferred =
+      activeAccounts.find((a) => (a.currency ?? 'INR') === (defaultCurrency ?? 'INR')) ??
+      activeAccounts[0]
+    setAccountId(preferred?.id ?? '')
+  }, [open, goal, activeAccounts, defaultCurrency])
 
   useEffect(() => {
     if (!open || !needsConversion) {
@@ -93,6 +114,11 @@ export default function AddMoneyModal({
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    if (!accountId) {
+      setAccountError('Select an account')
+      return
+    }
+
     const sourceAmount = Number(amount)
     if (!amount.trim() || Number.isNaN(sourceAmount) || sourceAmount <= 0) {
       setAmountError('Enter an amount greater than 0')
@@ -128,7 +154,12 @@ export default function AddMoneyModal({
     setSubmitError(null)
 
     try {
-      await onSubmit(goal, contributionAmount, contributionNote)
+      await onSubmit(goal, contributionAmount, contributionNote, {
+        accountId,
+        transactionDate,
+        sourceAmount,
+        accountCurrency: inputCurrency,
+      })
       onClose()
     } catch (err) {
       const message =
@@ -168,9 +199,13 @@ export default function AddMoneyModal({
           <p className="mb-4 text-sm text-slate-600">
             Adding to{' '}
             <span className="font-semibold text-slate-900">{goal.name}</span>
+            <span className="mt-1 block text-xs text-slate-500">
+              Also records an Activity transaction from the selected account.
+            </span>
             {needsConversion && (
-              <span className="block mt-1 text-xs text-slate-500">
-                Goal is in {goalCurrency}. Enter savings in {inputCurrency}; we convert at today&apos;s rate.
+              <span className="mt-1 block text-xs text-slate-500">
+                Goal is in {goalCurrency}. Amount is in account currency ({inputCurrency}); we convert
+                for the goal at today&apos;s rate.
               </span>
             )}
           </p>
@@ -182,8 +217,39 @@ export default function AddMoneyModal({
           )}
 
           <div className="mb-4">
+            <p className="label-field">Account</p>
+            {activeAccounts.length === 0 ? (
+              <p className="text-sm text-slate-500">Add a balance in Settings first.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {activeAccounts.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => {
+                      setAccountId(a.id)
+                      setAccountError(null)
+                    }}
+                    className={`${chipBase} ${
+                      accountId === a.id
+                        ? 'bg-brand-600 text-white ring-brand-600'
+                        : 'bg-slate-50 text-slate-700 ring-slate-200'
+                    }`}
+                  >
+                    {a.name}
+                    <span className={`ml-1 text-xs ${accountId === a.id ? 'text-white/80' : 'text-slate-400'}`}>
+                      {a.currency ?? 'INR'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {accountError && <p className="mt-1 text-sm text-red-600">{accountError}</p>}
+          </div>
+
+          <div className="mb-4">
             <label htmlFor="contribution-amount" className="label-field">
-              {needsConversion ? `Amount (${inputCurrency})` : 'Amount'}
+              Amount ({inputCurrency})
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -208,7 +274,9 @@ export default function AddMoneyModal({
             </div>
             {amountError && <p className="mt-1 text-sm text-red-600">{amountError}</p>}
             {needsConversion && rateLoading && (
-              <p className="mt-2 text-sm text-slate-500">Loading today&apos;s {inputCurrency}/{goalCurrency} rate…</p>
+              <p className="mt-2 text-sm text-slate-500">
+                Loading today&apos;s {inputCurrency}/{goalCurrency} rate…
+              </p>
             )}
             {needsConversion && rateError && (
               <p className="mt-2 text-sm text-red-600">{rateError}</p>
@@ -222,6 +290,20 @@ export default function AddMoneyModal({
                 </span>
               </p>
             )}
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="contribution-date" className="label-field">
+              Date
+            </label>
+            <input
+              id="contribution-date"
+              type="date"
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+              className="input-field"
+              required
+            />
           </div>
 
           <div className="mb-6">
@@ -241,10 +323,18 @@ export default function AddMoneyModal({
           <div className="flex flex-col gap-3 safe-bottom sm:flex-row-reverse">
             <button
               type="submit"
-              disabled={submitting || (needsConversion && (rateLoading || !rateInfo?.rate))}
+              disabled={
+                submitting ||
+                activeAccounts.length === 0 ||
+                (needsConversion && (rateLoading || !rateInfo?.rate))
+              }
               className="btn-primary w-full sm:flex-1"
             >
-              {submitting ? 'Adding…' : needsConversion ? `Add ${goalCurrencySymbol} to goal` : 'Add contribution'}
+              {submitting
+                ? 'Adding…'
+                : needsConversion
+                  ? `Add ${goalCurrencySymbol} to goal`
+                  : 'Add to goal & Activity'}
             </button>
             <button
               type="button"

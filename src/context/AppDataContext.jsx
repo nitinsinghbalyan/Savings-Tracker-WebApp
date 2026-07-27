@@ -5,6 +5,7 @@ import { getCategories, pruneDuplicateCategories, createCategory, updateCategory
 import { getAccountsWithBalances, createAccount, updateAccount, archiveAccount } from '../lib/accounts'
 import { getGoalsWithContributions, createGoal, updateGoal, deleteGoal } from '../lib/goals'
 import { addContribution, deleteContribution } from '../lib/contributions'
+import { backfillGoalCategories } from '../lib/goalCategory'
 import {
   createRecurringTransaction,
   deleteRecurringTransaction,
@@ -241,6 +242,21 @@ export function AppDataProvider({ children }) {
           setProfileError(null)
           setRecurringError(null)
           bootstrappedRef.current = true
+
+          // Lazy-link existing goals to savings categories (non-blocking)
+          backfillGoalCategories(goalsData)
+            .then(async ({ goals: linkedGoals, categoriesChanged }) => {
+              if (categoriesChanged) {
+                setGoals(linkedGoals)
+                try {
+                  const fresh = await getCategories()
+                  setCategories(fresh)
+                } catch {
+                  /* ignore */
+                }
+              }
+            })
+            .catch(() => {})
         } catch (err) {
           const message = toErrorMessage(err, 'Failed to load app data')
           setBootstrapError(message)
@@ -406,7 +422,6 @@ export function AppDataProvider({ children }) {
 
       setTxCache((prev) => {
         const existing = prev[key] ?? EMPTY_TX_ENTRY
-        const hasData = existing.data.length > 0
 
         if (!force && existing.loaded && !existing.stale) {
           shouldFetch = false
@@ -414,12 +429,14 @@ export function AppDataProvider({ children }) {
         }
 
         shouldFetch = true
+        // Only show skeleton on first load; empty months must not re-skeleton on refresh
+        const isFirstLoad = !existing.loaded
         return {
           ...prev,
           [key]: {
             ...existing,
-            loading: !hasData,
-            refreshing: hasData,
+            loading: isFirstLoad,
+            refreshing: !isFirstLoad,
             error: null,
           },
         }
@@ -587,7 +604,7 @@ export function AppDataProvider({ children }) {
           invalidateTransactions()
         }
 
-        if (result) {
+        if (result?.type && result?.transaction_date) {
           setTxCache((prev) => mergeTransactionIntoCache(prev, result))
         }
 
@@ -629,17 +646,33 @@ export function AppDataProvider({ children }) {
       saveProfile,
       txCacheVersion,
       createGoal: (data) =>
-        runGoalsMutation(() => createGoal(data), 'Failed to create goal', { mutationKind: 'create' }),
+        runGoalsMutation(async () => {
+          const goal = await createGoal(data)
+          await refreshCategories({ background: true }).catch(() => {})
+          return goal
+        }, 'Failed to create goal', { mutationKind: 'create' }),
       updateGoal: (id, patch) =>
-        runGoalsMutation(() => updateGoal(id, patch), 'Failed to update goal', { mutationKind: 'update' }),
+        runGoalsMutation(async () => {
+          const goal = await updateGoal(id, patch)
+          await refreshCategories({ background: true }).catch(() => {})
+          return goal
+        }, 'Failed to update goal', { mutationKind: 'update' }),
       deleteGoal: (id) =>
-        runGoalsMutation(() => deleteGoal(id).then(() => id), 'Failed to delete goal', {
+        runGoalsMutation(async () => {
+          await deleteGoal(id)
+          await refreshCategories({ background: true }).catch(() => {})
+          return id
+        }, 'Failed to delete goal', {
           mutationKind: 'delete',
         }),
-      addContribution: (goalId, amount, note) =>
-        runGoalsMutation(() => addContribution(goalId, amount, note), 'Failed to add contribution', {
-          mutationKind: 'addContribution',
-        }),
+      addContribution: (goalId, amount, note, sourceTransactionId) =>
+        runGoalsMutation(
+          () => addContribution(goalId, amount, note, sourceTransactionId),
+          'Failed to add contribution',
+          {
+            mutationKind: 'addContribution',
+          },
+        ),
       deleteContribution: (id) =>
         runGoalsMutation(() => deleteContribution(id).then(() => id), 'Failed to delete contribution', {
           mutationKind: 'deleteContribution',
@@ -679,8 +712,23 @@ export function AppDataProvider({ children }) {
         runTransactionsMutation(() => createTransaction(data), 'Failed to save transaction', meta),
       updateTransaction: (id, patch, meta) =>
         runTransactionsMutation(() => updateTransaction(id, patch), 'Failed to update transaction', meta),
-      deleteTransaction: (id, meta) =>
-        runTransactionsMutation(() => deleteTransaction(id), 'Failed to delete transaction', meta),
+      deleteTransaction: async (id, meta) => {
+        const result = await runTransactionsMutation(
+          () => deleteTransaction(id, { goals }),
+          'Failed to delete transaction',
+          meta,
+        )
+        if (result?.deletedContributionIds?.length) {
+          setGoals((prev) =>
+            result.deletedContributionIds.reduce(
+              (acc, contributionId) => mergeDeletedContribution(acc, contributionId),
+              prev,
+            ),
+          )
+          await refreshGoals({ background: true })
+        }
+        return result
+      },
     }),
     [
       profile,

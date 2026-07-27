@@ -19,3 +19,29 @@ export function isMissingSnapshotColumnError(error) {
     message.includes('category_is_savings')
   )
 }
+
+/** True when goal link columns are not on `transactions` / `contributions` yet. */
+export function isMissingGoalLinkColumnError(error) {
+  if (!error) return false
+  const message = String(error.message ?? '').toLowerCase()
+  const code = String(error.code ?? '')
+  return (
+    code === '42703' ||
+    code === 'PGRST204' ||
+    message.includes('goal_id') ||
+    message.includes('source_transaction_id')
+  )
+}
+
+/** True when goal↔category link columns are not migrated yet. */
+export function isMissingGoalCategoryLinkError(error) {
+  if (!error) return false
+  const message = String(error.message ?? '').toLowerCase()
+  const code = String(error.code ?? '')
+  return (
+    code === '42703' ||
+    code === 'PGRST204' ||
+    message.includes('linked_category_id') ||
+    (message.includes('goal_id') && message.includes('categories'))
+  )
+}

@@ -12,12 +12,6 @@ const chipBase =
 const categoryChipBase =
   'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-inset transition active:scale-95 sm:text-sm'
 
-function categoryChipLabel(category, pickerGroups) {
-  const group = pickerGroups.find((g) => g.items.some((item) => item.id === category.id))
-  if (group?.label) return `${group.label} · ${category.name}`
-  return category.name
-}
-
 const TYPES = [
   { value: 'expense', label: 'Expense' },
   { value: 'income', label: 'Income' },
@@ -31,7 +25,6 @@ function emptyForm(defaultCurrency = 'INR') {
     account_id: '',
     transfer_to_account_id: '',
     category_id: '',
-    goal_id: '',
     transaction_date: format(new Date(), 'yyyy-MM-dd'),
     note: '',
     currency: defaultCurrency,
@@ -89,7 +82,6 @@ export default function TransactionForm({
         account_id: transaction.account_id ?? '',
         transfer_to_account_id: transaction.transfer_to_account_id ?? '',
         category_id: transaction.category_id ?? '',
-        goal_id: '',
         transaction_date: transaction.transaction_date ?? format(new Date(), 'yyyy-MM-dd'),
         note: transaction.note ?? '',
         currency: transaction.account?.currency ?? defaultCurrency,
@@ -119,7 +111,6 @@ export default function TransactionForm({
       type,
       category_id: type === 'transfer' ? '' : (first?.id ?? ''),
       transfer_to_account_id: '',
-      goal_id: type === 'transfer' ? '' : v.goal_id,
     }))
   }
 
@@ -155,6 +146,13 @@ export default function TransactionForm({
 
     const categoryId =
       values.type === 'transfer' ? null : values.category_id || selectableCategories[0]?.id
+    const selectedCategory = selectableCategories.find((c) => c.id === categoryId)
+    const linkedGoalId = selectedCategory?.goal_id || null
+    // Prefer category.goal_id; fall back to goals list match by linked_category_id
+    const goalId =
+      linkedGoalId ||
+      goals.find((g) => g.linked_category_id === categoryId)?.id ||
+      null
 
     setSubmitting(true)
     try {
@@ -169,7 +167,7 @@ export default function TransactionForm({
         note: values.note.trim() || null,
       }
       await onSubmit(payload, transaction?.id, {
-        goalId: !isEdit && values.type !== 'transfer' && values.goal_id ? values.goal_id : null,
+        goalId: !isEdit && values.type !== 'transfer' ? goalId : null,
       })
       onClose()
     } catch (err) {
@@ -305,76 +303,55 @@ export default function TransactionForm({
                   </a>
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {selectableCategories.map((c) => {
-                    const palette = getColorPalette(c.color)
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => setValues((v) => ({ ...v, category_id: c.id }))}
-                        className={`${categoryChipBase} ${
-                          values.category_id === c.id
-                            ? palette.chip + ' ring-2'
-                            : 'bg-slate-50 text-slate-700 ring-slate-200'
-                        }`}
-                      >
-                        {categoryChipLabel(c, pickerGroups)}
-                      </button>
-                    )
-                  })}
+                <div className="space-y-3">
+                  {pickerGroups.map((group) => (
+                    <div key={group.label ?? group.parentId ?? 'root'}>
+                      {group.label && (
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          {group.label}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.items.map((c) => {
+                          const palette = getColorPalette(c.color)
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setValues((v) => ({ ...v, category_id: c.id }))}
+                              className={`${categoryChipBase} ${
+                                values.category_id === c.id
+                                  ? palette.chip + ' ring-2'
+                                  : 'bg-slate-50 text-slate-700 ring-slate-200'
+                              }`}
+                            >
+                              {c.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {values.type !== 'transfer' && !isEdit && goals.length > 0 && (
-            <div>
-              <p className="label-field">Add to goal (optional)</p>
-              <div className="chip-row flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setValues((v) => ({ ...v, goal_id: '' }))}
-                  className={`${chipBase} ${
-                    !values.goal_id
-                      ? 'bg-brand-600 text-white ring-brand-600'
-                      : 'bg-slate-50 text-slate-700 ring-slate-200'
-                  }`}
-                >
-                  None
-                </button>
-                {goals.map((goal) => {
-                  const selected = values.goal_id === goal.id
-                  const goalCurrency = goal.currency ?? 'INR'
+              {(() => {
+                const selected = selectableCategories.find((c) => c.id === values.category_id)
+                const goal =
+                  selected?.goal_id
+                    ? goals.find((g) => g.id === selected.goal_id)
+                    : goals.find((g) => g.linked_category_id === values.category_id)
+                if (!goal) return null
+                const goalCurrency = goal.currency ?? 'INR'
+                if (goalCurrency === currency) {
                   return (
-                    <button
-                      key={goal.id}
-                      type="button"
-                      onClick={() => setValues((v) => ({ ...v, goal_id: goal.id }))}
-                      className={`${chipBase} ${
-                        selected
-                          ? 'bg-brand-600 text-white ring-brand-600'
-                          : 'bg-slate-50 text-slate-700 ring-slate-200'
-                      }`}
-                    >
-                      {goal.name}
-                      {goalCurrency !== currency && (
-                        <span className={`text-xs ${selected ? 'text-white/80' : 'text-slate-400'}`}>
-                          {goalCurrency}
-                        </span>
-                      )}
-                    </button>
+                    <p className="mt-1.5 text-xs text-emerald-700">
+                      Counts toward goal: {goal.name}
+                    </p>
                   )
-                })}
-              </div>
-              {values.goal_id && (() => {
-                const selectedGoal = goals.find((g) => g.id === values.goal_id)
-                if (!selectedGoal) return null
-                const goalCurrency = selectedGoal.currency ?? 'INR'
-                if (goalCurrency === currency) return null
+                }
                 return (
-                  <p className="mt-1.5 text-xs text-slate-500">
-                    Converts from {currency} to {goalCurrency} at today&apos;s rate when saved.
+                  <p className="mt-1.5 text-xs text-emerald-700">
+                    Counts toward goal: {goal.name} (converts {currency} → {goalCurrency})
                   </p>
                 )
               })()}
