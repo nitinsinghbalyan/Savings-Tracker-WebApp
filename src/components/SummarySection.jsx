@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react'
+import { lazy, memo, Suspense, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useAppData } from '../context/AppDataContext'
@@ -9,8 +9,9 @@ import { useGoals } from '../hooks/useGoals'
 import { groupSummariesByCurrency } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
-import CategoryBreakdownChart from './CategoryBreakdownChart'
 import AccountCard from './AccountCard'
+
+const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
 
 const SUMMARY_VIEWS = [
   { value: 'overall', label: 'Overall' },
@@ -82,14 +83,16 @@ function SummarySection({ profile }) {
 
     return (
       <section className="card min-w-0 overflow-hidden p-4 lg:p-6">
-        <CategoryBreakdownChart
-          items={summary.byExpenseCategory}
-          total={summary.expenses}
-          currency={summary.currency}
-          budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
-          transactions={transactions}
-          large
-        />
+        <Suspense fallback={<div className="h-56 animate-pulse rounded-xl bg-slate-100" aria-hidden="true" />}>
+          <CategoryBreakdownChart
+            items={summary.byExpenseCategory}
+            total={summary.expenses}
+            currency={summary.currency}
+            budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
+            transactions={transactions}
+            large
+          />
+        </Suspense>
       </section>
     )
   }

@@ -618,6 +618,158 @@ export function AppDataProvider({ children }) {
     [invalidateTransactions, refreshAccounts],
   )
 
+  const handleCreateGoal = useCallback(
+    (data) =>
+      runGoalsMutation(async () => {
+        const goal = await createGoal(data)
+        await refreshCategories({ background: true }).catch(() => {})
+        return goal
+      }, 'Failed to create goal', { mutationKind: 'create' }),
+    [runGoalsMutation, refreshCategories],
+  )
+
+  const handleUpdateGoal = useCallback(
+    (id, patch) =>
+      runGoalsMutation(async () => {
+        const goal = await updateGoal(id, patch)
+        await refreshCategories({ background: true }).catch(() => {})
+        return goal
+      }, 'Failed to update goal', { mutationKind: 'update' }),
+    [runGoalsMutation, refreshCategories],
+  )
+
+  const handleDeleteGoal = useCallback(
+    (id) =>
+      runGoalsMutation(async () => {
+        await deleteGoal(id)
+        await refreshCategories({ background: true }).catch(() => {})
+        return id
+      }, 'Failed to delete goal', { mutationKind: 'delete' }),
+    [runGoalsMutation, refreshCategories],
+  )
+
+  const handleAddContribution = useCallback(
+    (goalId, amount, note, sourceTransactionId) =>
+      runGoalsMutation(
+        () => addContribution(goalId, amount, note, sourceTransactionId),
+        'Failed to add contribution',
+        { mutationKind: 'addContribution' },
+      ),
+    [runGoalsMutation],
+  )
+
+  const handleDeleteContribution = useCallback(
+    (id) =>
+      runGoalsMutation(() => deleteContribution(id).then(() => id), 'Failed to delete contribution', {
+        mutationKind: 'deleteContribution',
+      }),
+    [runGoalsMutation],
+  )
+
+  const handleCreateAccount = useCallback(
+    (data) => runAccountsMutation(() => createAccount(data), 'Failed to create account'),
+    [runAccountsMutation],
+  )
+
+  const handleUpdateAccount = useCallback(
+    (id, patch) => runAccountsMutation(() => updateAccount(id, patch), 'Failed to update account'),
+    [runAccountsMutation],
+  )
+
+  const handleArchiveAccount = useCallback(
+    (id) => runAccountsMutation(() => archiveAccount(id), 'Failed to archive account'),
+    [runAccountsMutation],
+  )
+
+  const handleCreateCategory = useCallback(
+    (data) => runCategoriesMutation(() => createCategory(data), 'Failed to create category'),
+    [runCategoriesMutation],
+  )
+
+  const handleUpdateCategory = useCallback(
+    (id, patch) => runCategoriesMutation(() => updateCategory(id, patch), 'Failed to update category'),
+    [runCategoriesMutation],
+  )
+
+  const handleArchiveCategory = useCallback(
+    (id) => runCategoriesMutation(() => archiveCategory(id), 'Failed to archive category'),
+    [runCategoriesMutation],
+  )
+
+  const handleDeleteCategory = useCallback(
+    (id) => runCategoriesMutation(() => deleteCategory(id), 'Failed to delete category'),
+    [runCategoriesMutation],
+  )
+
+  const handleDeleteAllCategories = useCallback(
+    () => runCategoriesMutation(() => deleteAllCategories(), 'Failed to delete categories'),
+    [runCategoriesMutation],
+  )
+
+  const handleCreateRecurring = useCallback(
+    (data) =>
+      runRecurringMutation(() => createRecurringTransaction(data), 'Failed to create recurring transaction'),
+    [runRecurringMutation],
+  )
+
+  const handleUpdateRecurring = useCallback(
+    (id, patch) =>
+      runRecurringMutation(
+        () => updateRecurringTransaction(id, patch),
+        'Failed to update recurring transaction',
+      ),
+    [runRecurringMutation],
+  )
+
+  const handleDeleteRecurring = useCallback(
+    (id) =>
+      runRecurringMutation(() => deleteRecurringTransaction(id), 'Failed to delete recurring transaction'),
+    [runRecurringMutation],
+  )
+
+  const handleSkipNextRecurring = useCallback(
+    (id) => runRecurringMutation(() => skipNextOccurrence(id), 'Failed to skip occurrence'),
+    [runRecurringMutation],
+  )
+
+  const handleCreateTransaction = useCallback(
+    (data, meta) =>
+      runTransactionsMutation(() => createTransaction(data), 'Failed to save transaction', meta),
+    [runTransactionsMutation],
+  )
+
+  const handleUpdateTransaction = useCallback(
+    (id, patch, meta) =>
+      runTransactionsMutation(() => updateTransaction(id, patch), 'Failed to update transaction', meta),
+    [runTransactionsMutation],
+  )
+
+  const goalsRef = useRef(goals)
+  useEffect(() => {
+    goalsRef.current = goals
+  }, [goals])
+
+  const handleDeleteTransaction = useCallback(
+    async (id, meta) => {
+      const result = await runTransactionsMutation(
+        () => deleteTransaction(id, { goals: goalsRef.current }),
+        'Failed to delete transaction',
+        meta,
+      )
+      if (result?.deletedContributionIds?.length) {
+        setGoals((prev) =>
+          result.deletedContributionIds.reduce(
+            (acc, contributionId) => mergeDeletedContribution(acc, contributionId),
+            prev,
+          ),
+        )
+        await refreshGoals({ background: true })
+      }
+      return result
+    },
+    [runTransactionsMutation, refreshGoals],
+  )
+
   const value = useMemo(
     () => ({
       profile,
@@ -645,90 +797,26 @@ export function AppDataProvider({ children }) {
       invalidateTransactions,
       saveProfile,
       txCacheVersion,
-      createGoal: (data) =>
-        runGoalsMutation(async () => {
-          const goal = await createGoal(data)
-          await refreshCategories({ background: true }).catch(() => {})
-          return goal
-        }, 'Failed to create goal', { mutationKind: 'create' }),
-      updateGoal: (id, patch) =>
-        runGoalsMutation(async () => {
-          const goal = await updateGoal(id, patch)
-          await refreshCategories({ background: true }).catch(() => {})
-          return goal
-        }, 'Failed to update goal', { mutationKind: 'update' }),
-      deleteGoal: (id) =>
-        runGoalsMutation(async () => {
-          await deleteGoal(id)
-          await refreshCategories({ background: true }).catch(() => {})
-          return id
-        }, 'Failed to delete goal', {
-          mutationKind: 'delete',
-        }),
-      addContribution: (goalId, amount, note, sourceTransactionId) =>
-        runGoalsMutation(
-          () => addContribution(goalId, amount, note, sourceTransactionId),
-          'Failed to add contribution',
-          {
-            mutationKind: 'addContribution',
-          },
-        ),
-      deleteContribution: (id) =>
-        runGoalsMutation(() => deleteContribution(id).then(() => id), 'Failed to delete contribution', {
-          mutationKind: 'deleteContribution',
-        }),
-      createAccount: (data) => runAccountsMutation(() => createAccount(data), 'Failed to create account'),
-      updateAccount: (id, patch) =>
-        runAccountsMutation(() => updateAccount(id, patch), 'Failed to update account'),
-      archiveAccount: (id) => runAccountsMutation(() => archiveAccount(id), 'Failed to archive account'),
-      createCategory: (data) =>
-        runCategoriesMutation(() => createCategory(data), 'Failed to create category'),
-      updateCategory: (id, patch) =>
-        runCategoriesMutation(() => updateCategory(id, patch), 'Failed to update category'),
-      archiveCategory: (id) =>
-        runCategoriesMutation(() => archiveCategory(id), 'Failed to archive category'),
-      deleteCategory: (id) =>
-        runCategoriesMutation(() => deleteCategory(id), 'Failed to delete category'),
-      deleteAllCategories: () =>
-        runCategoriesMutation(() => deleteAllCategories(), 'Failed to delete categories'),
-      createRecurringTransaction: (data) =>
-        runRecurringMutation(
-          () => createRecurringTransaction(data),
-          'Failed to create recurring transaction',
-        ),
-      updateRecurringTransaction: (id, patch) =>
-        runRecurringMutation(
-          () => updateRecurringTransaction(id, patch),
-          'Failed to update recurring transaction',
-        ),
-      deleteRecurringTransaction: (id) =>
-        runRecurringMutation(
-          () => deleteRecurringTransaction(id),
-          'Failed to delete recurring transaction',
-        ),
-      skipNextRecurring: (id) =>
-        runRecurringMutation(() => skipNextOccurrence(id), 'Failed to skip occurrence'),
-      createTransaction: (data, meta) =>
-        runTransactionsMutation(() => createTransaction(data), 'Failed to save transaction', meta),
-      updateTransaction: (id, patch, meta) =>
-        runTransactionsMutation(() => updateTransaction(id, patch), 'Failed to update transaction', meta),
-      deleteTransaction: async (id, meta) => {
-        const result = await runTransactionsMutation(
-          () => deleteTransaction(id, { goals }),
-          'Failed to delete transaction',
-          meta,
-        )
-        if (result?.deletedContributionIds?.length) {
-          setGoals((prev) =>
-            result.deletedContributionIds.reduce(
-              (acc, contributionId) => mergeDeletedContribution(acc, contributionId),
-              prev,
-            ),
-          )
-          await refreshGoals({ background: true })
-        }
-        return result
-      },
+      createGoal: handleCreateGoal,
+      updateGoal: handleUpdateGoal,
+      deleteGoal: handleDeleteGoal,
+      addContribution: handleAddContribution,
+      deleteContribution: handleDeleteContribution,
+      createAccount: handleCreateAccount,
+      updateAccount: handleUpdateAccount,
+      archiveAccount: handleArchiveAccount,
+      createCategory: handleCreateCategory,
+      updateCategory: handleUpdateCategory,
+      archiveCategory: handleArchiveCategory,
+      deleteCategory: handleDeleteCategory,
+      deleteAllCategories: handleDeleteAllCategories,
+      createRecurringTransaction: handleCreateRecurring,
+      updateRecurringTransaction: handleUpdateRecurring,
+      deleteRecurringTransaction: handleDeleteRecurring,
+      skipNextRecurring: handleSkipNextRecurring,
+      createTransaction: handleCreateTransaction,
+      updateTransaction: handleUpdateTransaction,
+      deleteTransaction: handleDeleteTransaction,
     }),
     [
       profile,
@@ -756,11 +844,26 @@ export function AppDataProvider({ children }) {
       invalidateTransactions,
       saveProfile,
       txCacheVersion,
-      runGoalsMutation,
-      runAccountsMutation,
-      runCategoriesMutation,
-      runRecurringMutation,
-      runTransactionsMutation,
+      handleCreateGoal,
+      handleUpdateGoal,
+      handleDeleteGoal,
+      handleAddContribution,
+      handleDeleteContribution,
+      handleCreateAccount,
+      handleUpdateAccount,
+      handleArchiveAccount,
+      handleCreateCategory,
+      handleUpdateCategory,
+      handleArchiveCategory,
+      handleDeleteCategory,
+      handleDeleteAllCategories,
+      handleCreateRecurring,
+      handleUpdateRecurring,
+      handleDeleteRecurring,
+      handleSkipNextRecurring,
+      handleCreateTransaction,
+      handleUpdateTransaction,
+      handleDeleteTransaction,
     ],
   )
 

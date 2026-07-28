@@ -150,4 +150,10 @@
   .safe-top {
     padding-top: max(0px, env(safe-area-inset-top));
   }
+
+  /* Skip layout/paint for off-screen transaction day groups (INP/scroll) */
+  .tx-day-group {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 8rem;
+  }
 }

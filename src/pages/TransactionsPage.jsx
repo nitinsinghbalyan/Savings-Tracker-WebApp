@@ -89,7 +89,7 @@ export default function TransactionsPage({ isTabActive = true }) {
     updateTransaction,
     deleteTransaction,
   } = useTransactions({
-    enabled: txEnabled,
+    enabled: txEnabled && isTabActive,
     year,
     month,
     monthStartDay,
@@ -327,7 +327,7 @@ export default function TransactionsPage({ isTabActive = true }) {
   ) : (
     <div className="space-y-4">
       {groups.map(({ date, items }) => (
-        <section key={date} className="card overflow-hidden">
+        <section key={date} className="card tx-day-group overflow-hidden">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             {formatTransactionDateLabel(date)}
           </h3>

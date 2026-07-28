@@ -1,12 +1,20 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext'
-import { AppDataProvider } from './context/AppDataContext'
 import { ToastProvider } from './context/ToastContext'
 import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
-import AppShell from './components/AppShell'
-import LoginPage from './pages/LoginPage'
+
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const AuthenticatedRoutes = lazy(() => import('./AuthenticatedRoutes'))
+
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-slate-50 px-4">
+      <p className="text-sm text-slate-500">Loading…</p>
+    </div>
+  )
+}
 
 function AppRoutes() {
   const { session, initialLoading, claimNotice, clearClaimNotice } = useAuth()
@@ -17,42 +25,37 @@ function AppRoutes() {
       toast.success(`Linked ${claimNotice} existing goals to your account`)
       clearClaimNotice()
     }
-  }, [claimNotice, clearClaimNotice, toast.success])
+  }, [claimNotice, clearClaimNotice, toast])
 
   if (initialLoading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-slate-50 px-4">
-        <p className="text-sm text-slate-500">Loading…</p>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   if (!session) {
     return (
-      <Routes>
-        <Route path="*" element={<LoginPage />} />
-      </Routes>
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </Suspense>
     )
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/summary" replace />} />
-      <Route path="/*" element={<AppShell />} />
-    </Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <AuthenticatedRoutes />
+    </Suspense>
   )
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppDataProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </ToastProvider>
-      </AppDataProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   )
 }

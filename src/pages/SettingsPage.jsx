@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, ChevronRight, CircleDollarSign, DollarSign, Repeat, Tags } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -7,15 +7,15 @@ import { useProfile } from '../hooks/useProfile'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useToast } from '../hooks/useToast'
-import { downloadBackup } from '../lib/backup'
 import { CURRENCIES } from '../lib/constants'
 import PageHeader from '../components/PageHeader'
 import SettingsSection from '../components/SettingsSection'
 import UserAccountInfo from '../components/UserAccountInfo'
 import AccountCard from '../components/AccountCard'
 import AccountForm from '../components/AccountForm'
-import ImportBackupModal from '../components/ImportBackupModal'
 import RupeeIcon from '../components/icons/RupeeIcon'
+
+const ImportBackupModal = lazy(() => import('../components/ImportBackupModal'))
 
 const chipBase =
   'inline-flex min-h-10 items-center justify-center rounded-full px-4 py-2 text-sm font-medium ring-1 ring-inset transition'
@@ -69,6 +69,7 @@ export default function SettingsPage() {
 
   const handleExport = async () => {
     try {
+      const { downloadBackup } = await import('../lib/backup')
       await downloadBackup(goals)
       toast.success('Backup downloaded')
     } catch (err) {
@@ -252,12 +253,16 @@ export default function SettingsPage() {
         onError={(msg) => toast.error(msg)}
       />
 
-      <ImportBackupModal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        onImported={handleImported}
-        hasExistingGoals={goals.length > 0}
-      />
+      {importOpen && (
+        <Suspense fallback={null}>
+          <ImportBackupModal
+            open={importOpen}
+            onClose={() => setImportOpen(false)}
+            onImported={handleImported}
+            hasExistingGoals={goals.length > 0}
+          />
+        </Suspense>
+      )}
     </>
   )
 }

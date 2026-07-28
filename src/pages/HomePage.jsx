@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Target } from 'lucide-react'
 import { percentComplete, savedAmount } from '../lib/contributions'
@@ -11,10 +11,11 @@ import { useToast } from '../hooks/useToast'
 import { ensureGoalCategory } from '../lib/goalCategory'
 import PageHeader from '../components/PageHeader'
 import GoalCard from '../components/GoalCard'
-import GoalForm from '../components/GoalForm'
-import GoalDetailModal from '../components/GoalDetailModal'
-import AddMoneyModal from '../components/AddMoneyModal'
-import Celebration from '../components/Celebration'
+
+const GoalForm = lazy(() => import('../components/GoalForm'))
+const GoalDetailModal = lazy(() => import('../components/GoalDetailModal'))
+const AddMoneyModal = lazy(() => import('../components/AddMoneyModal'))
+const Celebration = lazy(() => import('../components/Celebration'))
 
 export default function HomePage({ isTabActive = true }) {
   const toast = useToast()
@@ -218,47 +219,51 @@ export default function HomePage({ isTabActive = true }) {
         </section>
       </main>
 
-      {isTabActive && (
-        <GoalForm
-          open={formOpen}
-          onClose={() => setFormOpen(false)}
-          goal={editingGoal}
-          createGoal={handleCreateGoal}
-          updateGoal={handleUpdateGoal}
-          onError={(message) => toast.error(message)}
-        />
-      )}
+      {isTabActive && (formOpen || detailGoal || addMoneyGoal || celebrationMessage) && (
+        <Suspense fallback={null}>
+          {formOpen && (
+            <GoalForm
+              open={formOpen}
+              onClose={() => setFormOpen(false)}
+              goal={editingGoal}
+              createGoal={handleCreateGoal}
+              updateGoal={handleUpdateGoal}
+              onError={(message) => toast.error(message)}
+            />
+          )}
 
-      {isTabActive && detailGoal && (
-        <GoalDetailModal
-          key={detailGoal.id}
-          open
-          onClose={() => setDetailGoal(null)}
-          goal={goals.find((g) => g.id === detailGoal.id) ?? detailGoal}
-          onAddMoney={setAddMoneyGoal}
-          onEdit={openEditForm}
-          onDelete={handleDeleteGoal}
-          onDeleteContribution={handleDeleteContribution}
-        />
-      )}
+          {detailGoal && (
+            <GoalDetailModal
+              key={detailGoal.id}
+              open
+              onClose={() => setDetailGoal(null)}
+              goal={goals.find((g) => g.id === detailGoal.id) ?? detailGoal}
+              onAddMoney={setAddMoneyGoal}
+              onEdit={openEditForm}
+              onDelete={handleDeleteGoal}
+              onDeleteContribution={handleDeleteContribution}
+            />
+          )}
 
-      {isTabActive && (
-        <AddMoneyModal
-          open={Boolean(addMoneyGoal)}
-          onClose={() => setAddMoneyGoal(null)}
-          goal={addMoneyGoal}
-          accounts={accounts}
-          defaultCurrency={profile?.default_currency ?? 'INR'}
-          onSubmit={handleAddMoney}
-          onError={(message) => toast.error(message)}
-        />
-      )}
+          {addMoneyGoal && (
+            <AddMoneyModal
+              open
+              onClose={() => setAddMoneyGoal(null)}
+              goal={addMoneyGoal}
+              accounts={accounts}
+              defaultCurrency={profile?.default_currency ?? 'INR'}
+              onSubmit={handleAddMoney}
+              onError={(message) => toast.error(message)}
+            />
+          )}
 
-      {isTabActive && celebrationMessage && (
-        <Celebration
-          message={celebrationMessage}
-          onDone={() => setCelebrationMessage(null)}
-        />
+          {celebrationMessage && (
+            <Celebration
+              message={celebrationMessage}
+              onDone={() => setCelebrationMessage(null)}
+            />
+          )}
+        </Suspense>
       )}
     </>
   )
