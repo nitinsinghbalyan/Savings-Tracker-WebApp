@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useAppData } from '../context/AppDataContext'
@@ -9,9 +9,8 @@ import { useGoals } from '../hooks/useGoals'
 import { groupSummariesByCurrency } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
+import CategoryBreakdownChart from './CategoryBreakdownChart'
 import AccountCard from './AccountCard'
-
-const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
 
 const SUMMARY_VIEWS = [
   { value: 'overall', label: 'Overall' },
@@ -83,16 +82,14 @@ function SummarySection({ profile }) {
 
     return (
       <section className="card min-w-0 overflow-hidden p-4 lg:p-6">
-        <Suspense fallback={<div className="h-56 animate-pulse rounded-xl bg-slate-100" aria-hidden="true" />}>
-          <CategoryBreakdownChart
-            items={summary.byExpenseCategory}
-            total={summary.expenses}
-            currency={summary.currency}
-            budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
-            transactions={transactions}
-            large
-          />
-        </Suspense>
+        <CategoryBreakdownChart
+          items={summary.byExpenseCategory}
+          total={summary.expenses}
+          currency={summary.currency}
+          budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
+          transactions={transactions}
+          large
+        />
       </section>
     )
   }
@@ -141,8 +138,8 @@ function SummarySection({ profile }) {
 
       {error && <p className="alert-error">{error}</p>}
 
-      {initialLoading ? (
-        <div className="card animate-pulse h-64" />
+      {!dataReady || initialLoading ? (
+        <div className="card h-64 animate-pulse" aria-busy="true" aria-label="Loading summary" />
       ) : isEmpty ? (
         <section className="card py-8 text-center">
           <p className="text-sm text-slate-500">

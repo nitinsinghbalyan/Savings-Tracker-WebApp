@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import SummaryPage from '../pages/SummaryPage'
 
-const SummaryPage = lazy(() => import('../pages/SummaryPage'))
+// Default tab stays eager — lazy Summary caused a blank/fallback flash on first paint.
 const HomePage = lazy(() => import('../pages/HomePage'))
 const TransactionsPage = lazy(() => import('../pages/TransactionsPage'))
 const SettingsRoutes = lazy(() => import('../pages/SettingsRoutes'))
@@ -36,6 +37,12 @@ export default function PersistentTabs() {
   const activePath = normalizeTabPath(pathname)
   const [mountedTabs, setMountedTabs] = useState(() => new Set([activePath]))
 
+  // Mount the active tab during render so the first Activity visit isn't a blank frame
+  // waiting on useEffect (which delayed the initial "All" transactions fetch).
+  if (!mountedTabs.has(activePath)) {
+    setMountedTabs(new Set(mountedTabs).add(activePath))
+  }
+
   useEffect(() => {
     const normalized = pathname.replace(/\/+$/, '') || '/'
     if (!TAB_PATHS.includes(normalized) && !normalized.startsWith('/settings/')) {
@@ -44,27 +51,18 @@ export default function PersistentTabs() {
   }, [pathname, navigate])
 
   useEffect(() => {
-    setMountedTabs((prev) => {
-      if (prev.has(activePath)) return prev
-      const next = new Set(prev)
-      next.add(activePath)
-      return next
-    })
-  }, [activePath])
-
-  // Warm likely next tab chunks during idle time (improves tab-switch INP/TTI)
-  useEffect(() => {
+    // Warm likely next tab chunks during idle time (improves tab-switch INP/TTI)
     const prefetchers = {
-      '/summary': () => import('../pages/SummaryPage'),
       '/goals': () => import('../pages/HomePage'),
       '/transactions': () => import('../pages/TransactionsPage'),
       '/settings': () => import('../pages/SettingsRoutes'),
     }
-    const order = ['/summary', '/goals', '/transactions', '/settings'].filter(
+    const order = ['/goals', '/transactions', '/settings'].filter(
       (path) => path !== activePath,
     )
 
     let cancelled = false
+    let idleId
     const run = () => {
       if (cancelled) return
       const path = order.shift()
@@ -79,7 +77,6 @@ export default function PersistentTabs() {
         idleId = window.setTimeout(run, 400)
       }
     }
-    let idleId
     schedule()
     return () => {
       cancelled = true
@@ -107,9 +104,13 @@ export default function PersistentTabs() {
             inert={!active || undefined}
             aria-hidden={!active}
           >
-            <Suspense fallback={active ? <TabFallback /> : null}>
+            {path === '/summary' ? (
               <Component isTabActive={active} />
-            </Suspense>
+            ) : (
+              <Suspense fallback={active ? <TabFallback /> : null}>
+                <Component isTabActive={active} />
+              </Suspense>
+            )}
           </div>
         )
       })}

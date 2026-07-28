@@ -89,7 +89,9 @@ export default function TransactionsPage({ isTabActive = true }) {
     updateTransaction,
     deleteTransaction,
   } = useTransactions({
-    enabled: txEnabled && isTabActive,
+    // Fetch whenever Activity is mounted (mount-on-visit). Don't gate on isTabActive
+    // or the first "All" load can stay empty until a chip change remounts the query.
+    enabled: txEnabled,
     year,
     month,
     monthStartDay,
@@ -327,7 +329,7 @@ export default function TransactionsPage({ isTabActive = true }) {
   ) : (
     <div className="space-y-4">
       {groups.map(({ date, items }) => (
-        <section key={date} className="card tx-day-group overflow-hidden">
+        <section key={date} className="card overflow-hidden">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             {formatTransactionDateLabel(date)}
           </h3>

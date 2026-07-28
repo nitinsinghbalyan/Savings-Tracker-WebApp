@@ -45,12 +45,12 @@ export function useTransactions({
     if (!enabled) return
     if (allTime) {
       if (entry.loaded && !entry.stale) return
-      loadTransactions({ allTime: true, type, accountId, enabled: true })
+      void loadTransactions({ allTime: true, type, accountId, enabled: true })
       return
     }
     if (!year || !month) return
     if (entry.loaded && !entry.stale) return
-    loadTransactions({ year, month, monthStartDay, type, accountId, enabled: true })
+    void loadTransactions({ year, month, monthStartDay, type, accountId, enabled: true })
   }, [
     enabled,
     allTime,
@@ -62,6 +62,8 @@ export function useTransactions({
     loadTransactions,
     entry.loaded,
     entry.stale,
+    // Re-run when cache slot identity changes (e.g. first mount for "all")
+    cacheKey,
   ])
 
   const refetch = useCallback(async () => {
@@ -110,8 +112,9 @@ export function useTransactions({
     [deleteTransaction, txMeta],
   )
 
-  const initialLoading =
-    enabled && !entry.loaded && (entry.loading || entry.refreshing)
+  // Treat any enabled-but-not-loaded slot as loading so the first "All" paint
+  // never flashes an empty state before loadTransactions runs.
+  const initialLoading = enabled && !entry.loaded
 
   return {
     transactions: showData ? entry.data : [],

@@ -164,6 +164,10 @@ export function AppDataProvider({ children }) {
   const categoriesPrunedRef = useRef(false)
   const recurringPostedRef = useRef(0)
   const recurringProcessedRef = useRef(false)
+  const txCacheRef = useRef(txCache)
+  const txInflightRef = useRef(new Map())
+
+  txCacheRef.current = txCache
 
   const clearAll = useCallback(() => {
     bootstrappedRef.current = false
@@ -177,6 +181,7 @@ export function AppDataProvider({ children }) {
     setGoals([])
     setTxCache({})
     setTxCacheVersion(0)
+    txInflightRef.current.clear()
     setBootstrapError(null)
     setGoalsError(null)
     setAccountsError(null)
@@ -418,61 +423,64 @@ export function AppDataProvider({ children }) {
         ? buildOverallTransactionsCacheKey({ type, accountId })
         : buildTransactionsCacheKey({ year, month, monthStartDay, type, accountId })
 
-      let shouldFetch = force
+      const existing = txCacheRef.current[key] ?? EMPTY_TX_ENTRY
+      if (!force && existing.loaded && !existing.stale) return
+
+      if (!force) {
+        const inflight = txInflightRef.current.get(key)
+        if (inflight) return inflight
+      }
 
       setTxCache((prev) => {
-        const existing = prev[key] ?? EMPTY_TX_ENTRY
-
-        if (!force && existing.loaded && !existing.stale) {
-          shouldFetch = false
-          return prev
-        }
-
-        shouldFetch = true
-        // Only show skeleton on first load; empty months must not re-skeleton on refresh
-        const isFirstLoad = !existing.loaded
+        const current = prev[key] ?? EMPTY_TX_ENTRY
+        if (!force && current.loaded && !current.stale) return prev
         return {
           ...prev,
           [key]: {
-            ...existing,
-            loading: isFirstLoad,
-            refreshing: !isFirstLoad,
+            ...current,
+            loading: !current.loaded,
+            refreshing: current.loaded,
             error: null,
           },
         }
       })
 
-      if (!shouldFetch) return
+      const request = (async () => {
+        try {
+          const data = allTime
+            ? await getTransactions({ type, accountId })
+            : await getTransactions({
+                startDate: getMonthRange(year, month, monthStartDay).start,
+                endDate: getMonthRange(year, month, monthStartDay).end,
+                type,
+                accountId,
+              })
+          setTxCache((prev) => ({
+            ...prev,
+            [key]: { data, loading: false, refreshing: false, error: null, stale: false, loaded: true },
+          }))
+          return data
+        } catch (err) {
+          const message = toErrorMessage(err, 'Failed to load transactions')
+          setTxCache((prev) => ({
+            ...prev,
+            [key]: {
+              ...(prev[key] ?? EMPTY_TX_ENTRY),
+              loading: false,
+              refreshing: false,
+              error: message,
+              stale: false,
+              loaded: true,
+            },
+          }))
+          throw err
+        } finally {
+          txInflightRef.current.delete(key)
+        }
+      })()
 
-      try {
-        const data = allTime
-          ? await getTransactions({ type, accountId })
-          : await getTransactions({
-              startDate: getMonthRange(year, month, monthStartDay).start,
-              endDate: getMonthRange(year, month, monthStartDay).end,
-              type,
-              accountId,
-            })
-        setTxCache((prev) => ({
-          ...prev,
-          [key]: { data, loading: false, refreshing: false, error: null, stale: false, loaded: true },
-        }))
-        return data
-      } catch (err) {
-        const message = toErrorMessage(err, 'Failed to load transactions')
-        setTxCache((prev) => ({
-          ...prev,
-          [key]: {
-            ...(prev[key] ?? EMPTY_TX_ENTRY),
-            loading: false,
-            refreshing: false,
-            error: message,
-            stale: false,
-            loaded: true,
-          },
-        }))
-        throw err
-      }
+      txInflightRef.current.set(key, request)
+      return request
     },
     [],
   )
