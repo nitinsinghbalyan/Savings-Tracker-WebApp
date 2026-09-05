@@ -1704,9 +1704,10 @@ canvas "Goal Tracker App Redesign"
 
 ### Deployed
 
-- **Production:** `dpl_…` from `npx vercel --prod`, aliased to
-  `savings-tracker-azure.vercel.app` (2026-09-05) — first deploy carried the
-  Month tab crash; superseded by the fix deploy the same day
+- **Production:** `dpl_8CZUT64NbMQy8U5pV1xHRM7v1Chz` (2026-09-05) — aliased to
+  `savings-tracker-azure.vercel.app`; carries the Month tab fix
+- **Superseded same day:** `dpl_EDTP4ht9osSyhkTgwVcEix9ASirC` — the redesign deploy that shipped the
+  Month tab crash. Production was broken between the two
 - **Prior production:** `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` (session 80)
 
 ### Git
