@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react'
+import { lazy, memo, Suspense, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useAppData } from '../context/AppDataContext'
@@ -9,19 +9,21 @@ import { useGoals } from '../hooks/useGoals'
 import { groupSummariesByCurrency } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
-import CategoryBreakdownChart from './CategoryBreakdownChart'
 import AccountCard from './AccountCard'
 
+const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
+
 const SUMMARY_VIEWS = [
-  { value: 'overall', label: 'Overall' },
   { value: 'monthly', label: 'Monthly' },
+  { value: 'overall', label: 'Overall' },
 ]
 
-function SummarySection({ profile }) {
+function SummarySection({ profile, isTabActive = true }) {
   const { user, authReady } = useAuth()
   const { bootstrapping } = useAppData()
   const now = new Date()
-  const [view, setView] = useState('overall')
+  // Monthly first: avoids unbounded all-time fetch on the default landing tab.
+  const [view, setView] = useState('monthly')
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
 
@@ -33,7 +35,8 @@ function SummarySection({ profile }) {
   const { categories } = useCategories({ enabled: dataReady })
   const { goals } = useGoals({ enabled: dataReady })
   const { transactions, initialLoading, error } = useTransactions({
-    enabled: dataReady,
+    // Pause fetches while the tab is hidden; cached rows still render from context.
+    enabled: dataReady && isTabActive,
     allTime: !isMonthly,
     year: isMonthly ? year : undefined,
     month: isMonthly ? month : undefined,
@@ -82,14 +85,18 @@ function SummarySection({ profile }) {
 
     return (
       <section className="card min-w-0 overflow-hidden p-4 lg:p-6">
-        <CategoryBreakdownChart
-          items={summary.byExpenseCategory}
-          total={summary.expenses}
-          currency={summary.currency}
-          budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
-          transactions={transactions}
-          large
-        />
+        <Suspense
+          fallback={<div className="h-64 animate-pulse rounded-xl bg-slate-100" aria-hidden="true" />}
+        >
+          <CategoryBreakdownChart
+            items={summary.byExpenseCategory}
+            total={summary.expenses}
+            currency={summary.currency}
+            budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
+            transactions={transactions}
+            large
+          />
+        </Suspense>
       </section>
     )
   }

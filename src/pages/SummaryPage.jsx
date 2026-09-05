@@ -3,7 +3,7 @@ import { useProfile } from '../hooks/useProfile'
 import PageHeader from '../components/PageHeader'
 import SummarySection from '../components/SummarySection'
 
-export default function SummaryPage() {
+export default function SummaryPage({ isTabActive = true }) {
   const { user, authReady } = useAuth()
   const { profile } = useProfile({ enabled: Boolean(user) && authReady })
 
@@ -11,7 +11,7 @@ export default function SummaryPage() {
     <>
       <PageHeader title="Summary" subtitle="Overall and monthly breakdown" />
       <main className="page-container">
-        <SummarySection profile={profile} />
+        <SummarySection profile={profile} isTabActive={isTabActive} />
       </main>
     </>
   )

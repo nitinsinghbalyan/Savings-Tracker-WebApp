@@ -28,6 +28,28 @@ export function shouldHighlightSavingsOrGoal(tx, goalLinkedIds) {
   return isSavingsCategoryTransaction(tx) || isGoalLinkedTransaction(tx, goalLinkedIds)
 }
 
+function noteMatchesGoalPrefix(note) {
+  return TRANSACTION_GOAL_NOTE_PREFIXES.some((prefix) => note.startsWith(prefix))
+}
+
+/** Index transactions for O(1) legacy note matching: date|type|currency|amount → tx ids */
+function buildTransactionMatchIndex(transactions) {
+  const index = new Map()
+  for (const tx of transactions) {
+    if (tx.type !== 'expense' && tx.type !== 'income') continue
+    const currency = tx.account?.currency ?? 'INR'
+    const amount = Number(tx.amount) || 0
+    const key = `${tx.transaction_date}|${tx.type}|${currency}|${amount.toFixed(2)}`
+    let list = index.get(key)
+    if (!list) {
+      list = []
+      index.set(key, list)
+    }
+    list.push(tx.id)
+  }
+  return index
+}
+
 export function buildGoalLinkedTransactionIds(transactions, goals) {
   const ids = new Set()
 
@@ -43,12 +65,14 @@ export function buildGoalLinkedTransactionIds(transactions, goals) {
     }
   }
 
+  let matchIndex = null
+
   for (const goal of goals) {
     const goalCurrency = goal.currency ?? 'INR'
     for (const contribution of goal.contributions ?? []) {
       if (contribution.source_transaction_id) continue
       const note = contribution.note ?? ''
-      if (!TRANSACTION_GOAL_NOTE_PREFIXES.some((prefix) => note.startsWith(prefix))) continue
+      if (!noteMatchesGoalPrefix(note)) continue
 
       const contribDate = contribution.created_at
         ? format(new Date(contribution.created_at), 'yyyy-MM-dd')
@@ -56,15 +80,18 @@ export function buildGoalLinkedTransactionIds(transactions, goals) {
       if (!contribDate) continue
 
       const contribAmount = Number(contribution.amount) || 0
+      if (!matchIndex) matchIndex = buildTransactionMatchIndex(transactions)
 
-      for (const tx of transactions) {
-        if (ids.has(tx.id)) continue
-        if (tx.transaction_date !== contribDate) continue
-        if (tx.type !== 'expense' && tx.type !== 'income') continue
-        if ((tx.account?.currency ?? 'INR') !== goalCurrency) continue
-        if (Math.abs(Number(tx.amount) - contribAmount) >= 0.01) continue
-        ids.add(tx.id)
-        break
+      // Prefer expense then income keys (legacy matching scanned in list order).
+      for (const type of ['expense', 'income']) {
+        const key = `${contribDate}|${type}|${goalCurrency}|${contribAmount.toFixed(2)}`
+        const candidates = matchIndex.get(key)
+        if (!candidates) continue
+        const matchId = candidates.find((id) => !ids.has(id))
+        if (matchId) {
+          ids.add(matchId)
+          break
+        }
       }
     }
   }
@@ -92,24 +119,29 @@ export function findLinkedContributionIds(transaction, goals) {
     }
   }
 
+  const txCurrency = transaction.account?.currency ?? 'INR'
+  const txAmount = Number(transaction.amount) || 0
+  const canLegacyMatch =
+    transaction.type === 'expense' || transaction.type === 'income'
+
   for (const goal of goals) {
+    if (!canLegacyMatch) break
     const goalCurrency = goal.currency ?? 'INR'
+    if (goalCurrency !== txCurrency) continue
+
     for (const contribution of goal.contributions ?? []) {
       if (seen.has(contribution.id)) continue
       if (contribution.source_transaction_id) continue
 
       const note = contribution.note ?? ''
-      if (!TRANSACTION_GOAL_NOTE_PREFIXES.some((prefix) => note.startsWith(prefix))) continue
+      if (!noteMatchesGoalPrefix(note)) continue
 
       const contribDate = contribution.created_at
         ? format(new Date(contribution.created_at), 'yyyy-MM-dd')
         : null
       if (!contribDate || contribDate !== transaction.transaction_date) continue
-      if (transaction.type !== 'expense' && transaction.type !== 'income') continue
-      if ((transaction.account?.currency ?? 'INR') !== goalCurrency) continue
 
       const contribAmount = Number(contribution.amount) || 0
-      const txAmount = Number(transaction.amount) || 0
       if (Math.abs(txAmount - contribAmount) >= 0.01) continue
 
       add(contribution.id)

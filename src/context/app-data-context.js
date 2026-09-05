@@ -24,6 +24,18 @@ export function isOverallTransactionsCacheKey(key) {
 
 export function parseTransactionsCacheKey(key) {
   const parts = key.split(CACHE_KEY_SEP)
+  if (parts.length < 3) return null
+
+  // overall|type|accountId — unbounded Summary cache
+  if (parts[0] === 'overall') {
+    const accountPart = parts.slice(2).join(CACHE_KEY_SEP)
+    return {
+      allTime: true,
+      type: parts[1] === 'all' ? undefined : parts[1],
+      accountId: accountPart === 'all' ? undefined : accountPart,
+    }
+  }
+
   if (parts.length < 5) return null
 
   const year = Number(parts[0])
@@ -34,6 +46,7 @@ export function parseTransactionsCacheKey(key) {
   const accountPart = parts.slice(4).join(CACHE_KEY_SEP)
 
   return {
+    allTime: false,
     year,
     month,
     monthStartDay,

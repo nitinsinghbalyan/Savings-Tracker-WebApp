@@ -432,3 +432,28 @@ Persistent context for the **savings-tracker** app. Use this folder so agents an
 - **Prior snapshot:** v0.27 (`dpl_9aLjkrW34G3jPFw9j4drawmRLGcx`)
 - **Migrations recommended:** `add_transaction_goal_link.sql`; `add_transaction_category_snapshot.sql`; `add_recurring_daily_frequency.sql`
 - **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
+
+## Current snapshot (2026-08-01, v0.29 perf + goal linking fallback)
+
+- **Live:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — production `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo` (2026-08-01 11:28 IST, session 78 goal linking fallback); prior `dpl_4XwD9zKTXek2f6xQuqdBwob3LAQ6` (session 77 modal layout)
+- **Performance (session 75):** manual Vite chunks (`react-vendor`, `supabase`, `react-router`, `date-fns`, `lucide`); `lazy()` on non-default routes and modals; idle prefetch in `PersistentTabs`; immutable asset headers in `vercel.json`
+- **First paint (session 76):** default `/summary` tab and `CategoryBreakdownChart` stay **eager**; `SummarySection` shows a skeleton until `dataReady`; `useTransactions` fetches on mount (not `isTabActive`) with `cacheKey` in deps; `txCacheRef` + `txInflightRef` de-dup loads; `content-visibility` removed from `.tx-day-group`
+- **Add transaction modal (session 77):** Save in the header next to Close; category chips in horizontal scrollable rows
+- **Goal linking (session 78):** "Add money" works without the goal-category migration (`category_id: null` + `goal_id` + contribution); **explicit "Add to goal (optional)" chip row** in `TransactionForm` writes `goal_id` directly
+- **Migration status (audited 2026-08-01 via PostgREST):** all applied **except `add_goal_category_link.sql`** — `categories.goal_id` and `goals.linked_category_id` are **missing**. Now optional; run it for auto-created goal categories and the **Goals** group in the category picker
+- **Local Supabase access:** anon key only, CLI not linked — DDL must be pasted into the Supabase SQL Editor
+- **Git:** `master` at `52f9984`; remote `origin` → `Savings-Tracker-WebApp`; sessions 77–78 **uncommitted**; push pending GitHub auth
+- **Prior snapshot:** v0.28 (session 74, commit `6aa65da`)
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`
+
+## Current snapshot (2026-08-02, v0.30 two-step add + Activity sync)
+
+- **Live:** [savings-tracker-azure.vercel.app](https://savings-tracker-azure.vercel.app) — production `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` (2026-08-02 20:37 IST, session 80); prior `dpl_FjzAXxKSDgG3cfKUMf9G5pQ6ZZJb` (session 79 Activity sync)
+- **Add transaction (create):** two-step — (1) type + on-screen keypad → Continue; (2) wrapping account/category/goal chips, date, note, optional Make recurring (Daily/Weekly/Monthly/Yearly, default monthly)
+- **Goals:** no goal selected by default; explicit pick only on submit (no category→goal auto-link); goal-linked categories excluded from Category chips
+- **Add money → Activity (session 79):** merge supports overall keys; invalidate month + overall after create; snapshot goal label when category missing; pass profile `monthStartDay`
+- **Edit transaction:** single scrolled form (no keypad wizard); transfers cannot be edited
+- **Migration:** `add_goal_category_link.sql` **applied** on production as of 2026-08-02 (was missing on 2026-08-01); other finance migrations unchanged
+- **Git:** `master` at `52f9984`; sessions 77–80 **uncommitted**; GitHub push pending auth
+- **Prior snapshot:** v0.29 (session 78, `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo`)
+- **Deploy:** `npx vercel --prod --yes` from `savings-tracker/`

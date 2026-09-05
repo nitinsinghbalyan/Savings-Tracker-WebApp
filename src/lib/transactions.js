@@ -27,10 +27,16 @@ export function getPeriodForDate(dateStr, monthStartDay = 1) {
   return { year, month: calendarMonth - 1 }
 }
 
-export function transactionMatchesCacheFilters(tx, { type, accountId, year, month, monthStartDay = 1 }) {
-  if (!tx || !year || !month) return false
-  const { start, end } = getMonthRange(year, month, monthStartDay)
-  if (tx.transaction_date < start || tx.transaction_date > end) return false
+export function transactionMatchesCacheFilters(
+  tx,
+  { type, accountId, year, month, monthStartDay = 1, allTime = false },
+) {
+  if (!tx) return false
+  if (!allTime) {
+    if (!year || !month) return false
+    const { start, end } = getMonthRange(year, month, monthStartDay)
+    if (tx.transaction_date < start || tx.transaction_date > end) return false
+  }
   if (type && tx.type !== type) return false
   if (accountId && tx.account_id !== accountId) return false
   return true
@@ -103,12 +109,22 @@ export async function createTransaction(data) {
   }
 
   const snapshot =
-    data.type === 'transfer' ? {} : await fetchCategorySnapshot(userId, data.category_id)
+    data.type === 'transfer'
+      ? {}
+      : {
+          ...(await fetchCategorySnapshot(userId, data.category_id)),
+          // Callers (e.g. add-to-goal) may supply a label when category_id is null
+          ...(data.category_name != null ? { category_name: data.category_name } : {}),
+          ...(data.category_color != null ? { category_color: data.category_color } : {}),
+          ...(data.category_is_savings != null
+            ? { category_is_savings: Boolean(data.category_is_savings) }
+            : {}),
+        }
 
   const payload = {
     user_id: userId,
     account_id: data.account_id,
-    category_id: data.category_id,
+    category_id: data.category_id ?? null,
     type: data.type,
     amount: Number(data.amount),
     note: data.note ?? null,

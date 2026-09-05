@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-07-06 (v0.28)
+**Last updated:** 2026-08-02 (v0.30)
 
 ## Tech stack
 
@@ -431,6 +431,20 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 | `add_subcategories_recurring_bank.sql` | **Required** for v0.13 — `parent_id`, `recurring_transactions`, `accounts.bank`, `transactions.recurring_id`, `get_account_balances()` with `bank`; run after `phase2_finance.sql`; uses `DROP FUNCTION IF EXISTS get_account_balances()` before recreate |
 | `add_transaction_category_snapshot.sql` | **Required** for session 63 — `transactions.category_name`, `category_color`, `category_is_savings`; backfill from `categories`; app freezes snapshot before category delete |
 
+### SQL migrations (status — audited 2026-08-01, session 78)
+
+Verified directly against production PostgREST (see "Checking live schema without the service role").
+
+| File | Column(s) | Status |
+|------|-----------|--------|
+| `add_transaction_goal_link.sql` | `transactions.goal_id`, `contributions.source_transaction_id` | **Applied** |
+| `add_transaction_category_snapshot.sql` | `transactions.category_name` | **Applied** |
+| `add_category_is_savings.sql` | `categories.is_savings` | **Applied** |
+| `add_category_budget.sql` | `categories.monthly_budget` | **Applied** |
+| `add_subcategories_recurring_bank.sql` | `categories.parent_id`, `recurring_transactions.frequency` | **Applied** |
+| `add_recurring_daily_frequency.sql` | `recurring_transactions.frequency` enum | **Applied** |
+| `add_goal_category_link.sql` | `categories.goal_id`, `goals.linked_category_id` | **NOT applied** — optional since session 78; app degrades gracefully |
+
 ---
 
 ## Monthly summary (v0.9 — current)
@@ -748,3 +762,61 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - **`deleteTransaction(id, { goals })`** — orchestrates contribution cleanup + tx delete; returns `deletedContributionIds`
 - **`AppDataContext.deleteTransaction`** — optimistic `mergeDeletedContribution` + `refreshGoals()` when contributions removed
 - **Why needed** — migration FK `ON DELETE SET NULL` does not remove contributions; goal balance would stay inflated
+
+### Performance pass (v0.29, session 75)
+
+- **`vite.config.js`** — manual chunks: `react-vendor`, `supabase`, `react-router`, `date-fns`, `lucide`; build-time compression
+- **`vercel.json`** — immutable long-max-age headers for content-hashed assets
+- **Code splitting** — `lazy()` on `AuthenticatedRoutes`, `SettingsRoutes`, `LoginPage`, and modals; **not** on the default `/summary` tab or its chart (see session 76)
+- **`PersistentTabs`** — `requestIdleCallback` prefetch for non-active tabs; `/summary` excluded because it is eager
+
+### First-paint correctness (v0.29, session 76)
+
+- **Eager by rule** — the default route component and any above-the-fold chart import statically; `Suspense` fallbacks are acceptable only for routes the user navigates to
+- **`SummarySection`** — renders a skeleton while `!dataReady || initialLoading`; never an empty/zeroed summary
+- **`PersistentTabs`** — the active tab is added to `mountedTabs` during render, so the first visit does not lose a frame waiting on `useEffect`
+- **`useTransactions`** — `enabled` no longer includes `isTabActive`; `cacheKey` is in the effect deps so a new cache slot (notably the first all-time "All" slot) triggers a load; `initialLoading = enabled && !entry.loaded`
+- **`AppDataContext.loadTransactions`** — reads current cache from `txCacheRef` (avoids stale closure reads) and de-dups concurrent loads through `txInflightRef` keyed by cache key; `clearAll()` clears the in-flight map
+
+### Goal linking without the category migration (v0.29, session 78)
+
+- **Two independent link paths:**
+  - `transactions.goal_id` + `contributions.source_transaction_id` (from `add_transaction_goal_link.sql`) — **applied**; all that goal contributions actually require
+  - `categories.goal_id` + `goals.linked_category_id` (from `add_goal_category_link.sql`) — **not applied**; cosmetic, drives auto-created goal categories and the **Goals** group in `buildCategoryPickerTree`
+- **`HomePage.handleAddMoney`** — `ensureGoalCategory()` is best-effort (`.catch(() => null)`); a null result writes `category_id: null` and still records `goal_id` + the contribution
+- **`TransactionForm`** — `values.goal_id` holds an explicit pick; `effectiveGoal` resolves explicit → `category.goal_id` → `goals.linked_category_id`; the picker renders for new non-transfer transactions, and edit mode shows a read-only note
+- **Submit path unchanged** — `onSubmit(payload, id, { goalId })` → `createTransaction({ goal_id })` → `buildGoalContributionFromTransaction()` → `addContribution(..., tx.id)`, including cross-currency conversion
+
+### Checking live schema without the service role
+
+`.env` carries only `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, and the Supabase CLI is not linked, so migrations cannot be applied from the repo — but presence of a column can be proven read-only:
+
+```bash
+curl -s -o /tmp/chk.json -w '%{http_code}' \
+  "$VITE_SUPABASE_URL/rest/v1/<table>?select=<column>&limit=1" \
+  -H "apikey: $VITE_SUPABASE_ANON_KEY" -H "Authorization: Bearer $VITE_SUPABASE_ANON_KEY"
+```
+
+PostgREST resolves columns before RLS filters rows: `200` (usually `[]`) means the column exists, while `400` with `42703` / `column <table>.<column> does not exist` means the migration has not run.
+
+### Add-to-goal → Activity cache (v0.30, session 79)
+
+- **`parseTransactionsCacheKey`** — understands `overall|type|accountId` (sets `allTime: true`) as well as month keys
+- **`transactionMatchesCacheFilters`** — when `allTime`, skips date-range checks; still applies type/account filters
+- **`runTransactionsMutation`** — functional `mergeTransactionIntoCache`, then invalidate month prefix (from `getPeriodForDate` + caller `monthStartDay`) and `overall|`
+- **`HomePage.handleAddMoney`** — passes `monthStartDay: profile?.month_start_day ?? 1`; supplies category snapshot from goal name/color when category link is null
+- **`createTransaction`** — merges optional `category_name` / `category_color` / `category_is_savings` overrides into the insert snapshot
+
+### Two-step TransactionForm (v0.30, session 80)
+
+- **Steps:** `amount` (create only) → `details`; edit opens on `details` with native amount field
+- **Keypad:** digits / `.` / backspace; max 2 decimal places; Continue gated on amount &gt; 0
+- **Details:** wrapping account/category/goal chips; goal-linked categories excluded from Category section; goal optional (toggle off by re-tapping); Make recurring + frequency chips (hidden for transfer/edit)
+- **Submit options:** `{ goalId: values.goal_id || null, recurring: { frequency, interval_count: 1, start_date, day_of_month } | null }`
+- **`TransactionsPage.handleSubmit`** — after create (+ optional goal contribution), if `options.recurring` then `createRecurringTransaction(...)`; toast variants for goal / recurring / both
+
+### SQL migrations (status — append session 79)
+
+| File | Status |
+|------|--------|
+| `add_goal_category_link.sql` | **Applied** on production as of 2026-08-02 (was missing on 2026-08-01 audit); app still tolerates absence |

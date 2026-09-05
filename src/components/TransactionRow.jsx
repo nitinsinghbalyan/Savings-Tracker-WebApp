@@ -27,7 +27,9 @@ function TransactionRow({ transaction, highlightSavingsOrGoal = false, onEdit, o
   const palette = category ? getColorPalette(category.color) : null
   const currency = account?.currency ?? 'INR'
 
-  const title = category?.name ?? 'Transfer'
+  const title =
+    category?.name ??
+    (type === 'transfer' ? 'Transfer' : type === 'income' ? 'Income' : 'Expense')
   const accountLabel =
     type === 'transfer' && transferTo
       ? `${account?.name} → ${transferTo.name}`

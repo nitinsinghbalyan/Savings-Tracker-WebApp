@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Target } from 'lucide-react'
 import { percentComplete, savedAmount } from '../lib/contributions'
@@ -40,91 +40,118 @@ export default function HomePage({ isTabActive = true }) {
   const [addMoneyGoal, setAddMoneyGoal] = useState(null)
   const [celebrationMessage, setCelebrationMessage] = useState(null)
 
-  const openCreateForm = () => {
+  const openCreateForm = useCallback(() => {
     setEditingGoal(null)
     setFormOpen(true)
-  }
+  }, [])
 
-  const openEditForm = (goal) => {
+  const openEditForm = useCallback((goal) => {
     setEditingGoal(goal)
     setFormOpen(true)
-  }
+  }, [])
 
-  const handleCreateGoal = async (data) => {
-    const goal = await createGoal(data)
-    toast.success('Goal created')
-    return goal
-  }
+  const handleCreateGoal = useCallback(
+    async (data) => {
+      const goal = await createGoal(data)
+      toast.success('Goal created')
+      return goal
+    },
+    [createGoal, toast],
+  )
 
-  const handleUpdateGoal = async (id, patch) => {
-    await updateGoal(id, patch)
-    toast.success('Goal updated')
-  }
+  const handleUpdateGoal = useCallback(
+    async (id, patch) => {
+      await updateGoal(id, patch)
+      toast.success('Goal updated')
+    },
+    [updateGoal, toast],
+  )
 
-  const handleDeleteGoal = async (id) => {
-    try {
-      await deleteGoal(id)
-      setDetailGoal((current) => (current?.id === id ? null : current))
-      toast.success('Goal deleted')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete goal')
-      throw err
-    }
-  }
+  const handleDeleteGoal = useCallback(
+    async (id) => {
+      try {
+        await deleteGoal(id)
+        setDetailGoal((current) => (current?.id === id ? null : current))
+        toast.success('Goal deleted')
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to delete goal')
+        throw err
+      }
+    },
+    [deleteGoal, toast],
+  )
 
-  const handleDeleteContribution = async (id) => {
-    try {
-      await deleteContribution(id)
-      toast.success('Contribution removed')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove contribution')
-      throw err
-    }
-  }
+  const handleDeleteContribution = useCallback(
+    async (id) => {
+      try {
+        await deleteContribution(id)
+        toast.success('Contribution removed')
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to remove contribution')
+        throw err
+      }
+    },
+    [deleteContribution, toast],
+  )
 
-  const handleAddMoney = async (goal, contributionAmount, contributionNote, meta = {}) => {
-    const before = percentComplete(goal)
-    const target = Number(goal.target_amount)
-    const projected = target > 0
-      ? Math.min(100, ((savedAmount(goal) + contributionAmount) / target) * 100)
-      : 0
+  const handleAddMoney = useCallback(
+    async (goal, contributionAmount, contributionNote, meta = {}) => {
+      const before = percentComplete(goal)
+      const target = Number(goal.target_amount)
+      const projected = target > 0
+        ? Math.min(100, ((savedAmount(goal) + contributionAmount) / target) * 100)
+        : 0
 
-    const { accountId, transactionDate, sourceAmount } = meta
-    if (!accountId) {
-      throw new Error('Select an account')
-    }
+      const { accountId, transactionDate, sourceAmount } = meta
+      if (!accountId) {
+        throw new Error('Select an account')
+      }
+      if (!transactionDate) {
+        throw new Error('Select a date')
+      }
 
-    const category = await ensureGoalCategory(goal)
-    if (!category?.id) {
-      throw new Error(
-        'Could not link this goal to a category. Run the goal-category migration in Supabase, then try again.',
+      // Goal categories need the goal↔category migration. Without it we still record the
+      // transaction and contribution, labeled with the goal name via category snapshot.
+      const category = await ensureGoalCategory(goal).catch(() => null)
+      if (category?.id) {
+        await refreshCategories({ background: true }).catch(() => {})
+      }
+
+      const txAmount = sourceAmount ?? contributionAmount
+      const tx = await createTransaction(
+        {
+          type: 'expense',
+          amount: txAmount,
+          account_id: accountId,
+          category_id: category?.id ?? null,
+          // Snapshot so Activity shows the goal name even when category link is missing
+          category_name: category?.name ?? goal.name,
+          category_color: category?.color ?? goal.color ?? 'indigo',
+          category_is_savings: true,
+          goal_id: goal.id,
+          transfer_to_account_id: null,
+          transaction_date: transactionDate,
+          note: contributionNote,
+        },
+        {
+          transactionDate,
+          monthStartDay: profile?.month_start_day ?? 1,
+        },
       )
-    }
 
-    await refreshCategories({ background: true }).catch(() => {})
+      if (!tx?.id) {
+        throw new Error('Transaction was not created. Please try again.')
+      }
 
-    const txAmount = sourceAmount ?? contributionAmount
-    const tx = await createTransaction(
-      {
-        type: 'expense',
-        amount: txAmount,
-        account_id: accountId,
-        category_id: category.id,
-        goal_id: goal.id,
-        transfer_to_account_id: null,
-        transaction_date: transactionDate,
-        note: contributionNote,
-      },
-      { transactionDate },
-    )
+      await addContribution(goal.id, contributionAmount, contributionNote, tx.id)
+      toast.success('Added to goal and Activity')
 
-    await addContribution(goal.id, contributionAmount, contributionNote, tx?.id)
-    toast.success('Added to goal and Activity')
-
-    if (before < 100 && projected >= 100) {
-      setCelebrationMessage(`You reached your ${goal.name} goal!`)
-    }
-  }
+      if (before < 100 && projected >= 100) {
+        setCelebrationMessage(`You reached your ${goal.name} goal!`)
+      }
+    },
+    [createTransaction, addContribution, refreshCategories, toast, profile?.month_start_day],
+  )
 
   return (
     <>

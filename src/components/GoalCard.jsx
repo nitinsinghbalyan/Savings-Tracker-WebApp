@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { ChevronDown, Pencil, Plus, Tag, Trash2 } from 'lucide-react'
 import {
   percentComplete,
@@ -35,15 +35,15 @@ function GoalCard({
   const [confirmingContributionId, setConfirmingContributionId] = useState(null)
   const [deletingContributionId, setDeletingContributionId] = useState(null)
 
-  const contributions = sortedContributions(goal)
-  const saved = savedAmount(goal)
+  const contributions = useMemo(() => sortedContributions(goal), [goal])
+  const saved = useMemo(() => savedAmount(goal), [goal])
   const target = Number(goal.target_amount)
-  const remaining = remainingAmount(goal)
-  const progress = percentComplete(goal)
-  const requiredMonthly = getRequiredMonthly(goal)
-  const forecast = getForecast(goal)
-  const daysLeft = getDaysRemaining(goal.end_date)
-  const palette = getColorPalette(goal.color)
+  const remaining = useMemo(() => remainingAmount(goal), [goal])
+  const progress = useMemo(() => percentComplete(goal), [goal])
+  const requiredMonthly = useMemo(() => getRequiredMonthly(goal), [goal])
+  const forecast = useMemo(() => getForecast(goal), [goal])
+  const daysLeft = useMemo(() => getDaysRemaining(goal.end_date), [goal.end_date])
+  const palette = useMemo(() => getColorPalette(goal.color), [goal.color])
   const currency = goal.currency ?? 'INR'
 
   const handleDelete = async (event) => {

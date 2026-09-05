@@ -25,11 +25,20 @@ export function isMissingGoalLinkColumnError(error) {
   if (!error) return false
   const message = String(error.message ?? '').toLowerCase()
   const code = String(error.code ?? '')
+  // Only treat as "column missing" — not FK violations (23503) that merely mention goal_id.
+  if (code === '42703' || code === 'PGRST204') {
+    return (
+      message.includes('goal_id') ||
+      message.includes('source_transaction_id') ||
+      // Bare schema-cache misses sometimes omit the column name
+      message.includes('schema cache')
+    )
+  }
   return (
-    code === '42703' ||
-    code === 'PGRST204' ||
-    message.includes('goal_id') ||
-    message.includes('source_transaction_id')
+    (message.includes('goal_id') || message.includes('source_transaction_id')) &&
+    (message.includes('does not exist') ||
+      message.includes('schema cache') ||
+      message.includes('could not find'))
   )
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import RupeeIcon from '../components/icons/RupeeIcon'
@@ -15,7 +15,8 @@ import { buildGoalContributionFromTransaction, buildGoalLinkedTransactionIds, sh
 import PageHeader from '../components/PageHeader'
 import MonthPicker from '../components/MonthPicker'
 import TransactionRow, { TransactionTableHeader } from '../components/TransactionRow'
-import TransactionForm from '../components/TransactionForm'
+
+const TransactionForm = lazy(() => import('../components/TransactionForm'))
 
 const FILTER_TYPES = [
   { value: '', label: 'All' },
@@ -40,7 +41,7 @@ export default function TransactionsPage({ isTabActive = true }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const now = new Date()
 
-  const { consumeRecurringPosted, bootstrapping } = useAppData()
+  const { consumeRecurringPosted, bootstrapping, createRecurringTransaction } = useAppData()
 
   useEffect(() => {
     if (!isTabActive) return
@@ -145,83 +146,152 @@ export default function TransactionsPage({ isTabActive = true }) {
 
   const showTransactionForm = formOpen
 
-  const handleMonthChange = (y, m) => {
-    setYear(y)
-    setMonth(m)
-    const monthKey = `${y}-${String(m).padStart(2, '0')}`
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.set('month', monthKey)
-        return next
-      },
-      { replace: true },
-    )
-  }
+  const handleMonthChange = useCallback(
+    (y, m) => {
+      setYear(y)
+      setMonth(m)
+      const monthKey = `${y}-${String(m).padStart(2, '0')}`
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set('month', monthKey)
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
 
-  const handleSubmit = async (data, id, options = {}) => {
-    if (id) {
-      await updateTransaction(id, data)
-      toast.success('Transaction updated')
-      return
-    }
-
-    const tx = await createTransaction({ ...data, goal_id: options.goalId || undefined })
-
-    const period = getPeriodForDate(data.transaction_date, monthStartDay)
-    if (period.year !== year || period.month !== month) {
-      handleMonthChange(period.year, period.month)
-    }
-    if (filterType && filterType !== data.type) {
-      setFilterType('')
-    }
-
-    if (options.goalId) {
-      const goal = goals.find((g) => g.id === options.goalId)
-      const account = accounts.find((a) => a.id === data.account_id)
-      if (!goal) {
-        toast.error('Goal not found — transaction saved without goal contribution')
+  const handleSubmit = useCallback(
+    async (data, id, options = {}) => {
+      if (id) {
+        await updateTransaction(id, data)
+        toast.success('Transaction updated')
         return
       }
-      try {
-        const contribution = await buildGoalContributionFromTransaction({
-          goal,
-          amount: data.amount,
-          accountCurrency: account?.currency ?? defaultCurrency,
-          note: data.note,
-          transactionType: data.type,
-        })
-        if (!contribution.amount || contribution.amount <= 0) {
-          throw new Error('Converted goal amount must be greater than 0')
+
+      const tx = await createTransaction({ ...data, goal_id: options.goalId || undefined })
+
+      const period = getPeriodForDate(data.transaction_date, monthStartDay)
+      if (period.year !== year || period.month !== month) {
+        handleMonthChange(period.year, period.month)
+      }
+      if (filterType && filterType !== data.type) {
+        setFilterType('')
+      }
+
+      let appliedGoal = false
+      if (options.goalId) {
+        const goal = goals.find((g) => g.id === options.goalId)
+        const account = accounts.find((a) => a.id === data.account_id)
+        if (!goal) {
+          toast.error('Goal not found — transaction saved without goal contribution')
+        } else {
+          try {
+            const contribution = await buildGoalContributionFromTransaction({
+              goal,
+              amount: data.amount,
+              accountCurrency: account?.currency ?? defaultCurrency,
+              note: data.note,
+              transactionType: data.type,
+            })
+            if (!contribution.amount || contribution.amount <= 0) {
+              throw new Error('Converted goal amount must be greater than 0')
+            }
+            await addContribution(contribution.goalId, contribution.amount, contribution.note, tx.id)
+            appliedGoal = true
+          } catch (err) {
+            toast.error(
+              err instanceof Error ? err.message : 'Transaction saved but goal contribution failed',
+            )
+          }
         }
-        await addContribution(contribution.goalId, contribution.amount, contribution.note, tx.id)
-        toast.success('Transaction added and applied to goal')
-        return
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : 'Transaction saved but goal contribution failed',
-        )
-        return
       }
-    }
 
-    toast.success('Transaction added')
-  }
+      let recurringSet = false
+      if (options.recurring && data.type !== 'transfer') {
+        try {
+          await createRecurringTransaction({
+            type: data.type,
+            amount: data.amount,
+            account_id: data.account_id,
+            category_id: data.category_id,
+            transfer_to_account_id: null,
+            note: data.note,
+            frequency: options.recurring.frequency ?? 'monthly',
+            interval_count: options.recurring.interval_count ?? 1,
+            start_date: options.recurring.start_date ?? data.transaction_date,
+            day_of_month: options.recurring.day_of_month ?? null,
+            end_date: null,
+            is_paused: false,
+          })
+          recurringSet = true
+        } catch (err) {
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : 'Transaction saved but recurring rule failed',
+          )
+        }
+      }
 
-  const handleDelete = async (tx) => {
-    if (!window.confirm('Delete this transaction?')) return
-    try {
-      await deleteTransaction(tx.id)
-      toast.success('Transaction deleted')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete')
-    }
-  }
+      if (appliedGoal && recurringSet) {
+        toast.success('Transaction added · goal + recurring set')
+      } else if (appliedGoal) {
+        toast.success('Transaction added and applied to goal')
+      } else if (recurringSet) {
+        toast.success('Transaction added · recurring set')
+      } else {
+        toast.success('Transaction added')
+      }
+    },
+    [
+      updateTransaction,
+      createTransaction,
+      createRecurringTransaction,
+      monthStartDay,
+      year,
+      month,
+      handleMonthChange,
+      filterType,
+      goals,
+      accounts,
+      defaultCurrency,
+      addContribution,
+      toast,
+    ],
+  )
 
-  const openAddForm = () => {
+  const handleDelete = useCallback(
+    async (tx) => {
+      if (!window.confirm('Delete this transaction?')) return
+      try {
+        await deleteTransaction(tx.id)
+        toast.success('Transaction deleted')
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to delete')
+      }
+    },
+    [deleteTransaction, toast],
+  )
+
+  const openAddForm = useCallback(() => {
     setEditingTx(null)
     setFormOpen(true)
-  }
+  }, [])
+
+  const openEditForm = useCallback((t) => {
+    setEditingTx(t)
+    setFormOpen(true)
+  }, [])
+
+  const closeForm = useCallback(() => {
+    setFormOpen(false)
+    setEditingTx(null)
+  }, [])
+
+  const handleFormError = useCallback((msg) => toast.error(msg), [toast])
 
   const showSkeleton = initialLoading
 
@@ -340,10 +410,7 @@ export default function TransactionsPage({ isTabActive = true }) {
                 key={tx.id}
                 transaction={tx}
                 highlightSavingsOrGoal={shouldHighlightSavingsOrGoal(tx, goalLinkedTxIds)}
-                onEdit={(t) => {
-                  setEditingTx(t)
-                  setFormOpen(true)
-                }}
+                onEdit={openEditForm}
                 onDelete={handleDelete}
               />
             ))}
@@ -403,21 +470,20 @@ export default function TransactionsPage({ isTabActive = true }) {
       )}
 
       {showTransactionForm && (
-        <TransactionForm
-          open={formOpen}
-          onClose={() => {
-            setFormOpen(false)
-            setEditingTx(null)
-          }}
-          transaction={editingTx}
-          accounts={accounts}
-          expenseCategories={expenseCategories}
-          incomeCategories={incomeCategories}
-          goals={goals}
-          defaultCurrency={defaultCurrency}
-          onSubmit={handleSubmit}
-          onError={(msg) => toast.error(msg)}
-        />
+        <Suspense fallback={null}>
+          <TransactionForm
+            open={formOpen}
+            onClose={closeForm}
+            transaction={editingTx}
+            accounts={accounts}
+            expenseCategories={expenseCategories}
+            incomeCategories={incomeCategories}
+            goals={goals}
+            defaultCurrency={defaultCurrency}
+            onSubmit={handleSubmit}
+            onError={handleFormError}
+          />
+        </Suspense>
       )}
     </>
   )

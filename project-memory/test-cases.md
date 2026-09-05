@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-07-06 (v0.28)
+**Last updated:** 2026-08-02 (v0.30)
 
 ## Setup
 
@@ -564,6 +564,75 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 | TC-429 | Delete savings+goal tx | Delete savings category tx tagged to goal | Contribution removed; Summary/Goals update | not-run | F-134 |
 | TC-430 | Legacy linked delete | Delete tx linked only by contribution note | Matching contribution removed | not-run | F-134 |
 
+### Performance pass (session 75)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-431 | Chunk split | `npx vite build` | Separate `react-vendor`, `supabase`, `react-router`, `date-fns`, `lucide` chunks | pass | F-135 |
+| TC-432 | Lazy route load | Navigate to Settings | Settings chunk fetched on demand, not in initial bundle | not-run | F-135 |
+| TC-433 | Idle prefetch | Idle on Summary, then open Activity | Activity chunk already cached; no visible delay | not-run | F-135 |
+| TC-434 | Asset caching | Reload after deploy | Hashed assets served from immutable cache | not-run | F-135 |
+
+### First-paint regressions (session 76)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-435 | Summary cold start | Hard reload on `/summary` | Skeleton then content; never a blank panel or `Suspense` flash | not-run | F-136 |
+| TC-436 | Summary chart first paint | Cold start with expense data | Heatmap renders without a separate lazy fallback | not-run | F-136 |
+| TC-437 | Activity first load | Open Activity on a fresh session | Transactions load on "All" with no chip toggle needed | not-run | F-136 |
+| TC-438 | Day group rendering | Scroll a long ledger | All day groups paint; no blank blocks from `content-visibility` | not-run | F-136 |
+| TC-439 | No duplicate fetch | Open Activity, watch network | One request per cache key despite mount-time fetching | not-run | F-136 |
+| TC-440 | Empty month still loads | Activity → month with no txs | Empty state, not an infinite skeleton | not-run | F-136 + F-131 |
+
+### Add transaction modal layout (session 77)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-441 | Save in header | Open Add transaction | Save sits top-right next to Close; reachable without scrolling | not-run | F-137 |
+| TC-442 | Horizontal category chips | Open Add transaction → Category | Chips scroll sideways per group; no tall vertical stack | not-run | F-137 |
+| TC-443 | Save disabled states | Edit a transfer | Save disabled with the transfer notice shown | not-run | F-137 |
+
+### Goal linking without the category migration (session 78)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-444 | Add money without migration | Goals → Add money on a DB missing `categories.goal_id` | Contribution + Activity tx recorded; no "run the migration" error | not-run | F-138 |
+| TC-445 | Null category tx | Inspect the tx from TC-444 | `category_id` null, `goal_id` set, contribution has `source_transaction_id` | not-run | F-138 |
+| TC-446 | Goal picker visible | Add transaction → expense | "Add to goal (optional)" row with `None` + one chip per goal | not-run | F-139 |
+| TC-447 | Explicit goal contribution | Pick a goal, save an expense | Toast "applied to goal"; goal saved amount increases | not-run | F-139 |
+| TC-448 | Cross-currency goal | USD account, INR goal | Hint shows conversion; contribution stored in goal currency | not-run | F-139 |
+| TC-449 | None resets link | Pick a goal, then tap `None` | No contribution created on save | not-run | F-139 |
+| TC-450 | Explicit beats category | Goal-linked category + different goal chip | Explicit pick wins; hint names the chosen goal | not-run | F-139 |
+| TC-451 | Picker hidden on transfer | Switch type to Transfer | Goal picker and category section hidden | not-run | F-139 |
+| TC-452 | Edit shows read-only note | Edit a goal-linked tx | "Counts toward goal … Delete and re-add to change this" | not-run | F-139 |
+| TC-453 | Goals group after migration | Run `add_goal_category_link.sql`, reopen modal | **Goals** group appears in the category picker | not-run | F-138 |
+
+### Add-to-goal → Activity (session 79)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-454 | Add money → Activity | Goals → Add money → open Activity current month | Expense appears with goal name (or category name) | not-run | F-140 |
+| TC-455 | Custom month start | Profile `month_start_day` ≠ 1; add money; open Activity | Tx visible in the active custom period without chip toggle | not-run | F-140 |
+| TC-456 | Uncategorized title | Force null category on goal add | Row title is Expense, not Transfer | not-run | F-140 |
+| TC-457 | Overall summary | Add money → Summary Overall | Expense reflected after refresh/stale refetch | not-run | F-140 |
+
+### Two-step add transaction (session 80)
+
+| ID | Area | Steps | Expected | Result | Notes |
+|----|------|-------|----------|--------|-------|
+| TC-458 | Keypad step | Activity → Add | Amount step with type toggle + keypad; no native number field | not-run | F-141 |
+| TC-459 | Continue gate | Amount empty / 0 | Continue disabled | not-run | F-141 |
+| TC-460 | Back to amount | Details → tap amount summary | Returns to keypad step with amount preserved | not-run | F-141 |
+| TC-461 | Wrap chips | Details with many categories/goals | Chips wrap; no horizontal scroll | not-run | F-141 |
+| TC-462 | No default goal | Open details | No goal chip selected | not-run | F-141 |
+| TC-463 | Toggle goal off | Select goal, tap again | Goal cleared; no contribution on save | not-run | F-141 |
+| TC-464 | Require category | Save without category | Error "Select a category" | not-run | F-141 |
+| TC-465 | Goal-linked cats | Goal has linked savings category | Category under Goals only, not in Category section | not-run | F-141 |
+| TC-466 | Recurring monthly | Check Make recurring, leave Monthly, save | Tx + recurring rule; toast mentions recurring | not-run | F-142 |
+| TC-467 | Recurring weekly | Check + Weekly, save | Rule frequency weekly | not-run | F-142 |
+| TC-468 | Transfer no recurring | Type Transfer on details | Make recurring hidden | not-run | F-142 |
+| TC-469 | Edit no wizard | Edit existing tx | Single form; no keypad step | not-run | F-141 |
+
 ### Activity pagination (session 50)
 
 | ID | Area | Steps | Expected | Result | Notes |
@@ -702,3 +771,10 @@ _Add a row here after each release or bug fix._
 | 2026-07-06 | v0.27 savings/goal highlight | `npm run build` pass locally; green Activity rows + no savings double count (deploy pending) |
 | 2026-07-06 | v0.27 production deploy | `npm run build` pass + Vercel iad1; deployed `dpl_9aLjkrW34G3jPFw9j4drawmRLGcx`; git uncommitted |
 | 2026-07-06 | v0.28 goal delete sync | `npm run build` pass locally; delete tx removes linked contribution (deploy pending) |
+| 2026-07-28 | v0.29 performance pass | `npm run build` pass; chunk splitting verified; deployed `dpl_Cw75nJLjSKD9qxSM1BsCshFfup7c` |
+| 2026-07-28 | v0.29 Summary first paint | Summary renders skeleton then content on cold start; deployed `dpl_5XqosPbkdVQa5cYhNucX4sWVEYoL` |
+| 2026-07-28 | v0.29 Activity first load | "All" loads without a chip toggle; deployed `dpl_64jGvUsKvR2sgvAmFHp3WQb2vFK8`, `dpl_ADKB9G2PiKnoRB9gSQg1xdzDJNcQ` |
+| 2026-07-28 | v0.29 modal layout | Save in header; horizontal category chips; deployed `dpl_4XwD9zKTXek2f6xQuqdBwob3LAQ6` (current production) |
+| 2026-08-01 | v0.29 goal linking fallback | `npx vite build` pass (~500ms); no lint errors; live schema audited via PostgREST — `add_goal_category_link.sql` confirmed missing; deployed `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo`; alias verified HTTP 200 |
+| 2026-08-02 | v0.30 add-to-goal → Activity | `npx vite build` pass; deployed `dpl_FjzAXxKSDgG3cfKUMf9G5pQ6ZZJb` |
+| 2026-08-02 | v0.30 two-step add transaction | `npx vite build` pass; keypad + wrapping chips + recurring checkbox; deployed `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` (current production) |

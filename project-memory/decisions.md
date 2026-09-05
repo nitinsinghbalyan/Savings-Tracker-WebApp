@@ -150,6 +150,24 @@
 | 2026-07-06 | Goal-tagged tx excluded from category Savings | Avoid double count when savings category + goal chip on same expense | Count in both Savings and Goals |
 | 2026-07-06 | Green Activity row for savings + goal txs | Visual distinction for savings-related ledger entries | No row styling |
 | 2026-07-06 | Delete linked contributions before tx row | `ON DELETE SET NULL` on `source_transaction_id` leaves orphan contributions | Rely on DB cascade only |
+| 2026-07-28 | Manual Vite chunks + lazy non-default routes | Cuts initial bundle without risking the first paint of the landing tab | Single bundle; lazy-load every route including the default |
+| 2026-07-28 | Default tab and its above-the-fold chart stay eager | Lazy-loading `SummaryPage` / `CategoryBreakdownChart` flashed a `Suspense` fallback on cold start (session 76 regression) | Lazy everything and accept the fallback flash |
+| 2026-07-28 | Skeleton until `dataReady`, never an empty state | An empty summary reads as "no data" rather than "still loading" | Render zeros while loading |
+| 2026-07-28 | Fetch transactions on mount, not on tab-active | `isTabActive` gating left the first "All" slot empty until a chip toggle remounted the query | Keep the `isTabActive` gate and prefetch separately |
+| 2026-07-28 | De-dup in-flight tx requests via `txInflightRef` | Mount-time fetching makes duplicate concurrent loads likely | Allow duplicate requests; rely on cache writes being idempotent |
+| 2026-07-28 | Save button in the modal header | Reachable without scrolling a long add-transaction form on mobile | Sticky footer CTA; bottom-of-form button |
+| 2026-07-28 | Horizontal scrolling category chip rows | Vertical stacks pushed the form fields below the fold | Wrapped flex rows (v0.22 flat wrap) |
+| 2026-08-01 | Optional migrations must degrade, never block | `add_goal_category_link.sql` is cosmetic — goal linking only needs `transactions.goal_id`, which is already applied | Hard-fail with a migration hint (previous behaviour) |
+| 2026-08-01 | Explicit goal picker instead of goal-linked categories | Discoverable, and independent of a migration that may never be applied; category-implied goals still work as a fallback | Keep goal selection implicit in the category picker |
+| 2026-08-01 | Goal picker only on create, read-only note on edit | The submit path only creates contributions for new transactions; editing a goal link would need contribution reconciliation | Allow re-targeting the goal on edit |
+| 2026-08-01 | Verify schema via PostgREST before blaming code | A `42703` on `?select=<column>&limit=1` proves a column is absent regardless of RLS; turns "run the migration" guesses into facts | Trust the app's error message; ask the user to check Supabase |
+| 2026-08-02 | Always merge + invalidate month and overall after tx create | Optimistic merge alone misses unloaded Activity slots; overall keys were previously unparseable | Invalidate only the calendar month with `monthStartDay=1` |
+| 2026-08-02 | Snapshot goal name onto add-money transactions | Activity must show a recognizable label when `category_id` is null | Leave title as "Transfer" for uncategorized expenses |
+| 2026-08-02 | Narrow `isMissingGoalLinkColumnError` to schema misses | FK errors mentioning `goal_id` were incorrectly retried without `goal_id` | Match any message containing `goal_id` |
+| 2026-08-02 | Two-step add transaction (keypad → details) | Amount is always entered first; on-screen keypad avoids double mobile keyboards | Single long scrolling form with native number input |
+| 2026-08-02 | Wrapping category/goal chips (no horizontal scroll) | User request; all options visible without sideways scrubbing | Horizontal scroll rows (session 77) |
+| 2026-08-02 | Explicit goal only on submit (no category auto-link) | "No goal by default" must not silently apply a savings category's goal | Category-implied goal fallback (session 78) |
+| 2026-08-02 | Recurring checkbox with frequency chips on add-tx | Creates ledger row + rule in one journey; default monthly | Open full Recurring form after save; monthly-only with no chooser |
 
 ### Superseded (historical — do not delete rows)
 
@@ -189,6 +207,15 @@
 | 2026-06-23 | Native SVG `<title>` only for chart hover | Rich HTML tooltip session 60 — F-109 |
 | 2026-06-23 | Fixed responsive Tailwind chart sizes | User-resizable `prefs.size` session 61 — F-110 |
 | 2026-06-23 | Income by category list on Summary | Removed session 61 — F-111; stat grid Income column kept |
+| 2026-07-04 | Flat wrap row for tx category chips | Horizontal scrolling rows per group session 77 — F-137 |
+| 2026-07-28 | Lazy-load `SummaryPage` + `CategoryBreakdownChart` | Reverted to eager session 76 — blank first paint |
+| 2026-07-28 | `content-visibility: auto` on `.tx-day-group` | Removed session 76 — suppressed the initial ledger paint |
+| 2026-07-28 | Gate `useTransactions` on `isTabActive` | Fetch whenever mounted session 76 — F-136 |
+| 2026-07-06 | Goal linking only via goal-linked savings categories | Explicit goal picker session 78 — F-139; category-implied goals kept as fallback |
+| 2026-07-06 | Hard-fail add-money when goal category missing | Null category tolerated session 78 — F-138 |
+| 2026-07-28 | Horizontal scrolling category chip rows in add-tx | Wrapping chips in two-step details session 80 — F-141 |
+| 2026-08-01 | Category-implied goal fallback on submit | Explicit `goal_id` only session 80 — F-141 |
+| 2026-08-01 | Single-screen add transaction with header Save | Two-step keypad journey session 80 — F-141 |
 
 ## Template
 

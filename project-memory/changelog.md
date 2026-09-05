@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-07-06 (v0.28)
+**Last updated:** 2026-08-02 (v0.30)
 
 ## 2026-06-14
 
@@ -1502,3 +1502,159 @@
 
 - **Production deploy** — session 74 local only
 - **Git commit** — sessions 72–74 still uncommitted on `master` (at `b1a24b3`)
+
+---
+
+## 2026-07-27 (session 74 commit)
+
+### Git
+
+- **Commit:** `6aa65da` on `master` — “Fix Activity loading and sync goals with categories and ledger.” Bundles sessions 72–74 app changes, `src/lib/goalCategory.js`, and the project-memory updates through v0.28
+- **Identity configured:** `user.name = Nitin Singh`, `user.email = nitinsinghbalyan@gmail.com` (global)
+
+---
+
+## 2026-07-28 (session 75 — performance optimization pass)
+
+### Changed
+
+- **`vite.config.js`** — manual chunk splitting (`react-vendor`, `supabase`, `react-router`, `date-fns`, `lucide`), build compression
+- **`vercel.json`** — long-lived immutable cache headers for hashed assets
+- **Route-level code splitting** — `AuthenticatedRoutes`, `SettingsRoutes`, `LoginPage`, modals, and `CategoryBreakdownChart` moved behind `lazy()` + `Suspense`
+- **`PersistentTabs`** — idle-time route prefetch via `requestIdleCallback`
+- **`AppDataContext`** — memoized context value; reduced re-render fan-out
+- **`index.css`** — `content-visibility: auto` on transaction day groups (reverted in session 76)
+- **`index.html`** — font/preconnect hints
+
+### Deployed
+
+- **Production:** `dpl_Cw75nJLjSKD9qxSM1BsCshFfup7c` (2026-07-28 10:22 IST)
+
+### Git
+
+- **Commit:** `100be5b` on `master` — “Enhance app performance and user experience with lazy loading and improved caching.”
+
+---
+
+## 2026-07-28 (session 76 — Summary + Activity first-load regressions)
+
+### Fixed
+
+- **Summary tab blank on first paint** — `SummaryPage` and `CategoryBreakdownChart` reverted to eager imports; lazy-loading the default tab flashed the `Suspense` fallback before any content. Added a skeleton (`!dataReady || initialLoading`) instead of rendering an empty summary
+- **Activity blank until a filter chip was toggled** — `useTransactions` now fetches whenever the tab is mounted rather than gating on `isTabActive`; `cacheKey` added to the effect deps so the first "All" slot triggers a load; `initialLoading` simplified to `enabled && !entry.loaded`
+- **`content-visibility` removed** from `.tx-day-group` — it suppressed rendering of the initial ledger paint
+- **`PersistentTabs`** — active tab mounts during render instead of waiting on `useEffect`, which had delayed the first Activity fetch
+
+### Changed
+
+- **`AppDataContext.loadTransactions`** — `txCacheRef` for fresh cache reads plus `txInflightRef` request de-duplication; `clearAll` clears in-flight map
+
+### Deployed
+
+- **Production:** `dpl_5XqosPbkdVQa5cYhNucX4sWVEYoL` (10:32 IST), then `dpl_64jGvUsKvR2sgvAmFHp3WQb2vFK8` (10:39) and `dpl_ADKB9G2PiKnoRB9gSQg1xdzDJNcQ` (10:40) back-to-back
+
+### Git
+
+- **Commit:** `52f9984` on `master` — “Refactor transaction loading and caching for improved performance and user experience.”
+
+---
+
+## 2026-07-28 (session 77 — Add transaction modal layout)
+
+### Changed
+
+- **`TransactionForm`** — Save moved into the modal header next to Close (reachable without scrolling the form)
+- **Category chips horizontal** — `categoryRows` merges unlabeled root categories into a single scrollable row per group; each row scrolls on the x-axis instead of wrapping into tall vertical stacks
+
+### Deployed
+
+- **Production:** `dpl_4XwD9zKTXek2f6xQuqdBwob3LAQ6` (10:54 IST) — current live bundle
+
+### Not done (manual follow-up)
+
+- **Git commit** — session 77 deployed from the working tree; still uncommitted
+
+---
+
+## 2026-08-01 (session 78 — goal↔category migration fallback + explicit goal picker)
+
+### Fixed
+
+- **“Could not link this goal to a category. Run the goal-category migration in Supabase, then try again.”** — `HomePage.handleAddMoney` threw whenever `ensureGoalCategory()` returned null. It now tolerates a null category, recording the transaction with `category_id: null` and still writing `goal_id` + the contribution. Adding money to a goal no longer depends on the migration
+- **No way to attach an expense to a goal from the Add transaction modal** — goal linking was only reachable by selecting a goal-linked savings category, and those categories cannot exist while `categories.goal_id` is missing, so the option was invisible
+
+### Added
+
+- **Explicit “Add to goal (optional)” chip row** in `TransactionForm` — horizontal scrollable `None` + one chip per goal; writes `values.goal_id` straight through to the existing `onSubmit(..., { goalId })` path, which relies only on `transactions.goal_id` and `contributions.source_transaction_id`
+- **`effectiveGoal`** — explicit pick wins, then a goal implied by the chosen category (`category.goal_id`, then `goals.linked_category_id`); drives the "Counts toward goal" hint including the cross-currency conversion note
+- **Edit mode** — read-only "Counts toward goal … Delete and re-add to change this" line, replacing the hint lost when the picker was scoped to new transactions
+
+### Verified
+
+- **Live schema audit** against production Supabase via PostgREST (`select=<column>&limit=1`; `42703` ⇒ column absent): `categories.goal_id` and `goals.linked_category_id` **missing**; `transactions.goal_id`, `contributions.source_transaction_id`, `transactions.category_name`, `categories.is_savings`, `categories.monthly_budget`, `categories.parent_id`, `recurring_transactions.frequency` all **present**
+- `npx vite build` passes (~500ms); no lint errors in touched files
+
+### Deployed
+
+- **Production:** `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo` (2026-08-01 11:28 IST) — alias `savings-tracker-azure.vercel.app` verified resolving to it, HTTP 200
+- **Prior production:** `dpl_4XwD9zKTXek2f6xQuqdBwob3LAQ6` (session 77 modal layout)
+
+### Not done (manual follow-up)
+
+- **Run `supabase/add_goal_category_link.sql`** in the Supabase SQL Editor — only the anon key is available locally, so DDL cannot be applied from the repo. Until then there are no auto-created goal categories and no **Goals** group in the category picker
+- **Git commit** — sessions 77–78 deployed from the working tree; still uncommitted on `master` (at `52f9984`)
+
+---
+
+## 2026-08-02 (session 79 — add-to-goal missing from Activity)
+
+### Fixed
+
+- **Add money to a goal did not show up in Activity** — cache merge skipped overall keys (`parseTransactionsCacheKey` required numeric year/month); month invalidation used `monthStartDay = 1` even when the profile used a custom start; uncategorized goal expenses labeled **"Transfer"**; `isMissingGoalLinkColumnError` was broad enough to strip `goal_id` on unrelated FK errors
+- **`runTransactionsMutation`** — always functional-merge into matching slots **and** invalidate the transaction’s month prefix + `overall|` so Activity/Summary refetch even when no slot existed to merge into
+- **`HomePage.handleAddMoney`** — passes `monthStartDay` from profile; stamps `category_name` / `category_color` / `category_is_savings` from the goal when the category link is missing; refuses to continue without a returned tx id
+- **`TransactionRow`** — uncategorized expense/income titles are "Expense"/"Income", not "Transfer"
+- **`ensureGoalCategory`** — link failures are best-effort; still returns the created category
+
+### Changed
+
+- **`parseTransactionsCacheKey` / `transactionMatchesCacheFilters`** — support `overall|…` all-time cache keys
+- **`createTransaction`** — accepts optional snapshot overrides from the caller
+- **`isMissingGoalLinkColumnError`** — only treats true missing-column / schema-cache misses, not FK `23503`
+
+### Deployed
+
+- **Production:** `dpl_FjzAXxKSDgG3cfKUMf9G5pQ6ZZJb` (2026-08-02 20:31 IST)
+- **Prior production:** `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo` (session 78)
+
+### Note
+
+- **`add_goal_category_link.sql`** — by session 79 the columns were present on production (user applied the migration after session 78). App still degrades if they are missing.
+
+---
+
+## 2026-08-02 (session 80 — two-step add transaction journey)
+
+### Changed
+
+- **`TransactionForm`** create flow is a two-step wizard:
+  1. **Amount** — type toggle + large amount display + on-screen numeric keypad (no native number input); Continue when amount &gt; 0
+  2. **Details** — tappable amount summary (back to step 1); wrapping account chips; categories above optional goals (both `flex-wrap`, no horizontal scroll); date; note; **Make recurring** checkbox with Daily/Weekly/Monthly/Yearly (default monthly)
+- **No goal selected by default**; tap again to clear; submit uses **only** explicit `goal_id` (no category→goal auto-link)
+- **Goal-linked categories** filtered out of the Category section (they belong under Goals)
+- **Edit mode** remains a single scrolled form (no keypad wizard); transfers hide recurring
+- **`TransactionsPage.handleSubmit`** — when `options.recurring` is set, also calls `createRecurringTransaction` with the same type/amount/account/category/note and schedule (`start_date` = tx date)
+
+### Deployed
+
+- **Production:** `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` (2026-08-02 20:37 IST) — current live bundle
+- **Prior production:** `dpl_FjzAXxKSDgG3cfKUMf9G5pQ6ZZJb` (session 79)
+
+### Verified
+
+- `npx vite build` passes; no lint errors in touched files
+
+### Not done (manual follow-up)
+
+- **Git commit** — sessions 77–80 still uncommitted on `master` (at `52f9984`); GitHub push pending auth
+- **Project memory** — this entry (session 80)

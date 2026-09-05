@@ -526,16 +526,12 @@ export function AppDataProvider({ children }) {
 
         if (mutationKind) {
           setGoals((current) => applyGoalsMutationResult(current, result, mutationKind))
+          // Optimistic merge already applied — reconcile in the background without blocking UI.
+          void refreshGoals({ background: true }).catch(() => {})
+          return result
         }
 
-        try {
-          await refreshGoals({ background: true })
-        } catch (refreshErr) {
-          if (!mutationKind) {
-            throw refreshErr
-          }
-        }
-
+        await refreshGoals({ background: true })
         return result
       } catch (err) {
         const message = toErrorMessage(err, fallbackMessage)
@@ -606,15 +602,23 @@ export function AppDataProvider({ children }) {
               ? { year, month }
               : null
 
-        if (period) {
-          invalidateTransactions(buildTransactionsCachePrefix(period.year, period.month))
-        } else {
-          invalidateTransactions()
-        }
+        const canMergeCreate = Boolean(result?.type && result?.transaction_date)
 
-        if (result?.type && result?.transaction_date) {
+        // Optimistic merge into any matching loaded slots (including overall).
+        // Use a functional update so concurrent cache writes aren't overwritten.
+        if (canMergeCreate) {
           setTxCache((prev) => mergeTransactionIntoCache(prev, result))
         }
+
+        // Always invalidate the transaction's month + overall so Activity/Summary
+        // refetch even when no matching cache slot existed yet to merge into.
+        // monthStartDay must match Activity's key or a custom month-start period is missed.
+        if (period) {
+          invalidateTransactions(buildTransactionsCachePrefix(period.year, period.month))
+        } else if (!canMergeCreate) {
+          invalidateTransactions()
+        }
+        invalidateTransactions('overall|')
 
         await refreshAccounts({ background: true })
         return result

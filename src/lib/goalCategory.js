@@ -22,7 +22,11 @@ export async function ensureGoalCategory(goal) {
   assertNoError(findError, 'Failed to look up goal category')
   if (existing) {
     if (goal.linked_category_id !== existing.id) {
-      await linkGoalToCategory(goal.id, existing.id)
+      try {
+        await linkGoalToCategory(goal.id, existing.id)
+      } catch {
+        // Best-effort back-link
+      }
     }
     return existing
   }
@@ -80,7 +84,11 @@ export async function ensureGoalCategory(goal) {
   }
 
   assertNoError(createError, 'Failed to create goal category')
-  await linkGoalToCategory(goal.id, created.id)
+  try {
+    await linkGoalToCategory(goal.id, created.id)
+  } catch {
+    // Linking is best-effort; the category itself is enough for the ledger
+  }
   return created
 }
 

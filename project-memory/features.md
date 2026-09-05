@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-07-06 (v0.28)
+**Last updated:** 2026-08-02 (v0.30)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -139,6 +139,14 @@
 | F-132 | Savings/goal Activity row highlight | done | Light green row for savings-category or goal-linked txs (session 72) |
 | F-133 | Goal-tagged tx excluded from category Savings | done | `countsAsCategorySavings()`; `goal_id` + `source_transaction_id` link (session 72) |
 | F-134 | Delete tx removes linked goal contribution | done | `deleteContributionsForTransaction()` before tx delete; goals refresh (session 74) |
+| F-135 | Bundle splitting + route code splitting | done | `vite.config.js` manual chunks; `lazy()` routes/modals; idle prefetch in `PersistentTabs`; asset cache headers in `vercel.json` (session 75) |
+| F-136 | Summary + Activity first-paint fixes | done | Default tab and its chart eager again; mount-time tx fetch keyed on `cacheKey`; in-flight request de-dup in `AppDataContext` (session 76) |
+| F-137 | Add transaction modal layout | done | Save in modal header next to Close; category chips in horizontal scrollable rows via `categoryRows` (session 77) |
+| F-138 | Add money works without goal-category migration | done | `ensureGoalCategory()` null tolerated; tx written with `category_id: null` plus `goal_id` + contribution (session 78) |
+| F-139 | Explicit goal picker in transaction modal | done | "Add to goal (optional)" chips write `goal_id` directly; `effectiveGoal` prefers explicit pick over category-implied goal (session 78) |
+| F-140 | Add-to-goal appears in Activity cache | done | Merge overall keys; invalidate month+overall after create; snapshot goal label; pass profile `monthStartDay` (session 79) |
+| F-141 | Two-step add transaction (keypad → details) | done | Step 1 amount keypad; step 2 wrapping categories/goals; no default goal; edit stays single form (session 80) |
+| F-142 | Recurring checkbox on add transaction | done | Optional Daily/Weekly/Monthly/Yearly (default monthly); creates ledger tx + recurring rule (session 80) |
 
 ## Backlog ideas
 
@@ -294,3 +302,29 @@
 | Idea | Status |
 |------|--------|
 | Goal sync on transaction delete | **Done** — F-134 (session 74) |
+
+### Candidate features — status after sessions 75–78 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Performance / bundle optimization pass | **Done** — F-135 (session 75); deployed `dpl_Cw75nJLjSKD9qxSM1BsCshFfup7c` |
+| Summary + Activity first-paint regressions | **Done** — F-136 (session 76); deployed `dpl_ADKB9G2PiKnoRB9gSQg1xdzDJNcQ` |
+| Add transaction modal layout (horizontal chips, Save top-right) | **Done** — F-137 (session 77); deployed `dpl_4XwD9zKTXek2f6xQuqdBwob3LAQ6` |
+| Goal contribution without goal-category migration | **Done** — F-138 (session 78); deployed `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo` |
+| Explicit goal picker on transaction form | **Done** — F-139 (session 78); deployed `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo` |
+| Paste-a-bank-SMS quick add | **Planned** — parser + prefill sheet scoped in session 77; iPhone cannot grant SMS read to a web app, so input is paste / clipboard / iOS Shortcuts only |
+| Mount `BudgetManager` in Settings | **Planned** — component exists, not rendered anywhere since F-126 |
+| Surface `savingsRate` on Summary | **Planned** — already computed in `monthlySummary.js`, never displayed |
+| CSV export | **Planned** — extend `backup.js` |
+| Debt payoff mode for credit accounts | **Deferred** — needs `apr` / `min_payment` migration |
+| Recurring processing via Supabase Edge Function + `pg_cron` | **Deferred** — currently posts on app open |
+
+### Candidate features — status after sessions 79–80 (append-only)
+
+| Idea | Status |
+|------|--------|
+| Add-to-goal missing from Activity | **Done** — F-140 (session 79); deployed `dpl_FjzAXxKSDgG3cfKUMf9G5pQ6ZZJb` |
+| Two-step add transaction journey | **Done** — F-141 (session 80); deployed `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` |
+| Recurring from add-transaction flow | **Done** — F-142 (session 80); same deploy |
+| Horizontal scrolling category chips in add-tx | **Superseded** — wrapping chips in two-step details (session 80) |
+| Category-implied goal on submit | **Superseded** — explicit goal only (session 80) |
