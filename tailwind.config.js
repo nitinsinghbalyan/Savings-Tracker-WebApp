@@ -6,7 +6,42 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"DM Mono"', 'ui-monospace', 'Menlo', 'monospace'],
+      },
       colors: {
+        // Paper-and-ink system from the Savings Tracker Redesign canvas.
+        paper: {
+          DEFAULT: '#EFE9DE', // page ground
+          card: '#FFFDF9', // raised surfaces
+          sunk: '#F7F3EC', // app/main area behind cards
+          rail: '#F0EBE1', // segmented-control track
+          line: '#EDE7DC', // progress track
+        },
+        ink: {
+          DEFAULT: '#16130F',
+          muted: 'rgba(22,19,15,.66)',
+          soft: 'rgba(22,19,15,.5)',
+          faint: 'rgba(22,19,15,.45)',
+          rule: 'rgba(22,19,15,.1)',
+          hairline: 'rgba(22,19,15,.08)',
+        },
+        accent: {
+          DEFAULT: '#3B4CC0',
+          hover: '#2B3A9E',
+          tint: '#EBEDFA',
+          track: '#E7E9F7',
+        },
+        positive: {
+          DEFAULT: '#1E7A57',
+          tint: '#E4EEE9',
+        },
+        negative: {
+          DEFAULT: '#B3452B',
+          tint: '#F3E3DE',
+        },
         brand: {
           50: '#eef2ff',
           100: '#e0e7ff',

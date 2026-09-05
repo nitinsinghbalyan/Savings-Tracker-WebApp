@@ -28,6 +28,40 @@ function SummarySection({ profile, isTabActive = true }) {
   const [month, setMonth] = useState(now.getMonth() + 1)
 
   const isMonthly = view === 'monthly'
+
+  // Artboard 1e puts a per-day spend sparkline inside the balance card.
+  const spendByDay = useMemo(() => {
+    const byCurrency = new Map()
+    for (const tx of transactions ?? []) {
+      if (tx.type !== 'expense') continue
+      const day = tx.transaction_date?.slice(0, 10)
+      if (!day) continue
+      const currency = tx.account?.currency ?? 'INR'
+      if (!byCurrency.has(currency)) byCurrency.set(currency, new Map())
+      const days = byCurrency.get(currency)
+      days.set(day, (days.get(day) ?? 0) + (Number(tx.amount) || 0))
+    }
+    return byCurrency
+  }, [transactions])
+
+  const buildDayBars = (currency) => {
+    const days = spendByDay.get(currency) ?? new Map()
+    const dayCount = new Date(year, month, 0).getDate()
+    const today = new Date()
+    const isCurrentMonth =
+      today.getFullYear() === year && today.getMonth() + 1 === month
+    const bars = []
+    for (let day = 1; day <= dayCount; day += 1) {
+      const key = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      bars.push({ day, amount: days.get(key) ?? 0 })
+    }
+    const max = bars.reduce((peak, bar) => Math.max(peak, bar.amount), 0)
+    return bars.map((bar) => ({
+      ...bar,
+      height: max > 0 && bar.amount > 0 ? `${Math.max(6, (bar.amount / max) * 100)}%` : '2px',
+      isToday: isCurrentMonth && bar.day === today.getDate(),
+    }))
+  }
   const dataReady = Boolean(user) && authReady && !bootstrapping && Boolean(profile)
   const monthStartDay = profile?.month_start_day ?? 1
 
@@ -113,14 +147,16 @@ function SummarySection({ profile, isTabActive = true }) {
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:w-56">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-paper-rail p-[3px] sm:w-56">
           {SUMMARY_VIEWS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setView(option.value)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                view === option.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              className={`rounded-md px-3 py-[7px] text-xs transition ${
+                view === option.value
+                  ? 'bg-paper-card font-medium text-ink shadow-[0_1px_2px_rgba(22,19,15,.07)]'
+                  : 'font-normal text-ink-soft'
               }`}
             >
               {option.label}
@@ -170,38 +206,55 @@ function SummarySection({ profile, isTabActive = true }) {
               </p>
             )}
 
-            <section className="card grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <div>
-                <p className="text-xs text-slate-500">Income</p>
-                <p className="text-lg font-bold text-emerald-600">
-                  {formatMoney(summary.income, summary.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Expenses</p>
-                <p className="text-lg font-bold text-rose-600">
-                  {formatMoney(summary.expenses, summary.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Savings</p>
-                <p className="text-lg font-bold text-brand-600">
-                  {formatMoney(summary.categorySavings, summary.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Goals</p>
-                <p className="text-lg font-bold text-violet-600">
-                  {formatMoney(summary.goalSavings, summary.currency)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Total balance</p>
-                <p
-                  className={`text-lg font-bold ${summary.balances >= 0 ? 'text-slate-900' : 'text-rose-600'}`}
+            <section className="overflow-hidden rounded-xl border border-ink-rule bg-paper-card p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">
+                Balance
+              </p>
+              <p
+                className={`n mt-1.5 text-[29px] font-medium leading-none tracking-[-.02em] ${
+                  summary.balances >= 0 ? 'text-ink' : 'text-negative'
+                }`}
+              >
+                {formatMoney(summary.balances, summary.currency)}
+              </p>
+
+              {isMonthly && (
+                <div
+                  className="mt-3.5 flex h-11 items-end gap-[2px]"
+                  aria-label="Daily spending this month"
                 >
-                  {formatMoney(summary.balances, summary.currency)}
-                </p>
+                  {buildDayBars(summary.currency).map((bar) => (
+                    <div
+                      key={bar.day}
+                      className={`min-h-[2px] flex-1 rounded-t-sm ${
+                        bar.isToday ? 'bg-accent' : 'bg-accent/25'
+                      }`}
+                      style={{ height: bar.height }}
+                      title={`${bar.day}: ${formatMoney(bar.amount, summary.currency)}`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-2 flex justify-between border-t border-ink-hairline pt-[11px]">
+                <div>
+                  <p className="text-[10.5px] text-ink-faint">Spent</p>
+                  <p className="n mt-0.5 text-sm font-medium text-ink">
+                    {formatMoney(summary.expenses, summary.currency)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10.5px] text-ink-faint">In</p>
+                  <p className="n mt-0.5 text-sm font-medium text-positive">
+                    {formatMoney(summary.income, summary.currency)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10.5px] text-ink-faint">To goals</p>
+                  <p className="n mt-0.5 text-sm font-medium text-ink">
+                    {formatMoney(summary.goalSavings, summary.currency)}
+                  </p>
+                </div>
               </div>
             </section>
 

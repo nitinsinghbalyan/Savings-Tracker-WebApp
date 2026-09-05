@@ -81,11 +81,14 @@ function GoalCard({
   return (
     <article
       onClick={() => onOpenDetails?.(goal)}
-      className={`card min-w-0 cursor-pointer border-l-4 transition hover:shadow-card ${palette.border}`}
+      className="min-w-0 cursor-pointer overflow-hidden rounded-xl border border-ink-rule bg-paper-card transition hover:shadow-card"
     >
+      {/* 3px goal-colour edge from artboard 1e, replacing the left stripe. */}
+      <div className="h-[3px]" style={{ background: palette.fill }} aria-hidden="true" />
+      <div className={compact ? 'p-3.5' : 'p-4 sm:p-[18px]'}>
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className={`truncate font-semibold text-slate-900 ${compact ? 'text-base' : 'text-lg'}`}>
+          <h3 className={`truncate font-medium text-ink ${compact ? 'text-[13.5px]' : 'text-base'}`}>
             {goal.name}
           </h3>
           {!compact && goal.category && (
@@ -96,8 +99,12 @@ function GoalCard({
           )}
         </div>
         <span
-          className={`shrink-0 font-medium ${compact ? 'text-xs' : 'text-sm'} ${
-            daysLeft < 0 ? 'text-rose-600' : daysLeft <= 7 ? 'text-amber-700' : 'text-slate-500'
+          className={`n shrink-0 rounded-[5px] px-1.5 py-[3px] text-[11px] ${
+            daysLeft < 0
+              ? 'bg-negative-tint text-negative'
+              : daysLeft <= 7
+                ? 'bg-[#F6E2E6] text-[#8E2340]'
+                : 'text-ink-faint'
           }`}
         >
           {formatDaysRemaining(daysLeft)}
@@ -106,17 +113,17 @@ function GoalCard({
 
       <div className={compact ? 'mt-3' : 'mt-4'}>
         <div className="mb-2 flex items-baseline justify-between gap-2">
-          <p className={`min-w-0 truncate font-medium text-slate-700 ${compact ? 'text-xs' : 'text-sm'}`}>
+          <p className={`n min-w-0 truncate font-medium text-ink ${compact ? 'text-base' : 'text-lg'}`}>
             {formatCurrency(saved, currency)}{' '}
-            <span className="font-normal text-slate-400">of {formatCurrency(target, currency)}</span>
+            <span className="n text-[11px] font-normal text-ink-faint">of {formatCurrency(target, currency)}</span>
           </p>
-          <p className={`shrink-0 font-semibold text-slate-700 ${compact ? 'text-xs' : 'text-sm'}`}>
+          <p className="n shrink-0 text-[11px] text-ink-soft">
             {Math.round(progress)}%
           </p>
         </div>
 
         <div
-          className={`overflow-hidden rounded-full bg-slate-100 ${compact ? 'h-2' : 'h-3'}`}
+          className={`overflow-hidden rounded-full bg-paper-line ${compact ? 'h-1.5' : 'h-2'}`}
           role="progressbar"
           aria-valuenow={Math.round(progress)}
           aria-valuemin={0}
@@ -269,6 +276,7 @@ function GoalCard({
         )}
       </div>
       )}
+      </div>
     </article>
   )
 }

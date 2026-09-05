@@ -93,7 +93,10 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" />
+      <PageHeader title="Settings">
+        {/* 1f puts the signed-in address beside the title. */}
+        <span className="n hidden text-xs text-ink-faint sm:block">{user?.email}</span>
+      </PageHeader>
 
       <main className="page-container space-y-6">
         <SettingsSection title="Account">

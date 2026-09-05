@@ -1,7 +1,9 @@
-import { lazy, Suspense, useCallback, useState } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Target } from 'lucide-react'
 import { percentComplete, savedAmount } from '../lib/contributions'
+import { formatCurrency } from '../lib/format'
+import { getColorPalette } from '../lib/constants'
 import { useAuth } from '../hooks/useAuth'
 import { useGoals } from '../hooks/useGoals'
 import { useProfile } from '../hooks/useProfile'
@@ -33,6 +35,21 @@ export default function HomePage({ isTabActive = true }) {
     addContribution,
     deleteContribution,
   } = useGoals({ enabled: Boolean(user) && authReady })
+
+  // Artboard 1e splits goals by whether anything has been saved yet, so the
+  // unfunded ones collapse into a list rather than padding the card grid.
+  const activeGoals = useMemo(
+    () => goals.filter((goal) => savedAmount(goal) > 0),
+    [goals],
+  )
+  const notStartedGoals = useMemo(
+    () => goals.filter((goal) => savedAmount(goal) <= 0),
+    [goals],
+  )
+  const notStartedTarget = useMemo(
+    () => notStartedGoals.reduce((sum, goal) => sum + Number(goal.target_amount || 0), 0),
+    [notStartedGoals],
+  )
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState(null)
@@ -219,28 +236,68 @@ export default function HomePage({ isTabActive = true }) {
             </section>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {goals.map((goal) => (
-                  <GoalCard
+              {activeGoals.length > 0 && (
+                <>
+                  <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">
+                    In progress
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                    {activeGoals.map((goal) => (
+                      <GoalCard
+                        key={goal.id}
+                        goal={goal}
+                        compact
+                        onOpenDetails={setDetailGoal}
+                        onAddMoney={setAddMoneyGoal}
+                        onEdit={openEditForm}
+                        onDelete={handleDeleteGoal}
+                        onDeleteContribution={handleDeleteContribution}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Artboard 1e collapses unfunded goals into a plain list instead
+                  of letting empty cards pad the grid. */}
+              {notStartedGoals.length > 0 && (
+                <div className="flex items-baseline gap-2">
+                  <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">
+                    Not started
+                  </p>
+                  <span className="n text-[10.5px] text-ink-faint">
+                    {notStartedGoals.length} · {formatCurrency(notStartedTarget, 'INR')} target
+                  </span>
+                </div>
+              )}
+              <div className="overflow-hidden rounded-xl border border-ink-rule bg-paper-card">
+                {notStartedGoals.map((goal) => (
+                  <button
                     key={goal.id}
-                    goal={goal}
-                    compact
-                    onOpenDetails={setDetailGoal}
-                    onAddMoney={setAddMoneyGoal}
-                    onEdit={openEditForm}
-                    onDelete={handleDeleteGoal}
-                    onDeleteContribution={handleDeleteContribution}
-                  />
+                    type="button"
+                    onClick={() => setDetailGoal(goal)}
+                    className="flex w-full items-center gap-[11px] border-b border-ink-hairline px-3.5 py-3 text-left transition hover:bg-paper-sunk"
+                  >
+                    <span
+                      className="h-[18px] w-[3px] shrink-0 rounded-sm"
+                      style={{ background: getColorPalette(goal.color).fill }}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{goal.name}</span>
+                    <span className="n shrink-0 text-[11.5px] text-ink-faint">
+                      {formatCurrency(Number(goal.target_amount), goal.currency ?? 'INR')}
+                    </span>
+                  </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={openCreateForm}
+                  className="flex w-full items-center justify-center gap-1.5 py-3 text-[12.5px] font-medium text-accent transition hover:bg-paper-sunk"
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  New goal
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={openCreateForm}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-semibold text-brand-600 transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99] sm:py-3.5"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                New goal
-              </button>
             </>
           )}
         </section>
