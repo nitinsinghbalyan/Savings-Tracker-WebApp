@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-08-02 (v0.30)
+**Last updated:** 2026-09-05 (v0.31)
 
 ## Tech stack
 
@@ -820,3 +820,34 @@ PostgREST resolves columns before RLS filters rows: `200` (usually `[]`) means t
 | File | Status |
 |------|--------|
 | `add_goal_category_link.sql` | **Applied** on production as of 2026-08-02 (was missing on 2026-08-01 audit); app still tolerates absence |
+
+## Design system (append session 81)
+
+Paper-and-ink system from the Claude Design canvas "Goal Tracker App Redesign".
+
+**Typefaces** (Google Fonts, linked in `index.html`): Outfit for headings
+(`font-display`), DM Sans for text (`font-sans`), DM Mono for numbers
+(`font-mono`). Numbers additionally take the `.n` class from `index.css`, which
+sets `font-feature-settings: 'tnum'` so ledger columns align.
+
+**Tailwind tokens** (`tailwind.config.js` → `theme.extend.colors`):
+
+| Token | Value | Use |
+|---|---|---|
+| `paper` | `#EFE9DE` | page ground |
+| `paper-card` | `#FFFDF9` | raised surfaces |
+| `paper-sunk` | `#F7F3EC` | app/main area behind cards |
+| `paper-rail` | `#F0EBE1` | segmented-control track |
+| `paper-line` | `#EDE7DC` | progress track, mobile tab track |
+| `ink` | `#16130F` | primary text |
+| `ink-muted` / `ink-soft` / `ink-faint` | rgba 0.66 / 0.5 / 0.45 | secondary text |
+| `ink-rule` / `ink-hairline` | rgba 0.1 / 0.08 | borders and separators |
+| `accent` | `#3B4CC0` | anything actionable |
+| `positive` | `#1E7A57` | income |
+| `negative` | `#B3452B` | expense, overdrawn balance |
+
+The legacy `brand` (indigo) and Tailwind `slate` colours remain in the config and
+are still referenced by unconverted components — the redesign covers mobile
+(artboards 1e/1f) only. Per-goal colours still come from
+`getColorPalette()` in `src/lib/constants.js`; `palette.fill` (hex) drives the
+3px card edge, `palette.bar` the progress fill.

@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-08-02 (v0.30)
+**Last updated:** 2026-09-05 (v0.31)
 
 ## 2026-06-14
 
@@ -1658,3 +1658,79 @@
 
 - **Git commit** — sessions 77–80 still uncommitted on `master` (at `52f9984`); GitHub push pending auth
 - **Project memory** — this entry (session 80)
+
+---
+
+## 2026-09-05 (session 81 — paper-and-ink redesign, mobile)
+
+Implements artboards **1e (mobile)** and **1f (settings)** from the Claude Design
+canvas "Goal Tracker App Redesign"
+(`a2ce9821-42c4-41f2-a8bd-7cde6523c259`), imported via the design MCP.
+
+### Added
+
+- **Design system** — Outfit (headings), DM Sans (text), DM Mono (all numbers, so
+  ledger columns align). `.n` class in `index.css` carries `font-feature-settings: 'tnum'`
+- **Tailwind tokens** — `paper` (DEFAULT/card/sunk/rail/line), `ink`
+  (DEFAULT/muted/soft/faint/rule/hairline), `accent`, `positive`, `negative`
+- **`SegmentedTabs.jsx`** — Month / Goals / Ledger / More as a top segmented
+  control on the `#EDE7DC` track
+- **Per-day spend sparkline** in the Summary balance card, bucketed from
+  `transactions` by `transaction_date` per currency, scaled to the month peak,
+  today highlighted
+
+### Changed
+
+- **`PageHeader`** — Outfit title on paper with the segmented tabs beneath;
+  desktop keeps a card ground and hairline rule since the sidebar still carries nav
+- **`AppShell`** — `BottomNav` removed (nav moved to the top on mobile);
+  `.app-main` 4.5rem bottom padding reservation dropped
+- **`GoalCard`** — paper ground, 3px goal-colour **top** edge replacing the left
+  stripe, days-left as a mono chip, amounts in tabular figures
+- **`HomePage`** — goals split into **In progress** and **Not started**; unfunded
+  goals collapse to a plain colour-bar list instead of padding the grid with
+  empty cards. This was the stated point of the redesign: a card is the wrong
+  container for six numbers
+- **`SummarySection`** — leads with Balance, then the sparkline, then
+  Spent / In / To goals beneath a hairline. Monthly/Overall toggle restyled
+- **`SettingsSection` / `SettingsRow`** — plain hairline-ruled list instead of
+  cards nested in cards; signed-in address beside the title
+- **Body and shell** moved off `slate-50` onto cream paper
+
+### Fixed
+
+- **Month tab blank after first deploy** — see `error-history.md` 2026-09-05.
+  A `useMemo` was placed above the `useTransactions` call it read from
+
+### Deployed
+
+- **Production:** `dpl_…` from `npx vercel --prod`, aliased to
+  `savings-tracker-azure.vercel.app` (2026-09-05) — first deploy carried the
+  Month tab crash; superseded by the fix deploy the same day
+- **Prior production:** `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` (session 80)
+
+### Git
+
+- **Commit:** `e70899e` on `master` — the redesign (12 files, +338/−114)
+- **GitHub:** `origin/master` force-updated `3b3344f...e70899e`. The remote had
+  held an unrelated Next.js rewrite ("RupeeRise") with **no common ancestor**;
+  that history survives on `origin/cursor/setup-dev-environment-cb6b` at `6ff908b`
+- A stray duplicate branch `vite-app` was created at the same SHA during this
+  session and should be deleted
+
+### Decisions deferred
+
+- **Desktop direction not chosen.** The canvas offers 1a/1b (Safe — sidebar +
+  cards, fixed hierarchy) and 1c/1d (Radical — top ribbon, month spread with
+  per-day bars). These are alternatives for the same screens, so only mobile was
+  built. Desktop still renders the pre-redesign layout
+
+### Not done (manual follow-up)
+
+- **Authenticated screens never visually verified.** Sign-in blocks agent
+  testing; only the login page was confirmed to render with a clean console.
+  Month / Goals / Ledger / Settings need a human pass on a real device
+- **`BottomNav.jsx` is now dead code** — nothing imports it;
+  `ModalShell`'s `useBottomNavAutoHide` is inert
+- **Desktop artboards** 1a/1b/1c/1d unimplemented pending the direction call
+- **"Today" ledger rows** from 1e (coloured dot + name + amount) not done

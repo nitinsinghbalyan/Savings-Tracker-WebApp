@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-08-02 (v0.30)
+**Last updated:** 2026-09-05 (v0.31)
 
 ## Setup
 
@@ -778,3 +778,26 @@ _Add a row here after each release or bug fix._
 | 2026-08-01 | v0.29 goal linking fallback | `npx vite build` pass (~500ms); no lint errors; live schema audited via PostgREST — `add_goal_category_link.sql` confirmed missing; deployed `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo`; alias verified HTTP 200 |
 | 2026-08-02 | v0.30 add-to-goal → Activity | `npx vite build` pass; deployed `dpl_FjzAXxKSDgG3cfKUMf9G5pQ6ZZJb` |
 | 2026-08-02 | v0.30 two-step add transaction | `npx vite build` pass; keypad + wrapping chips + recurring checkbox; deployed `dpl_8dmxQz1Gv8bRBauLzGDKxEFhqVRU` (current production) |
+
+---
+
+## v0.31 — Paper-and-ink redesign (mobile, session 81)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-180 | Bundle boots after redesign | Load `127.0.0.1:5173`, read console | Sign-in page renders; no console errors | pass | 2026-09-05 |
+| TC-181 | Changed modules parse | `curl` each changed file from the dev server | No `PARSE_ERROR` / `Transform failed` | pass | 2026-09-05 |
+| TC-182 | Declaration order in `SummarySection` | Check `transactions` declared above `spendByDay` | Provider hook precedes its consumer | pass | 2026-09-05 |
+| TC-183 | Month tab first paint | Sign in, open Month | Balance, sparkline, Spent/In/To goals render on first paint — no blank, no toggle needed | not-run | |
+| TC-184 | Sparkline accuracy | Compare bar heights with the month's daily expenses | Bars scale to the month peak; today highlighted; tooltip shows date + amount | not-run | |
+| TC-185 | Goals split | Open Goals with funded and unfunded goals | Funded under "In progress"; unfunded collapse to the colour-bar list; `＋ New goal` is the last row | not-run | |
+| TC-186 | Not started heading hidden when empty | Fund every goal | "Not started" label absent; `＋ New goal` still reachable | not-run | |
+| TC-187 | Segmented tabs navigate | Tap Month / Goals / Ledger / More | Correct route each time; active pill on the tapped tab | not-run | |
+| TC-188 | Bottom nav gone, no dead space | Scroll any tab to the bottom on mobile | No 4.5rem empty band where `BottomNav` was | not-run | |
+| TC-189 | Settings plain list | Open Settings | Hairline-ruled rows, no cards-in-cards; email beside the title | not-run | |
+| TC-190 | Webfonts load | Open any screen | Outfit headings, DM Sans text, DM Mono numerals; no fallback flash | not-run | |
+| TC-191 | iOS Safari with install banner | Open on iOS Safari with the install prompt visible | Top tabs tappable; prompt does not overlay them | not-run | |
+| TC-192 | Production alias serves the fix | Open `savings-tracker-azure.vercel.app` after the fix deploy | Month tab renders; no TDZ error in console | not-run | |
+
+**Note:** TC-183 onward are `not-run` because agent testing stops at sign-in —
+credentials are the user's to enter. These need a human pass on a real device.

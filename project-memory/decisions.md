@@ -1,5 +1,7 @@
 # Decision Log
 
+**Last updated:** 2026-09-05 (v0.31)
+
 | Date | Decision | Rationale | Alternatives considered |
 |------|----------|-----------|-------------------------|
 | 2026-06-14 | No authentication | Faster MVP; personal single-device use case | Supabase Auth, magic links |
@@ -222,3 +224,9 @@
 ```markdown
 | YYYY-MM-DD | What we decided | Why | What we didn't pick |
 ```
+| 2026-09-05 | Adopt the paper-and-ink system from the Claude Design canvas | Cards were reading as empty because a card is the wrong container for six numbers; cream/ink with hairlines and one indigo accent gives spend and goals real weight | Keep the slate-on-white Tailwind defaults; a full custom design system |
+| 2026-09-05 | DM Mono for every number | Ledger and goal columns only align with tabular figures | Proportional numerals in the body font |
+| 2026-09-05 | Mobile nav moves from bottom tabs to a top segmented control | Artboard 1e; frees the bottom edge and groups nav with the page title | Keep `BottomNav`; a hamburger drawer |
+| 2026-09-05 | Per-goal colour becomes a 3px top edge, not a left stripe | Reads as a quiet label rather than a shouting stripe while keeping goal identity | Drop per-goal colour entirely; keep `border-l-4` |
+| 2026-09-05 | Summary shows Spent / In / To goals only | Artboard 1e carries three values; the five-up grid was the hierarchy problem being fixed | Keep all five including `categorySavings` — can be restored as a fourth item if missed |
+| 2026-09-05 | Ship mobile (1e/1f) only; defer the desktop direction | 1a/1b and 1c/1d are alternatives for the same screens, so building both is wasted work; mobile had no such fork | Pick a desktop direction unilaterally; build both and choose later |

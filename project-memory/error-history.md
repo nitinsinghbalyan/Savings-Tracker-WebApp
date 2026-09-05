@@ -2,7 +2,7 @@
 
 Log bugs, incidents, and fixes so the same issues are not re-debugged from scratch.
 
-**Last updated:** 2026-08-02 (v0.30)
+**Last updated:** 2026-09-05 (v0.31)
 
 | Date | Symptom | Root cause | Fix | Prevention |
 |------|---------|------------|-----|------------|
@@ -52,6 +52,8 @@ Log bugs, incidents, and fixes so the same issues are not re-debugged from scrat
 | 2026-08-01 | "Could not link this goal to a category. Run the goal-category migration in Supabase, then try again." | `add_goal_category_link.sql` never applied — `categories.goal_id` and `goals.linked_category_id` absent, so `ensureGoalCategory()` returned null and `handleAddMoney` threw | Tolerate a null category: record the tx with `category_id: null` and still write `goal_id` + contribution (session 78 — F-138) | Degrade gracefully when an optional migration is missing; don't block a flow whose required columns are already present |
 | 2026-08-01 | No option to add an expense to a goal in the Add transaction modal | Goal linking was reachable only by picking a goal-linked savings category; those categories cannot exist while `categories.goal_id` is missing, so the **Goals** picker group was always empty | Explicit "Add to goal (optional)" chip row writing `goal_id` directly via the existing `{ goalId }` submit path (session 78 — F-139) | Don't make a user-facing action reachable only through data that an unapplied migration creates |
 | 2026-08-02 | Add money to a goal does not appear in Activity | Month cache invalidation used default `monthStartDay=1` (missed custom periods); overall cache keys skipped by merge; uncategorized goal expenses titled "Transfer"; overly broad `goal_id` error classifier | Functional merge + invalidate month/overall; pass profile `monthStartDay`; snapshot goal name onto tx; tighten error detector; Expense/Income titles (session 79 — F-140) | Always invalidate the period the Activity tab actually uses; never skip overall keys in merge; label uncategorized txs by type |
+| 2026-09-05 | Month tab completely blank after the redesign deploy | `spendByDay` `useMemo` was inserted above the `useTransactions()` call it reads; `const` is in the temporal dead zone until its declaration runs, so every render threw `Cannot access 'transactions' before initialization` and `SummarySection` returned nothing. `vite build` passed — it renders no component, so it cannot see this | Moved the memo and `buildDayBars` below the `useTransactions` destructuring (session 81) | Third instance of this class (see 2026-06-14 `categoryTab`, and `useState` dropped from `SummarySection`). After adding any derived value, confirm the hook supplying its data is declared **above** it — `curl` the module from the dev server and check declaration order. Never treat a green `vite build` as evidence a screen renders |
+| 2026-09-05 | `SummarySection` stopped parsing while fixing the above | The scripted edit that moved the block used `"  }\n  const dataReady ="` as its end delimiter, which consumed `buildDayBars`'s closing brace | Restored the brace; verified brace balance is 0 (session 81) | After any scripted block move (`sed`, `python`), fetch the file from the vite dev server — it returns `PARSE_ERROR` in seconds, versus 4–14 minutes for a build on this machine |
 
 ## Template (copy for new entries)
 

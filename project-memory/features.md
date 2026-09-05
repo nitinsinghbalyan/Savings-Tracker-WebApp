@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-08-02 (v0.30)
+**Last updated:** 2026-09-05 (v0.31)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -145,6 +145,13 @@
 | F-138 | Add money works without goal-category migration | done | `ensureGoalCategory()` null tolerated; tx written with `category_id: null` plus `goal_id` + contribution (session 78) |
 | F-139 | Explicit goal picker in transaction modal | done | "Add to goal (optional)" chips write `goal_id` directly; `effectiveGoal` prefers explicit pick over category-implied goal (session 78) |
 | F-140 | Add-to-goal appears in Activity cache | done | Merge overall keys; invalidate month+overall after create; snapshot goal label; pass profile `monthStartDay` (session 79) |
+| F-141 | Paper-and-ink design system | done | Outfit / DM Sans / DM Mono webfonts; `.n` tabular-figure class; `paper`/`ink`/`accent`/`positive`/`negative` Tailwind tokens (session 81) |
+| F-142 | Mobile top segmented tabs | done | `SegmentedTabs` (Month/Goals/Ledger/More) replaces `BottomNav`; artboard 1e (session 81) |
+| F-143 | Goals split: In progress / Not started | done | Unfunded goals collapse to a plain list instead of empty cards padding the grid (session 81) |
+| F-144 | Summary balance card + per-day sparkline | done | Balance headline; spend bucketed from `transactions` by day and currency, today highlighted; Spent/In/To goals row. Drops the separate `categorySavings` figure (session 81) |
+| F-145 | Settings as a plain list | done | `SettingsSection`/`SettingsRow` hairline-ruled, no cards-in-cards; artboard 1f (session 81) |
+| F-146 | Desktop redesign (1a/1b Safe or 1c/1d Radical) | deferred | Canvas offers two competing directions for the same screens; direction not chosen (session 81) |
+| F-147 | "Today" ledger rows on Month screen | planned | Coloured dot + name + amount from artboard 1e (session 81) |
 | F-141 | Two-step add transaction (keypad → details) | done | Step 1 amount keypad; step 2 wrapping categories/goals; no default goal; edit stays single form (session 80) |
 | F-142 | Recurring checkbox on add transaction | done | Optional Daily/Weekly/Monthly/Yearly (default monthly); creates ledger tx + recurring rule (session 80) |
 

@@ -29,6 +29,21 @@ function SummarySection({ profile, isTabActive = true }) {
 
   const isMonthly = view === 'monthly'
 
+  const dataReady = Boolean(user) && authReady && !bootstrapping && Boolean(profile)
+  const monthStartDay = profile?.month_start_day ?? 1
+
+  const { accounts } = useAccounts({ enabled: dataReady })
+  const { categories } = useCategories({ enabled: dataReady })
+  const { goals } = useGoals({ enabled: dataReady })
+  const { transactions, initialLoading, error } = useTransactions({
+    // Pause fetches while the tab is hidden; cached rows still render from context.
+    enabled: dataReady && isTabActive,
+    allTime: !isMonthly,
+    year: isMonthly ? year : undefined,
+    month: isMonthly ? month : undefined,
+    monthStartDay,
+  })
+
   // Artboard 1e puts a per-day spend sparkline inside the balance card.
   const spendByDay = useMemo(() => {
     const byCurrency = new Map()
@@ -62,20 +77,6 @@ function SummarySection({ profile, isTabActive = true }) {
       isToday: isCurrentMonth && bar.day === today.getDate(),
     }))
   }
-  const dataReady = Boolean(user) && authReady && !bootstrapping && Boolean(profile)
-  const monthStartDay = profile?.month_start_day ?? 1
-
-  const { accounts } = useAccounts({ enabled: dataReady })
-  const { categories } = useCategories({ enabled: dataReady })
-  const { goals } = useGoals({ enabled: dataReady })
-  const { transactions, initialLoading, error } = useTransactions({
-    // Pause fetches while the tab is hidden; cached rows still render from context.
-    enabled: dataReady && isTabActive,
-    allTime: !isMonthly,
-    year: isMonthly ? year : undefined,
-    month: isMonthly ? month : undefined,
-    monthStartDay,
-  })
 
   const activeAccounts = useMemo(
     () => accounts.filter((a) => !a.is_archived),
