@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-05 (v0.31)
+**Last updated:** 2026-09-06 (v0.32)
 
 ## Setup
 
@@ -801,3 +801,21 @@ _Add a row here after each release or bug fix._
 
 **Note:** TC-183 onward are `not-run` because agent testing stops at sign-in —
 credentials are the user's to enter. These need a human pass on a real device.
+
+---
+
+## v0.32 — Savings on Summary (session 82)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-193 | Savings invariant (synthetic) | Import `monthlySummary.js` via the dev server; run fixtures in Monthly and Overall | `categorySavings + goalSavings === savings` in both modes | pass | 2026-09-06 |
+| TC-194 | Goal-linked savings not double counted (synthetic) | Same fixtures; one savings-category expense also linked to a goal | Appears only in `byGoalSavings`; absent from `bySavingsCategory`; `expenses` excludes it | pass | 2026-09-06 |
+| TC-195 | Savings cell with real data | Sign in, open Summary, both Monthly and Overall | Third cell reads Savings; equals category subtotal + goal subtotal in the list below | not-run | |
+| TC-196 | Breakdown sections with real data | Summary with savings categories and goal contributions | Two sections with own subtotals; category rows sum to By category, goal rows to To goals | not-run | |
+| TC-197 | No savings activity | Period with no savings and no goal contributions | Breakdown block hidden entirely; Savings cell reads zero | not-run | |
+| TC-198 | Savings-only period | Period containing only savings activity | Not treated as empty; summary renders (the `isEmpty` guard ORs both savings terms) | not-run | |
+
+**Note:** TC-195 onward are `not-run` — agent testing stops at sign-in.
+TC-193/TC-194 are marked `pass` because they were verified against the real
+`monthlySummary.js` with synthetic fixtures, not against production data.
+

@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-09-05 (v0.31)
+**Last updated:** 2026-09-06 (v0.32)
 
 ## 2026-06-14
 
@@ -1735,3 +1735,59 @@ canvas "Goal Tracker App Redesign"
   `ModalShell`'s `useBottomNavAutoHide` is inert
 - **Desktop artboards** 1a/1b/1c/1d unimplemented pending the direction call
 - **"Today" ledger rows** from 1e (coloured dot + name + amount) not done
+
+---
+
+## 2026-09-06 (session 82 — Savings restored on Summary, with breakdown)
+
+Session 81's redesign dropped the `categorySavings` figure to match artboard
+1e's three-cell row. This restores savings as a **combined** total and itemises
+where it went.
+
+### Added
+
+- **`SavingsBreakdownList.jsx`** — presentational, two hairline-separated
+  sections each with its own subtotal: **By category** (`bySavingsCategory`,
+  subtotal `categorySavings`) and **To goals** (`byGoalSavings`, subtotal
+  `goalSavings`). The subtotals add to the Savings cell, so the headline is
+  verifiable by reading down
+- **`goalColors`** lookup in `SummarySection` — `byGoalSavings` entries carry no
+  colour, so each goal's palette is resolved by id from `goals`
+
+### Changed
+
+- **Summary balance card** — the third cell is now **Savings** (`summary.savings`)
+  instead of **To goals** (`summary.goalSavings`). Row stays three cells
+
+### Notes
+
+- **No calculation was added.** `savings`, `bySavingsCategory`, `goalSavings` and
+  `byGoalSavings` were all already computed in `monthlySummary.js` and had zero
+  consumers repo-wide. This was pure wiring — the data layer needed no edit,
+  which is the signal the design matched it
+- **No `isMonthly` branching** in the new UI; Monthly vs Overall is fully
+  absorbed upstream by `useTransactions` and `groupSummariesByCurrency`
+
+### Verified
+
+- Both changed modules transform cleanly via the vite dev server
+- Declaration order checked: `goals` (38) → `summaries` (94) → `goalColors` (120)
+  → `renderSavingsBreakdown` (125) → use (287). No TDZ, the failure mode that
+  blanked the Month tab in session 81
+- **Logic proven against synthetic fixtures** by importing `monthlySummary.js`
+  through the dev server and running it in the browser (its import chain needs
+  `import.meta.env`, so bare node cannot load it). With a savings-category
+  expense of ₹1,000, a goal-linked savings expense of ₹2,000, an ordinary ₹500
+  expense and ₹5,000 income, **in both Monthly and Overall**:
+  `categorySavings=1000`, `goalSavings=2000`, `savings=3000`,
+  `categorySavings + goalSavings === savings`, `expenses=500`, and the
+  goal-linked "Silver" row appears **only** under goals — not double counted
+- App boots with a clean console
+
+### Not done (manual follow-up)
+
+- **Not seen rendering with real data.** The Summary tab is behind sign-in and
+  agent testing stops at the login page. TC-193…TC-196 are `not-run`
+- `savingsRate` and a standalone combined `savings` stat remain unsurfaced
+  (F-72 superseded; still computed)
+

@@ -10,6 +10,7 @@ import { groupSummariesByCurrency } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
 import AccountCard from './AccountCard'
+import SavingsBreakdownList from './SavingsBreakdownList'
 
 const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
 
@@ -114,6 +115,28 @@ function SummarySection({ profile, isTabActive = true }) {
   )
 
   const monthKey = `${year}-${String(month).padStart(2, '0')}`
+
+  // byGoalSavings carries no colour, so resolve each goal's palette by id.
+  const goalColors = useMemo(
+    () => Object.fromEntries((goals ?? []).map((g) => [g.id, g.color])),
+    [goals],
+  )
+
+  const renderSavingsBreakdown = (summary) => {
+    const hasRows = summary.bySavingsCategory.length > 0 || summary.byGoalSavings.length > 0
+    if (!hasRows || summary.savings <= 0) return null
+
+    return (
+      <SavingsBreakdownList
+        categoryItems={summary.bySavingsCategory}
+        goalItems={summary.byGoalSavings}
+        categoryTotal={summary.categorySavings}
+        goalTotal={summary.goalSavings}
+        currency={summary.currency}
+        goalColors={goalColors}
+      />
+    )
+  }
 
   const renderChart = (summary) => {
     if (!summary.byExpenseCategory.length || summary.expenses <= 0) return null
@@ -251,15 +274,17 @@ function SummarySection({ profile, isTabActive = true }) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10.5px] text-ink-faint">To goals</p>
+                  <p className="text-[10.5px] text-ink-faint">Savings</p>
                   <p className="n mt-0.5 text-sm font-medium text-ink">
-                    {formatMoney(summary.goalSavings, summary.currency)}
+                    {formatMoney(summary.savings, summary.currency)}
                   </p>
                 </div>
               </div>
             </section>
 
             {renderChart(summary)}
+
+            {renderSavingsBreakdown(summary)}
           </div>
         ))
       )}

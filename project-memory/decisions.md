@@ -1,6 +1,6 @@
 # Decision Log
 
-**Last updated:** 2026-09-05 (v0.31)
+**Last updated:** 2026-09-06 (v0.32)
 
 | Date | Decision | Rationale | Alternatives considered |
 |------|----------|-----------|-------------------------|
@@ -230,3 +230,8 @@
 | 2026-09-05 | Per-goal colour becomes a 3px top edge, not a left stripe | Reads as a quiet label rather than a shouting stripe while keeping goal identity | Drop per-goal colour entirely; keep `border-l-4` |
 | 2026-09-05 | Summary shows Spent / In / To goals only | Artboard 1e carries three values; the five-up grid was the hierarchy problem being fixed | Keep all five including `categorySavings` — can be restored as a fourth item if missed |
 | 2026-09-05 | Ship mobile (1e/1f) only; defer the desktop direction | 1a/1b and 1c/1d are alternatives for the same screens, so building both is wasted work; mobile had no such fork | Pick a desktop direction unilaterally; build both and choose later |
+| 2026-09-06 | Summary **Savings** is now the combined figure (`categorySavings` + `goalSavings`), superseding F-73's "category savings only" | User asked for one savings total with no overlapping double count. `savings` is already a clean sum of disjoint parts — a goal-linked savings expense is counted once, via goals only (`countsAsCategorySavings`, F-133) | Keep `categorySavings` only with "To goals" beside it (F-73's shape); show both combined and goals as peer cells (would render the same rupees twice with nothing marking containment) |
+| 2026-09-06 | "To goals" cell replaced rather than a 4th cell added | `savings` contains `goalSavings`; as peers they double-display. The goal figure survives as a labelled subtotal in the breakdown, where containment is explicit. Also keeps the artboard's 3-cell row and avoids 4 full-precision INR amounts on a 375px viewport | Add a 4th cell; move to a 2x2 grid |
+| 2026-09-06 | New `SavingsBreakdownList` rather than reusing `CategoryBreakdownChart` | The heatmap's drill-down (`getTransactionExpenseCategoryKey`) returns null for savings buckets, so every savings tile would open an empty modal; its tile-area encoding conveys nothing for 2-4 rows; and it is still pre-redesign slate/brand styling | Extend the heatmap with prop-driven copy and a savings-aware key function |
+| 2026-09-06 | Known edge left unmasked: a savings expense dated in-month whose goal contribution's `created_at` falls outside the range is excluded from both `categorySavings` (goal-linked) and `goalSavings` (out of range) — it vanishes in Monthly, returns in Overall | Pre-existing upstream; surfacing per-category sums makes it marginally more visible. A UI fallback re-sum would mask it and risk reintroducing the F-133 double count | Add a fallback re-sum in the component; date-filter contributions by transaction date instead of `created_at` |
+
