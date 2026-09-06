@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-09-05 (v0.31)
+**Last updated:** 2026-09-06 (v0.32)
 
 ## Tech stack
 
@@ -851,3 +851,16 @@ are still referenced by unconverted components — the redesign covers mobile
 (artboards 1e/1f) only. Per-goal colours still come from
 `getColorPalette()` in `src/lib/constants.js`; `palette.fill` (hex) drives the
 3px card edge, `palette.bar` the progress fill.
+
+## Vercel project ownership (append session 82)
+
+`.vercel/project.json` → `projectId: prj_v7KAWRAWR8Bcr7m8SaFbpAgBcE1Y`,
+`orgId: team_hVEIaSPWKtsksRE2DAob5HqA`, `projectName: savings-tracker`.
+
+That team is owned by the Vercel account **`singhnitin-6610`
+(singh.nitin@indiamart.com)** — the *work* address, not
+`nitinsinghbalyan@gmail.com`. Deploying requires being logged in as that
+account; the gmail account (`nitinsinghbalyan-7363`) has its own separate team
+and cannot see this project. The live alias `savings-tracker-azure.vercel.app`
+belongs to the work account, so re-linking to any other account would change the
+production URL.

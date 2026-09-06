@@ -1788,10 +1788,11 @@ where it went.
 
 - **Not seen rendering with real data.** The Summary tab is behind sign-in and
   agent testing stops at the login page. TC-193…TC-196 are `not-run`
-- **Deploy blocked.** `npx vercel --prod` returned `"Not authorized"` (EXIT 1) —
-  the CLI session had expired again, having worked earlier the same day.
-  Committed as `2f842e0` but **not deployed**; production still serves
-  `dpl_8CZUT64NbMQy8U5pV1xHRM7v1Chz` from session 81. Needs `npx vercel login`
+- ~~Deploy blocked~~ — **resolved.** Deployed as
+  `dpl_GzKqH9KVoJTJdRw4nWtSs4M7KVKo`, aliased to
+  `savings-tracker-azure.vercel.app`. The `"Not authorized"` failures were a
+  **wrong Vercel account**, not an expired session — see `error-history.md`
+  2026-09-06
 - `savingsRate` and a standalone combined `savings` stat remain unsurfaced
   (F-72 superseded; still computed)
 
