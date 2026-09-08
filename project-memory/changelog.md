@@ -1805,6 +1805,19 @@ seeded or hard-coded**; the app starts empty.
   and `NetWorthPage` — no TDZ, the class that blanked the Month tab in session 81
 - App boots with a clean console
 
+### Deployed
+
+- `dpl_CLvf9mCYg7bqD9HJV9RztHdZbwv3` — `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `readyState: READY`, target production.
+  Commit `904b116`
+- **The plain `npx vercel --prod --yes` failed with `"Not authorized"` again**,
+  but *not* for session 82's reason. `whoami` returned the correct owner and
+  `/v2/user`, `/v2/teams/<orgId>` and the project all returned **200** — the
+  account was fine. Adding **`--scope singhnitin-6610s-projects`** deployed
+  immediately. Use the scoped form from now on; see `error-history.md`
+- Verified on production: `/` 200, `/worth` 200 (SPA rewrite holds on a route
+  the server has no file for), and the new `NetWorthPage` chunk is served
+
 ### Not done (manual follow-up)
 
 - **`add_net_worth.sql` is not applied.** Until it is, the Worth tab shows live

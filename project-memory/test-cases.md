@@ -835,6 +835,9 @@ TC-193/TC-194 are marked `pass` because they were verified against the real
 | TC-476 | Components render | SSR-render 21 cases incl. negative net worth, unset target, empty group, 0/1/3-point trend | All render without throwing; trend hidden below 2 points | pass | 2026-09-07 |
 | TC-477 | Holding form states | Render form open in a real DOM: add, edit-quantity, edit-flat | Add shows "Add holding" + no Delete; edit-qty pre-fills 330/1200 with "off target" checked; edit-flat shows `2,50,000` | pass | 2026-09-07 |
 | TC-478 | Pre-migration degradation | Open `/worth` before `add_net_worth.sql` is applied | Live account figures + migration hint; no blank screen, no thrown error | not-run | |
+| TC-488 | Production loads | `GET https://savings-tracker-azure.vercel.app/` | 200 | pass | 2026-09-07 |
+| TC-489 | SPA rewrite on a new route | `GET .../worth` directly (no file exists server-side) | 200 via `vercel.json` rewrite | pass | 2026-09-07 |
+| TC-490 | New build is live | `GET .../assets/NetWorthPage-joBS0FN5.js` | 200 — the deployed bundle contains the Worth tab | pass | 2026-09-07 |
 | TC-479 | Post-migration empty state | Apply SQL, reload `/worth` | Five groups with `+` buttons; zero-state headline | not-run | |
 | TC-480 | Add a holding per group | Use each group's `+` | Group pre-selected; subtotal and net worth update | not-run | |
 | TC-481 | Target and exclusion | Set target and date; flag one holding off target | Eligible drops by exactly that value; % and delta follow | not-run | |
