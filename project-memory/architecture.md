@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-09-06 (v0.32)
+**Last updated:** 2026-09-07 (v0.33)
 
 ## Tech stack
 
@@ -430,6 +430,12 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 |------|--------|
 | `add_subcategories_recurring_bank.sql` | **Required** for v0.13 — `parent_id`, `recurring_transactions`, `accounts.bank`, `transactions.recurring_id`, `get_account_balances()` with `bank`; run after `phase2_finance.sql`; uses `DROP FUNCTION IF EXISTS get_account_balances()` before recreate |
 | `add_transaction_category_snapshot.sql` | **Required** for session 63 — `transactions.category_name`, `category_color`, `category_is_savings`; backfill from `categories`; app freezes snapshot before category delete |
+
+### SQL migrations (status — append session 83)
+
+| File | Status |
+|------|--------|
+| `add_net_worth.sql` | **Required** for the Worth tab — creates `holdings`, `net_worth_snapshots`, `contribution_plans` (each with the standard four-policy RLS block and `GRANT`s), plus `user_profiles.net_worth_target` / `net_worth_target_date`. Schema only, no seed rows. Run after `phase2_finance.sql`. **Not yet applied on production as of session 83.** The app degrades gracefully without it: `getHoldings` / `getSnapshots` / `getContributionPlans` return `[]` on `42P01` / `PGRST205` via `isMissingRelationError()`, the Worth tab shows live account balances only plus a migration hint, and `saveNetWorthTarget` no-ops on the missing-column codes via `isMissingNetWorthTargetColumnError()` |
 
 ### SQL migrations (status — audited 2026-08-01, session 78)
 

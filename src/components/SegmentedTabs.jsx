@@ -5,6 +5,7 @@ import { NavLink } from 'react-router-dom'
 const tabs = [
   { to: '/summary', label: 'Month' },
   { to: '/goals', label: 'Goals' },
+  { to: '/worth', label: 'Worth' },
   { to: '/transactions', label: 'Ledger' },
   { to: '/settings', label: 'More' },
 ]
@@ -20,7 +21,7 @@ export default function SegmentedTabs() {
           key={to}
           to={to}
           className={({ isActive }) =>
-            `flex-1 rounded-md py-[7px] text-center text-xs transition ${
+            `flex-1 rounded-md py-[7px] text-center text-[11px] transition ${
               isActive
                 ? 'bg-paper-card font-medium text-ink shadow-[0_1px_2px_rgba(22,19,15,.07)]'
                 : 'font-normal text-ink-soft'

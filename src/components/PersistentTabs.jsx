@@ -6,10 +6,12 @@ import SummaryPage from '../pages/SummaryPage'
 const HomePage = lazy(() => import('../pages/HomePage'))
 const TransactionsPage = lazy(() => import('../pages/TransactionsPage'))
 const SettingsRoutes = lazy(() => import('../pages/SettingsRoutes'))
+const NetWorthPage = lazy(() => import('../pages/NetWorthPage'))
 
 const TABS = [
   { path: '/summary', Component: SummaryPage },
   { path: '/goals', Component: HomePage },
+  { path: '/worth', Component: NetWorthPage },
   { path: '/transactions', Component: TransactionsPage },
   { path: '/settings', Component: SettingsRoutes },
 ]
@@ -54,10 +56,11 @@ export default function PersistentTabs() {
     // Warm likely next tab chunks during idle time (improves tab-switch INP/TTI)
     const prefetchers = {
       '/goals': () => import('../pages/HomePage'),
+      '/worth': () => import('../pages/NetWorthPage'),
       '/transactions': () => import('../pages/TransactionsPage'),
       '/settings': () => import('../pages/SettingsRoutes'),
     }
-    const order = ['/goals', '/transactions', '/settings'].filter(
+    const order = ['/goals', '/transactions', '/worth', '/settings'].filter(
       (path) => path !== activePath,
     )
 

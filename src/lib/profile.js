@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
-import { assertNoError } from './errors'
+import { assertNoError, isMissingNetWorthTargetColumnError } from './errors'
 
 const DEFAULT_PROFILE = {
   default_currency: 'INR',
@@ -51,5 +51,31 @@ export async function updateProfile(patch) {
     .single()
 
   assertNoError(error, 'Failed to update profile')
+  return data
+}
+
+/**
+ * Save the net worth target. Degrades quietly when add_net_worth.sql has not
+ * been run yet — the columns simply are not there, and the rest of the Worth
+ * screen keeps working.
+ */
+export async function saveNetWorthTarget({ target, targetDate }) {
+  const userId = await requireUserId()
+  await ensureProfile()
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update({
+      net_worth_target: target === '' || target === null || target === undefined
+        ? null
+        : Number(target) || 0,
+      net_worth_target_date: targetDate || null,
+    })
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (isMissingNetWorthTargetColumnError(error)) return null
+  assertNoError(error, 'Failed to save net worth target')
   return data
 }

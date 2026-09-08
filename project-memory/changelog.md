@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-09-06 (v0.32)
+**Last updated:** 2026-09-07 (v0.33)
 
 ## 2026-06-14
 
@@ -1737,6 +1737,86 @@ canvas "Goal Tracker App Redesign"
 - **"Today" ledger rows** from 1e (coloured dot + name + amount) not done
 
 ---
+
+## 2026-09-07 (session 83 — Net worth: assets, liabilities and a target)
+
+Adds a fifth tab, **Worth**, replacing a hand-maintained net-worth spreadsheet.
+The workbook was read for structure only — **no values from it were imported,
+seeded or hard-coded**; the app starts empty.
+
+### Added
+
+- **`supabase/add_net_worth.sql`** — `holdings`, `net_worth_snapshots`,
+  `contribution_plans`, each with the standard four-policy RLS block and
+  `GRANT`s, plus `user_profiles.net_worth_target` / `net_worth_target_date`.
+  Schema only, no seed rows. **Not yet applied on production**
+- **`src/lib/netWorth.js`** — the pure aggregation. `holdingValue`,
+  `groupHoldings`, `buildNetWorth`, `buildTargetProgress`, `netWorthCurrencies`.
+  No I/O, so the UI and the snapshot writer cannot disagree
+- **`src/lib/holdings.js` / `netWorthSnapshots.js` / `contributionPlans.js`** —
+  services in the `accounts.js` shape
+- **`src/hooks/useNetWorth.js`** — owns its own fetch with a module-level cache
+- **`src/pages/NetWorthPage.jsx`** + `src/components/netWorth/` (8 components)
+- **`isMissingRelationError` / `isMissingNetWorthTargetColumnError`** in
+  `errors.js`; **`saveNetWorthTarget`** in `profile.js`
+
+### Changed
+
+- **`PersistentTabs`** — `/worth` registered (lazy; it is not the default tab)
+  and added to the idle prefetch order
+- **`SegmentedTabs`** — fifth pill `Worth`; pill text `text-xs` → `text-[11px]`
+  so five fit at 375px
+- **`SidebarNav`** — `Worth` with lucide `Landmark`, matching this file's
+  still-legacy `brand`/`slate` styling rather than introducing paper tokens
+- **`SummarySection`** — a compact `NetWorthCard` above Balances
+
+### Design notes
+
+- **Hybrid source, with a double-count guard.** Liquid assets and credit-card
+  debt are read live from `accounts`; `holdings` carries only what the ledger
+  cannot see. A holding with `linked_account_id` is skipped in the manual pass
+  because the account row already supplies it. A credit account in surplus
+  contributes `max(0, -balance)` = 0, never an asset
+- **No unbounded ledger read anywhere.** This is the failure that got F-87
+  removed in session 46. History is `net_worth_snapshots`, capped at 24 rows;
+  actual-vs-plan reads only transactions already in the context cache
+- **Not added to the `AppDataContext` bootstrap.** That `Promise.all` already
+  fires five requests before first paint (F-135/F-136). `useNetWorth` fetches on
+  first activation of the Worth tab instead, and the Summary card calls it with
+  `enabled: false` — it renders from cache only, gated on `loaded` so it can
+  never show a misleading accounts-only figure
+- **`contribution_plans` is a new table, not `categories.monthly_budget`** —
+  budgets are spending ceilings consumed by the Summary heatmap; these are
+  savings floors
+
+### Verified
+
+- All 20 new/changed modules transform through vite, and each serves the exact
+  export names its consumers import
+- **Arithmetic proven** against fixtures with hand-computed expectations:
+  `assets.total`, `liabilities.total`, `netWorth`, `targetEligible` and
+  `target.delta` all exact. Edge cases covered: archived holdings excluded,
+  linked holdings counted once, credit surplus contributing zero, a USD holding
+  absent from the INR block, quantity x price valuation
+- **Components proven to render** via `vite build --ssr` +
+  `renderToStaticMarkup` — 21 cases including negative net worth, unset target,
+  empty groups, 0/1/3-point trends, and the add and edit forms
+- Declaration order checked in `SummarySection` (hook :43, first `useMemo` :54)
+  and `NetWorthPage` — no TDZ, the class that blanked the Month tab in session 81
+- App boots with a clean console
+
+### Not done (manual follow-up)
+
+- **`add_net_worth.sql` is not applied.** Until it is, the Worth tab shows live
+  account balances plus a migration hint — verified by code path, not observed
+- **Not seen rendering with real data.** The app is behind sign-in and agent
+  testing stops at the login page, so the authenticated Worth screen, the
+  five-pill mobile layout at 375px, and the snapshot write are **unobserved**.
+  TC-197...TC-206 are `not-run`
+- `eslint` could not be completed on this machine — every run exceeded the
+  time limit and was killed while competing with vite for CPU
+- Desktop layout for the Worth tab is unstyled beyond the shared page container
+  (F-146 desktop direction still unchosen)
 
 ## 2026-09-06 (session 82 — Savings restored on Summary, with breakdown)
 

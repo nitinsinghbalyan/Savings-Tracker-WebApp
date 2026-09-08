@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-09-06 (v0.32)
+**Last updated:** 2026-09-07 (v0.33)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -152,6 +152,7 @@
 | F-145 | Settings as a plain list | done | `SettingsSection`/`SettingsRow` hairline-ruled, no cards-in-cards; artboard 1f (session 81) |
 | F-146 | Desktop redesign (1a/1b Safe or 1c/1d Radical) | deferred | Canvas offers two competing directions for the same screens; direction not chosen (session 81) |
 | F-148 | Combined Savings + category/goal breakdown on Summary | done | Third balance cell shows `savings` (= `categorySavings` + `goalSavings`, disjoint); `SavingsBreakdownList` splits it into **By category** (`bySavingsCategory`) and **To goals** (`byGoalSavings`), each with its own subtotal. Works unchanged in Monthly and Overall (session 82) |
+| F-149 | Net worth tab (assets, liabilities, target) | done | Fifth tab `/worth`. `holdings` table for what the ledger cannot see + live `accounts` for liquid/credit. Pure `netWorth.js`; monthly `net_worth_snapshots` (capped 24) instead of F-87's ledger replay; per-holding `excluded_from_target`; quantity x unit price; contribution plan with actual-vs-plan from cached transactions only. Degrades to accounts-only without the migration (session 83) |
 | F-147 | "Today" ledger rows on Month screen | planned | Coloured dot + name + amount from artboard 1e (session 81) |
 | F-141 | Two-step add transaction (keypad → details) | done | Step 1 amount keypad; step 2 wrapping categories/goals; no default goal; edit stays single form (session 80) |
 | F-142 | Recurring checkbox on add transaction | done | Optional Daily/Weekly/Monthly/Yearly (default monthly); creates ledger tx + recurring rule (session 80) |

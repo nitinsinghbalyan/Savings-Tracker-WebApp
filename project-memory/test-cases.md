@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-06 (v0.32)
+**Last updated:** 2026-09-07 (v0.33)
 
 ## Setup
 
@@ -819,3 +819,33 @@ credentials are the user's to enter. These need a human pass on a real device.
 TC-193/TC-194 are marked `pass` because they were verified against the real
 `monthlySummary.js` with synthetic fixtures, not against production data.
 
+
+---
+
+## v0.33 — Net worth: assets, liabilities and target (session 83)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-470 | Aggregation arithmetic (synthetic) | Run `buildNetWorth` over fixtures with hand-computed totals | `assets.total`, `liabilities.total`, `netWorth`, `targetEligible`, `target.delta` all exact | pass | 2026-09-07 |
+| TC-471 | Archived holdings excluded (synthetic) | Fixture with `is_archived: true` | Contributes nothing to any group or total | pass | 2026-09-07 |
+| TC-472 | Linked holding not double counted (synthetic) | Holding with `linked_account_id` plus its account | Counted once, from the account row only | pass | 2026-09-07 |
+| TC-473 | Credit surplus is not an asset (synthetic) | `credit` account with positive balance | Contributes 0 to liabilities; never added to assets | pass | 2026-09-07 |
+| TC-474 | Currency isolation (synthetic) | USD holding present while building INR | Absent from the INR block; USD gets its own block | pass | 2026-09-07 |
+| TC-475 | Quantity x price valuation (synthetic) | Holding with `quantity` 330, `unit_price` 1200 | Valued 396000; flat `value` ignored | pass | 2026-09-07 |
+| TC-476 | Components render | SSR-render 21 cases incl. negative net worth, unset target, empty group, 0/1/3-point trend | All render without throwing; trend hidden below 2 points | pass | 2026-09-07 |
+| TC-477 | Holding form states | Render form open in a real DOM: add, edit-quantity, edit-flat | Add shows "Add holding" + no Delete; edit-qty pre-fills 330/1200 with "off target" checked; edit-flat shows `2,50,000` | pass | 2026-09-07 |
+| TC-478 | Pre-migration degradation | Open `/worth` before `add_net_worth.sql` is applied | Live account figures + migration hint; no blank screen, no thrown error | not-run | |
+| TC-479 | Post-migration empty state | Apply SQL, reload `/worth` | Five groups with `+` buttons; zero-state headline | not-run | |
+| TC-480 | Add a holding per group | Use each group's `+` | Group pre-selected; subtotal and net worth update | not-run | |
+| TC-481 | Target and exclusion | Set target and date; flag one holding off target | Eligible drops by exactly that value; % and delta follow | not-run | |
+| TC-482 | Reprice a quantity holding | Edit unit price | Value, subtotal, net worth and delta all move together | not-run | |
+| TC-483 | Credit account as liability | Add a `credit` account with a negative balance | Appears under short-term liabilities; lowers net worth | not-run | |
+| TC-484 | Snapshot write | Visit `/worth`, reload | One row per period; revisiting overwrites rather than appending | not-run | |
+| TC-485 | No unbounded ledger read | Watch the network panel on `/worth` | No unbounded `transactions` query; snapshots capped at 24 rows | not-run | |
+| TC-486 | Five tabs at 375px | Mobile viewport | Segmented tabs do not wrap or clip | not-run | |
+| TC-487 | Summary card | Visit `/worth`, return to Month | Net worth card appears above Balances and links to `/worth` | not-run | |
+
+**Note:** TC-470…TC-477 are `pass` — verified against the real modules with
+synthetic fixtures (arithmetic in Node, components via `vite build --ssr` +
+`renderToStaticMarkup`, the form in a real browser DOM). TC-478 onward are
+`not-run`: they need sign-in and an applied migration, both the user's to do.

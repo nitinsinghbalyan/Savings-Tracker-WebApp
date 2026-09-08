@@ -11,6 +11,8 @@ import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
 import AccountCard from './AccountCard'
 import SavingsBreakdownList from './SavingsBreakdownList'
+import NetWorthCard from './netWorth/NetWorthCard'
+import { useNetWorth } from '../hooks/useNetWorth'
 
 const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
 
@@ -36,6 +38,9 @@ function SummarySection({ profile, isTabActive = true }) {
   const { accounts } = useAccounts({ enabled: dataReady })
   const { categories } = useCategories({ enabled: dataReady })
   const { goals } = useGoals({ enabled: dataReady })
+  // enabled:false — read whatever the Worth tab has already cached, never
+  // fetch from here. The default tab must not gain a sixth startup request.
+  const { summary: netWorthSummary, loaded: netWorthLoaded } = useNetWorth({ enabled: false })
   const { transactions, initialLoading, error } = useTransactions({
     // Pause fetches while the tab is hidden; cached rows still render from context.
     enabled: dataReady && isTabActive,
@@ -288,6 +293,8 @@ function SummarySection({ profile, isTabActive = true }) {
           </div>
         ))
       )}
+
+      {netWorthLoaded && <NetWorthCard summary={netWorthSummary} />}
 
       <div className="space-y-2">
         <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">

@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Target, BarChart3, Settings } from 'lucide-react'
+import { Target, BarChart3, Settings, Landmark } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import RupeeIcon from './icons/RupeeIcon'
 
 const tabs = [
   { to: '/summary', label: 'Summary', icon: BarChart3 },
   { to: '/goals', label: 'Goals', icon: Target },
+  { to: '/worth', label: 'Worth', icon: Landmark },
   { to: '/transactions', label: 'Activity', icon: RupeeIcon },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
