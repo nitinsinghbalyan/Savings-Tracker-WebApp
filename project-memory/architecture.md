@@ -414,6 +414,15 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 
 ---
 
+## Project location
+
+**`~/Projects/Goals App/savings-tracker`** (moved 2026-09-09 from
+`~/Desktop/Goals App/...`). The Desktop is iCloud-synced, which left
+`node_modules` stored as `dataless` placeholders and made builds hang for
+tens of minutes waiting on downloads. Do not move it back under
+Desktop/Documents while iCloud sync is on — see `error-history.md` 2026-09-09.
+Git remote and the Vercel link are path-independent and survived the move.
+
 ## SQL migrations (status)
 
 | File | Status |

@@ -60,16 +60,17 @@ export function useNetWorth({ enabled = true } = {}) {
   const { user } = useAuth()
   const { accounts, profile, bootstrapping, refreshProfile } = useAppData()
 
-  const [dataVersion, setDataVersion] = useState(version)
-  const [loading, setLoading] = useState(!cache.loaded)
+  // Only used to force a re-render when the module cache publishes; the value
+  // itself is never read, the cache is the source of truth.
+  const [, setRenderTick] = useState(version)
   const [error, setError] = useState(null)
   const inFlightRef = useRef(null)
   const snapshotWrittenRef = useRef(null)
 
   useEffect(() => {
-    const notify = () => setDataVersion(version)
+    // Registered before the fetch effect below, so a publish cannot be missed.
+    const notify = () => setRenderTick(version)
     subscribers.add(notify)
-    notify()
     return () => subscribers.delete(notify)
   }, [])
 
@@ -81,10 +82,7 @@ export function useNetWorth({ enabled = true } = {}) {
   const load = useCallback(
     async ({ force = false } = {}) => {
       if (!user?.id) return
-      if (!force && cache.loaded) {
-        setLoading(false)
-        return
-      }
+      if (!force && cache.loaded) return
       if (inFlightRef.current) return inFlightRef.current
 
       setError(null)
@@ -107,7 +105,6 @@ export function useNetWorth({ enabled = true } = {}) {
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to load net worth')
         } finally {
-          setLoading(false)
           inFlightRef.current = null
         }
       })()
@@ -121,10 +118,7 @@ export function useNetWorth({ enabled = true } = {}) {
   useEffect(() => {
     if (!enabled) return
     if (!user?.id) return
-    if (cache.loaded) {
-      setLoading(false)
-      return
-    }
+    if (cache.loaded) return
     void load()
   }, [enabled, user?.id, load])
 
@@ -141,12 +135,12 @@ export function useNetWorth({ enabled = true } = {}) {
 
   const currencies = useMemo(
     () => netWorthCurrencies(holdings, accounts),
-    [holdings, accounts, dataVersion],
+    [holdings, accounts],
   )
 
   const summaries = useMemo(
     () => currencies.map((currency) => buildNetWorth(holdings, accounts, { currency })),
-    [currencies, holdings, accounts, dataVersion],
+    [currencies, holdings, accounts],
   )
 
   const primary = useMemo(
@@ -195,6 +189,9 @@ export function useNetWorth({ enabled = true } = {}) {
       })
       .catch(() => {})
   }, [enabled, user?.id, primary, monthStartDay])
+
+  const isLoading =
+    enabled && Boolean(user?.id) && !cache.loaded && !error
 
   const refetch = useCallback(() => load({ force: true }), [load])
 
@@ -267,7 +264,7 @@ export function useNetWorth({ enabled = true } = {}) {
     target,
     loaded: cache.loaded,
     migrationPending: cache.migrationPending,
-    loading: enabled && (loading || (bootstrapping && !cache.loaded)),
+    loading: isLoading || (enabled && bootstrapping && !cache.loaded),
     error,
     refetch,
     createHolding: handleCreate,

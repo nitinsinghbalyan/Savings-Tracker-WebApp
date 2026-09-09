@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import ModalShell from '../ModalShell'
 import { CURRENCIES } from '../../lib/constants'
@@ -17,6 +17,28 @@ const EMPTY = {
   note: '',
 }
 
+function isPriced(holding) {
+  return Boolean(holding) && holding.quantity !== null && holding.quantity !== undefined
+}
+
+function initialForm(holding, defaultGroup, defaultCurrency) {
+  if (!holding) {
+    return { ...EMPTY, holding_group: defaultGroup ?? EMPTY.holding_group, currency: defaultCurrency }
+  }
+  return {
+    name: holding.name ?? '',
+    holding_group: holding.holding_group,
+    currency: holding.currency ?? 'INR',
+    value: holding.value != null ? String(holding.value) : '',
+    quantity: holding.quantity != null ? String(holding.quantity) : '',
+    unit_price: holding.unit_price != null ? String(holding.unit_price) : '',
+    unit_label: holding.unit_label ?? '',
+    excluded_from_target: Boolean(holding.excluded_from_target),
+    note: holding.note ?? '',
+  }
+}
+
+
 export default function HoldingForm({
   open,
   holding,
@@ -26,37 +48,10 @@ export default function HoldingForm({
   onSubmit,
   onDelete,
 }) {
-  const [form, setForm] = useState(EMPTY)
-  const [byQuantity, setByQuantity] = useState(false)
+  const [form, setForm] = useState(() => initialForm(holding, defaultGroup, defaultCurrency))
+  const [byQuantity, setByQuantity] = useState(() => isPriced(holding))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!open) return
-    if (holding) {
-      const priced = holding.quantity !== null && holding.quantity !== undefined
-      setForm({
-        name: holding.name ?? '',
-        holding_group: holding.holding_group,
-        currency: holding.currency ?? 'INR',
-        value: holding.value != null ? String(holding.value) : '',
-        quantity: holding.quantity != null ? String(holding.quantity) : '',
-        unit_price: holding.unit_price != null ? String(holding.unit_price) : '',
-        unit_label: holding.unit_label ?? '',
-        excluded_from_target: Boolean(holding.excluded_from_target),
-        note: holding.note ?? '',
-      })
-      setByQuantity(priced)
-    } else {
-      setForm({
-        ...EMPTY,
-        holding_group: defaultGroup ?? EMPTY.holding_group,
-        currency: defaultCurrency,
-      })
-      setByQuantity(false)
-    }
-    setError(null)
-  }, [open, holding, defaultGroup, defaultCurrency])
 
   const computed = useMemo(() => {
     const q = Number(form.quantity)

@@ -149,9 +149,10 @@ export default function NetWorthPage({ isTabActive = true }) {
         )}
       </main>
 
-      {isTabActive && (
+      {isTabActive && formOpen && (
         <HoldingForm
-          open={formOpen}
+          key={editing?.id ?? `new-${defaultGroup}`}
+          open
           holding={editing}
           defaultGroup={defaultGroup}
           defaultCurrency={profile?.default_currency ?? 'INR'}
