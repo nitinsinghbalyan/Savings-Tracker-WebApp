@@ -83,9 +83,19 @@ ALTER TABLE user_profiles
 -- Row level security (same shape as phase2_finance.sql)
 -- ============================================================
 
+-- RLS is the ONLY thing keeping this data private: Supabase grants every new
+-- table in `public` to the `anon` role through default privileges, so the
+-- GRANTs at the bottom of this file restrict nothing on their own. Shipping
+-- these tables with RLS off exposed 48 holdings and a net worth snapshot to
+-- anyone holding the anon key (which is in the client bundle) — see
+-- error-history.md 2026-09-10. Never let this block fail silently.
 ALTER TABLE holdings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE net_worth_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contribution_plans ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE holdings FORCE ROW LEVEL SECURITY;
+ALTER TABLE net_worth_snapshots FORCE ROW LEVEL SECURITY;
+ALTER TABLE contribution_plans FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY "users_select_own_holdings" ON holdings
   FOR SELECT TO authenticated USING (user_id = auth.uid());
@@ -114,6 +124,22 @@ CREATE POLICY "users_update_own_contribution_plans" ON contribution_plans
 CREATE POLICY "users_delete_own_contribution_plans" ON contribution_plans
   FOR DELETE TO authenticated USING (user_id = auth.uid());
 
+-- Take away what Supabase's default privileges handed to `anon`.
+REVOKE ALL ON holdings FROM anon;
+REVOKE ALL ON net_worth_snapshots FROM anon;
+REVOKE ALL ON contribution_plans FROM anon;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON holdings TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON net_worth_snapshots TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON contribution_plans TO authenticated;
+
+-- Verify before trusting this migration. Every row must read
+-- rls_enabled = true and policy_count = 4.
+SELECT c.relname AS table_name,
+       c.relrowsecurity AS rls_enabled,
+       COUNT(p.polname) AS policy_count
+FROM pg_class c
+LEFT JOIN pg_policy p ON p.polrelid = c.oid
+WHERE c.relname IN ('holdings', 'net_worth_snapshots', 'contribution_plans')
+GROUP BY c.relname, c.relrowsecurity
+ORDER BY c.relname;

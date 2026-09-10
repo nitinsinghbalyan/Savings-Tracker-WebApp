@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-09-07 (v0.33)
+**Last updated:** 2026-09-10 (v0.33)
 
 ## Tech stack
 
@@ -444,7 +444,8 @@ Git remote and the Vercel link are path-independent and survived the move.
 
 | File | Status |
 |------|--------|
-| `add_net_worth.sql` | **Required** for the Worth tab — creates `holdings`, `net_worth_snapshots`, `contribution_plans` (each with the standard four-policy RLS block and `GRANT`s), plus `user_profiles.net_worth_target` / `net_worth_target_date`. Schema only, no seed rows. Run after `phase2_finance.sql`. **Not yet applied on production as of session 83.** The app degrades gracefully without it: `getHoldings` / `getSnapshots` / `getContributionPlans` return `[]` on `42P01` / `PGRST205` via `isMissingRelationError()`, the Worth tab shows live account balances only plus a migration hint, and `saveNetWorthTarget` no-ops on the missing-column codes via `isMissingNetWorthTargetColumnError()` |
+| `fix_net_worth_rls.sql` | **Required, applied 2026-09-10.** Closes the anonymous-read hole left when `add_net_worth.sql`'s RLS block did not take effect. Enables + forces RLS, recreates all 12 policies idempotently, and `REVOKE ALL ... FROM anon`. Verified: anon gets `401 / 42501` on all three tables |
+| `add_net_worth.sql` | **Applied on production 2026-09-10.** Originally described below as not applied — creates `holdings`, `net_worth_snapshots`, `contribution_plans` (each with the standard four-policy RLS block and `GRANT`s), plus `user_profiles.net_worth_target` / `net_worth_target_date`. Schema only, no seed rows. Run after `phase2_finance.sql`. **Applied 2026-09-10 — but its RLS block did not take effect, exposing every holding publicly until `fix_net_worth_rls.sql` was run. See `error-history.md` 2026-09-10.** The app degrades gracefully without it: `getHoldings` / `getSnapshots` / `getContributionPlans` return `[]` on `42P01` / `PGRST205` via `isMissingRelationError()`, the Worth tab shows live account balances only plus a migration hint, and `saveNetWorthTarget` no-ops on the missing-column codes via `isMissingNetWorthTargetColumnError()` |
 
 ### SQL migrations (status — audited 2026-08-01, session 78)
 

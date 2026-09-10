@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-07 (v0.33)
+**Last updated:** 2026-09-10 (v0.33)
 
 ## Setup
 
@@ -834,6 +834,11 @@ TC-193/TC-194 are marked `pass` because they were verified against the real
 | TC-475 | Quantity x price valuation (synthetic) | Holding with `quantity` 330, `unit_price` 1200 | Valued 396000; flat `value` ignored | pass | 2026-09-07 |
 | TC-476 | Components render | SSR-render 21 cases incl. negative net worth, unset target, empty group, 0/1/3-point trend | All render without throwing; trend hidden below 2 points | pass | 2026-09-07 |
 | TC-477 | Holding form states | Render form open in a real DOM: add, edit-quantity, edit-flat | Add shows "Add holding" + no Delete; edit-qty pre-fills 330/1200 with "off target" checked; edit-flat shows `2,50,000` | pass | 2026-09-07 |
+| TC-491 | **Anon cannot read holdings** | `curl "$VITE_SUPABASE_URL/rest/v1/holdings?select=*" -H "apikey: $ANON"` | `42501 permission denied` (was: 48 rows leaked) | pass | 2026-09-10 |
+| TC-492 | **Anon cannot read net_worth_snapshots** | Same probe on `net_worth_snapshots` | `42501 permission denied` | pass | 2026-09-10 |
+| TC-493 | **Anon cannot read contribution_plans** | Same probe on `contribution_plans` | `42501 permission denied` | pass | 2026-09-10 |
+| TC-494 | Migration applied | Probe the three tables + `user_profiles.net_worth_target` | All present | pass | 2026-09-10 |
+| TC-495 | Signed-in Worth tab still works after REVOKE | Sign in, open `/worth`, add and edit a holding | Holdings load; add/edit/delete succeed | not-run | |
 | TC-478 | Pre-migration degradation | Open `/worth` before `add_net_worth.sql` is applied | Live account figures + migration hint; no blank screen, no thrown error | not-run | |
 | TC-488 | Production loads | `GET https://savings-tracker-azure.vercel.app/` | 200 | pass | 2026-09-07 |
 | TC-489 | SPA rewrite on a new route | `GET .../worth` directly (no file exists server-side) | 200 via `vercel.json` rewrite | pass | 2026-09-07 |

@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-09-07 (v0.33)
+**Last updated:** 2026-09-10 (v0.33)
 
 ## 2026-06-14
 
@@ -1737,6 +1737,46 @@ canvas "Goal Tracker App Redesign"
 - **"Today" ledger rows** from 1e (coloured dot + name + amount) not done
 
 ---
+
+## 2026-09-10 (session 83 cont. — migration applied, and an RLS hole closed)
+
+### Fixed
+
+- **Security: the net worth tables were world-readable.** `add_net_worth.sql`
+  was run and created everything, but its `ENABLE ROW LEVEL SECURITY` block did
+  not take effect. Supabase grants new `public` tables to `anon` by default, so
+  the file's `GRANT ... TO authenticated` restricted nothing — **48 holdings
+  (with names and values) and the net worth snapshot were readable by anyone
+  with the anon key, which ships in the client bundle**
+- **`supabase/fix_net_worth_rls.sql`** (new) — `ENABLE` + `FORCE ROW LEVEL
+  SECURITY`, all 12 policies recreated behind `DROP POLICY IF EXISTS`, then
+  `REVOKE ALL ... FROM anon`. Idempotent, ends with a `pg_class.relrowsecurity`
+  verification query
+- **`add_net_worth.sql` hardened** with the same `FORCE` + `REVOKE` and the
+  verification query, so re-running it cannot recreate the hole
+
+### Verified
+
+- Before: anon `GET /rest/v1/holdings?select=*` returned **48 rows** while
+  `accounts` returned 0 — proving it was these tables, not the whole schema
+- After: `holdings`, `net_worth_snapshots` and `contribution_plans` all return
+  **`401` / `42501 permission denied`** to anon. Stricter than the rest of the
+  schema, which returns 200 with 0 rows via RLS filtering
+- `user_profiles.net_worth_target` / `net_worth_target_date` present
+
+### Not done (manual follow-up)
+
+- **Anonymous *write* access was never tested.** Given the same default grants
+  anon likely had INSERT/UPDATE/DELETE too; testing it would have meant writing
+  junk into production. The fix revokes all privileges, so reads and writes are
+  closed together — but treat the pre-fix window as write-exposed
+- **The exposure window** ran from whenever `add_net_worth.sql` was applied
+  until `fix_net_worth_rls.sql` was run on 2026-09-10. No way to tell from here
+  whether anyone read the data
+- **The signed-in Worth tab is still unverified** — agent testing stops at the
+  login page. The `REVOKE`/`FORCE RLS` change should be transparent to
+  authenticated users (grants and policies intact, and the app writes `user_id`
+  on every insert), but it has not been observed working
 
 ## 2026-09-07 (session 83 — Net worth: assets, liabilities and a target)
 
