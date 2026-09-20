@@ -50,6 +50,17 @@ remaining two are deliberately not built — see "Not done" and `decisions.md`.
   confirmed against HEAD
 - Goals tab loads with a clean console (signed out)
 
+### Deployed
+
+- `dpl_3U7UF8ZH4JQUu9KtYkSxTfksz5Db` — `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `readyState: READY`. Commit `227bdb9`,
+  `--scope singhnitin-6610s-projects`
+- **Proven live per chunk**, since all three screens are code-split into
+  separate bundles: `not started` in `HomePage-*`, `Spent by day` in
+  `TransactionsPage-*`, `Funding by month` in `GoalDetailModal-*`. A single
+  entry-chunk grep would have proven none of them
+- `/`, `/goals`, `/transactions`, `/summary`, `/worth` all 200
+
 ### Not done (manual follow-up)
 
 - **1f Log sheet — blocked on a decision, not on effort.** The artboard is a

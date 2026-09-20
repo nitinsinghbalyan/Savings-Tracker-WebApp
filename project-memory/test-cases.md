@@ -915,6 +915,7 @@ synthetic fixtures via `vite build --ssr`. TC-514 onward need sign-in.
 | TC-522 | Spend by day (synthetic) | `buildSpendByDay` mixed fixtures | 30 bars; expenses only; other currency excluded; max ratio = 1 | pass | 2026-09-20 |
 | TC-523 | Day net excludes transfers | `dayNet` on a day with a transfer | −2,485 (transfer ignored, income netted) | pass | 2026-09-20 |
 | TC-524 | New components render | SSR-render all three, plus empty states | Render without throwing; all three hide entirely when empty | pass | 2026-09-20 |
+| TC-528 | All three screens live per chunk | Grep the deployed `HomePage`, `TransactionsPage` and `GoalDetailModal` chunks | Each contains its own new string | pass | 2026-09-20 |
 | TC-525 | Goals header with real data | Sign in, open Goals | Percent and counts match the cards below | not-run | |
 | TC-526 | Funding chart with real data | Sign in, open a funded goal | Bars match its contribution history; average plausible | not-run | |
 | TC-527 | Ledger chart + day nets | Sign in, open Ledger | Chart total equals the month's spend; each day's net matches its rows | not-run | |
