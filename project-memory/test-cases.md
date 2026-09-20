@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-20 (v0.34)
+**Last updated:** 2026-09-20 (v0.35)
 
 ## Setup
 
@@ -880,3 +880,25 @@ synthetic fixtures (arithmetic in Node, components via `vite build --ssr` +
 component in a browser DOM at 375px. TC-501 is `partial`: the hide/show cycle
 was proven against the real `useBottomNavAutoHide` hook with a stand-in modal,
 but not against the five actual modals. Everything else needs sign-in.
+
+---
+
+## v0.35 — Goal Tracker Mobile redesign, part 1 (session 85)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-507 | Today rows (synthetic) | `buildTodayRows` over mixed fixtures | Today's non-transfer rows for the currency only; newest first; net = −2352.20 | pass | 2026-09-20 |
+| TC-508 | Transfers excluded from Today | Fixture with a transfer dated today | Absent from rows and from net | pass | 2026-09-20 |
+| TC-509 | Delta maths | `percentDelta` up / down / equal / no baseline | 18.2, −67, 0, `null` | pass | 2026-09-20 |
+| TC-510 | Delta badge semantics | Render spend ▲, goals ▼, income ▲ | Spend ▲ and goals ▼ warm; income ▲ green; zero and null render nothing | pass | 2026-09-20 |
+| TC-511 | Composition maths | `buildComposition` over fixtures | Assets = fixed+liquid; percentages sum to 100; liquid = spendable | pass | 2026-09-20 |
+| TC-512 | Snapshot delta | `snapshotDelta` with 1 vs 2+ snapshots | `null` with one; 1.4% and prior period with two | pass | 2026-09-20 |
+| TC-513 | Net worth spark degrades | Render composition with 0 / 1 / 6 snapshots | Spark hidden below 2; "Apr – Sep" label at 6 | pass | 2026-09-20 |
+| TC-514 | Today list with real data | Sign in, open Month on a day with entries | Rows match the day's ledger; net agrees | not-run | |
+| TC-515 | Delta badges with real data | Sign in, open Month with a populated previous month | Badges appear after the month paints, never before | not-run | |
+| TC-516 | Delta badges cost | Watch the network panel on first Month paint | Previous-month query fires only after the visible month resolves | not-run | |
+| TC-517 | Composition with real holdings | Sign in, open Worth | Band proportions match Assets / Personal / Owed; spendable = liquid | not-run | |
+| TC-518 | Overall view unaffected | Switch Month → Overall | No Today list, no badges, no previous-month query | not-run | |
+
+**Note:** TC-507…TC-513 are `pass` — verified against the real modules with
+synthetic fixtures via `vite build --ssr`. TC-514 onward need sign-in.

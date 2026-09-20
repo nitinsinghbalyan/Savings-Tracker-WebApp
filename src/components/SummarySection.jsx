@@ -1,17 +1,20 @@
 import { lazy, memo, Suspense, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { format } from 'date-fns'
 import { useAuth } from '../hooks/useAuth'
 import { useAppData } from '../context/AppDataContext'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useTransactions } from '../hooks/useTransactions'
 import { useGoals } from '../hooks/useGoals'
-import { groupSummariesByCurrency } from '../lib/monthlySummary'
+import { buildTodayRows, groupSummariesByCurrency, percentDelta } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
 import AccountCard from './AccountCard'
 import SavingsBreakdownList from './SavingsBreakdownList'
 import NetWorthCard from './netWorth/NetWorthCard'
+import TodayList from './TodayList'
+import DeltaBadge from './DeltaBadge'
 import { useNetWorth } from '../hooks/useNetWorth'
 
 const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
@@ -47,6 +50,23 @@ function SummarySection({ profile, isTabActive = true }) {
     allTime: !isMonthly,
     year: isMonthly ? year : undefined,
     month: isMonthly ? month : undefined,
+    monthStartDay,
+  })
+
+  // Artboard 1a shows month-over-month deltas, which need the previous period.
+  // Deliberately month-scoped: a second bounded query, never an all-time fetch
+  // (F-87 was removed in session 46 for exactly that).
+  const prevPeriod = useMemo(() => {
+    if (!isMonthly) return null
+    return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
+  }, [isMonthly, year, month])
+
+  const { transactions: prevTransactions, loaded: prevLoaded } = useTransactions({
+    // Only after the visible month is on screen, so the default tab's first
+    // paint never waits on a comparison that lives below the headline figure.
+    enabled: dataReady && isTabActive && isMonthly && !initialLoading && Boolean(prevPeriod),
+    year: prevPeriod?.year,
+    month: prevPeriod?.month,
     monthStartDay,
   })
 
@@ -118,6 +138,51 @@ function SummarySection({ profile, isTabActive = true }) {
       preferredCurrency,
     ],
   )
+
+  const prevSummaries = useMemo(() => {
+    if (!isMonthly || !prevLoaded || !prevPeriod) return []
+    return groupSummariesByCurrency(prevTransactions ?? [], categories, activeAccounts, {
+      goals,
+      year: prevPeriod.year,
+      month: prevPeriod.month,
+      monthStartDay,
+      preferredCurrency,
+      allTime: false,
+    })
+  }, [
+    isMonthly,
+    prevLoaded,
+    prevPeriod,
+    prevTransactions,
+    categories,
+    activeAccounts,
+    goals,
+    monthStartDay,
+    preferredCurrency,
+  ])
+
+  const deltasFor = (currency) => {
+    const prev = prevSummaries.find((p) => p.currency === currency)
+    if (!prev) return null
+    return {
+      expenses: percentDelta(
+        summaries.find((x) => x.currency === currency)?.expenses ?? 0,
+        prev.expenses,
+      ),
+      income: percentDelta(
+        summaries.find((x) => x.currency === currency)?.income ?? 0,
+        prev.income,
+      ),
+      savings: percentDelta(
+        summaries.find((x) => x.currency === currency)?.savings ?? 0,
+        prev.savings,
+      ),
+    }
+  }
+
+  const todayKey = format(now, 'yyyy-MM-dd')
+
+  const todayFor = (currency) => buildTodayRows(transactions ?? [], currency, todayKey)
 
   const monthKey = `${year}-${String(month).padStart(2, '0')}`
 
@@ -265,27 +330,59 @@ function SummarySection({ profile, isTabActive = true }) {
                 </div>
               )}
 
-              <div className="mt-2 flex justify-between border-t border-ink-hairline pt-[11px]">
+              {isMonthly && (
+                <div className="mt-1.5 flex justify-between">
+                  <span className="n text-[9.5px] text-ink-faint">
+                    {format(new Date(year, month - 1, 1), 'd MMM')}
+                  </span>
+                  <span className="n text-[9.5px] text-accent">today</span>
+                  <span className="n text-[9.5px] text-ink-faint">
+                    {new Date(year, month, 0).getDate()}
+                  </span>
+                </div>
+              )}
+
+              <div className="mt-3 grid grid-cols-3 gap-2.5 border-t border-ink-hairline pt-[11px]">
                 <div>
                   <p className="text-[10.5px] text-ink-faint">Spent</p>
                   <p className="n mt-0.5 text-sm font-medium text-ink">
                     {formatMoney(summary.expenses, summary.currency)}
                   </p>
+                  {isMonthly && (
+                    <DeltaBadge
+                      delta={deltasFor(summary.currency)?.expenses}
+                      higherIsBetter={false}
+                    />
+                  )}
                 </div>
                 <div>
-                  <p className="text-[10.5px] text-ink-faint">In</p>
+                  <p className="text-[10.5px] text-ink-faint">Income</p>
                   <p className="n mt-0.5 text-sm font-medium text-positive">
                     {formatMoney(summary.income, summary.currency)}
                   </p>
+                  {isMonthly && <DeltaBadge delta={deltasFor(summary.currency)?.income} />}
                 </div>
                 <div>
-                  <p className="text-[10.5px] text-ink-faint">Savings</p>
-                  <p className="n mt-0.5 text-sm font-medium text-ink">
+                  <p className="text-[10.5px] text-ink-faint">To goals</p>
+                  <p className="n mt-0.5 text-sm font-medium text-accent">
                     {formatMoney(summary.savings, summary.currency)}
                   </p>
+                  {isMonthly && <DeltaBadge delta={deltasFor(summary.currency)?.savings} />}
                 </div>
               </div>
             </section>
+
+            {isMonthly &&
+              (() => {
+                const today = todayFor(summary.currency)
+                return (
+                  <TodayList
+                    rows={today.rows}
+                    net={today.net}
+                    currency={summary.currency}
+                  />
+                )
+              })()}
 
             {renderChart(summary)}
 

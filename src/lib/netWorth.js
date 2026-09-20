@@ -232,3 +232,54 @@ export function buildTargetProgress(summary, { target, targetDate } = {}) {
     reached: eligible >= amount,
   }
 }
+
+/**
+ * Artboard 1h composition bar. "Assets" there means the investable side
+ * (large & fixed plus liquid); personal items are shown as their own band
+ * because they are estimates, not marketable holdings.
+ */
+export function buildComposition(summary) {
+  if (!summary) return null
+
+  const assets = summary.assets.largeFixed + summary.assets.liquid
+  const personal = summary.assets.personal
+  const liabilities = summary.liabilities.total
+  const span = assets + personal + liabilities
+
+  const pct = (v) => (span > 0 ? (v / span) * 100 : 0)
+
+  return {
+    assets,
+    personal,
+    liabilities,
+    liquid: summary.assets.liquid,
+    assetsPct: pct(assets),
+    personalPct: pct(personal),
+    liabilitiesPct: pct(liabilities),
+    hasSpan: span > 0,
+  }
+}
+
+/**
+ * Change against the previous snapshot, for the "▲ 1.4% vs Aug" badge.
+ * Returns null unless there are at least two snapshots for the currency, so a
+ * first-ever visit shows no badge rather than a meaningless 0%.
+ */
+export function snapshotDelta(snapshots = [], currency = 'INR') {
+  const rows = snapshots
+    .filter((s) => (s.currency ?? 'INR') === currency)
+    .sort((a, b) => String(a.period).localeCompare(String(b.period)))
+
+  if (rows.length < 2) return null
+
+  const latest = rows[rows.length - 1]
+  const prev = rows[rows.length - 2]
+  const prevValue = Number(prev.net_worth) || 0
+  if (prevValue <= 0) return null
+
+  const latestValue = Number(latest.net_worth) || 0
+  return {
+    percent: ((latestValue - prevValue) / prevValue) * 100,
+    previousPeriod: prev.period,
+  }
+}

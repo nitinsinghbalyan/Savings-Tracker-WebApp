@@ -242,3 +242,51 @@ export function groupSummariesByCurrency(
     }
   })
 }
+
+/**
+ * Today's entries for the Overview screen (artboard 1a "Today").
+ *
+ * Reads only the transactions already in the context cache for the visible
+ * month — it must never trigger a fetch of its own. Transfers are excluded:
+ * they move money between the user's own accounts and would read as spending.
+ */
+export function buildTodayRows(transactions = [], currency = 'INR', todayKey) {
+  const rows = []
+  let net = 0
+
+  for (const tx of transactions) {
+    if (tx.type === 'transfer') continue
+    if ((tx.account?.currency ?? 'INR') !== currency) continue
+    if (tx.transaction_date?.slice(0, 10) !== todayKey) continue
+
+    const bucket = resolveCategoryBucket(tx)
+    const amount = Number(tx.amount) || 0
+    const signed = tx.type === 'income' ? amount : -amount
+    net += signed
+
+    rows.push({
+      id: tx.id,
+      name: tx.note?.trim() || bucket.name,
+      color: bucket.color,
+      signed,
+      isIncome: tx.type === 'income',
+      createdAt: tx.created_at ?? null,
+    })
+  }
+
+  rows.sort((a, b) => new Date(b.createdAt ?? 0) - new Date(a.createdAt ?? 0))
+  return { rows, net }
+}
+
+/**
+ * Month-over-month change as a percentage, or null when there is no usable
+ * baseline. Returning null (rather than 0 or Infinity) lets the caller hide
+ * the badge instead of showing a meaningless "▲ 0%" or "▲ ∞".
+ */
+export function percentDelta(current, previous) {
+  const prev = Number(previous) || 0
+  const curr = Number(current) || 0
+  if (prev <= 0) return null
+  if (curr === prev) return 0
+  return ((curr - prev) / prev) * 100
+}

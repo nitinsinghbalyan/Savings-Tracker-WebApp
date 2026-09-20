@@ -1,6 +1,83 @@
 # Changelog
 
-**Last updated:** 2026-09-20 (v0.34)
+**Last updated:** 2026-09-20 (v0.35)
+
+## 2026-09-20 (session 85 — Goal Tracker Mobile redesign, part 1 of 3)
+
+Imported the **Goal Tracker App Redesign** canvas
+(`a2ce9821-42c4-41f2-a8bd-7cde6523c259`, file `Goal Tracker Mobile.dc.html`,
+8 artboards) via the DesignSync MCP and implemented **two of its seven
+in-scope screens**. See `decisions.md` — the navigation is deliberately *not*
+adopted, and Insights + Suggestions are deferred.
+
+**Reading the project needed a workaround worth remembering:** it is a
+`PROJECT_TYPE_PROJECT`, not `PROJECT_TYPE_DESIGN_SYSTEM`, so `list_projects`
+does **not** return it (that method filters to design systems). `get_project`,
+`list_files` and `get_file` all work when given the UUID from the canvas URL
+directly.
+
+### Added
+
+- **`TodayList`** (artboard 1a) — closes **F-147**, open since session 81.
+  Category dot, name, signed amount, and a net figure. Reads only the month
+  already in the context cache; **transfers excluded**, since moving money
+  between your own accounts would otherwise read as spending
+- **`DeltaBadge`** (artboard 1a) — month-over-month change on Spent / Income /
+  To goals. Direction-aware: spending more is warm, earning or saving more is
+  green, so the colour means "good/bad", not "up/down"
+- **`NetWorthComposition`** (artboard 1h) — proportional Assets / Personal /
+  Owed band, "Only ₹X is spendable today", and a 6-month spark
+- **`buildTodayRows`** / **`percentDelta`** in `monthlySummary.js`;
+  **`buildComposition`** / **`snapshotDelta`** in `netWorth.js` — all pure
+
+### Changed
+
+- **Overview balance card** — labels follow the artboards (`In` → `Income`,
+  `Savings` → `To goals` in accent), plus the `1 Sep / today / 30` sparkline axis
+- **Net worth headline** — gains a `▲ x% vs <month>` badge
+
+### Design notes
+
+- **The Net worth screen needed no new data.** Its "▲ 1.4% vs Aug" and Apr–Sep
+  spark come straight from `net_worth_snapshots`, built in session 83. The
+  design and the schema happened to agree
+- **The Overview deltas did.** There is no monthly aggregate to read last
+  month's totals from, so they cost a second month-scoped query. Bounded and
+  indexed, and gated on `!initialLoading` so it stays off the first-paint path
+  — but it *is* an extra request on the screen F-135/F-136 were spent
+  optimising. If that proves costly, dropping the badges leaves the rest intact
+- **Deltas return `null`, not `0`, when there is no baseline** — so a first-ever
+  month shows no badge rather than a meaningless "▲ 0%" or "▲ ∞". Same for
+  `snapshotDelta` with fewer than two snapshots
+
+### Verified
+
+- All 8 changed modules transform through the dev server, asserted **non-empty**
+  and checked against disk for staleness (both failure modes are recorded in
+  `error-history.md` 2026-09-07)
+- **34 assertions passed** through `vite build --ssr`: 12 on the Today/delta
+  helpers, 10 on the composition helpers, 12 render cases. The artboards' own
+  numbers reproduce exactly — **18%**, **67%**, **1.4%**
+- Edge cases covered: no baseline, zero delta, empty Today list, single
+  snapshot, empty composition, transfers, other currencies, other days
+- Declaration order checked across `SummarySection` (47 → 59 → 64 → 119 → 142 →
+  164 → 183 → use at 353+). No TDZ
+- Build green; **lint adds zero errors** — `monthlySummary.js` has one
+  pre-existing `categoryMap` unused-var on HEAD, confirmed by linting the
+  committed copy
+- App boots with a clean console
+
+### Not done (manual follow-up)
+
+- **Five of the seven in-scope screens remain**: 1c Goals, 1d Goal detail,
+  1e Ledger, 1f Log sheet, 1g Settings
+- **1b Insights and Suggestions are deferred by decision**, not forgotten
+- **Nothing verified signed in.** Agent testing stops at the login page, so the
+  Today list, the delta badges and the composition bar were proven against
+  fixtures and by SSR-rendering the real components — never against real data on
+  a real screen. In particular the second month query has **not** been observed
+  against a live cache, so its effect on Month-tab first paint is reasoned, not
+  measured
 
 ## 2026-09-20 (session 84 — bottom quick-nav bar)
 

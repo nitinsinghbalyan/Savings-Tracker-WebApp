@@ -4,8 +4,10 @@ import PageHeader from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { useNetWorth } from '../hooks/useNetWorth'
+import { buildComposition, snapshotDelta } from '../lib/netWorth'
 import { useTransactions } from '../hooks/useTransactions'
 import NetWorthHeadline from '../components/netWorth/NetWorthHeadline'
+import NetWorthComposition from '../components/netWorth/NetWorthComposition'
 import NetWorthTrend from '../components/netWorth/NetWorthTrend'
 import TargetCard from '../components/netWorth/TargetCard'
 import HoldingGroupSection from '../components/netWorth/HoldingGroupSection'
@@ -50,6 +52,9 @@ export default function NetWorthPage({ isTabActive = true }) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [defaultGroup, setDefaultGroup] = useState('large_fixed')
+
+  const compositionFor = (entry) => buildComposition(entry)
+  const deltaFor = (entryCurrency) => snapshotDelta(snapshots, entryCurrency)
 
   const excludedCount = useMemo(
     () => holdings.filter((h) => !h.is_archived && h.excluded_from_target).length,
@@ -113,7 +118,13 @@ export default function NetWorthPage({ isTabActive = true }) {
                 </p>
               )}
 
-              <NetWorthHeadline summary={entry} />
+              <NetWorthHeadline summary={entry} delta={deltaFor(entry.currency)} />
+
+              <NetWorthComposition
+                composition={compositionFor(entry)}
+                snapshots={snapshots}
+                currency={entry.currency}
+              />
 
               {entry.currency === summary?.currency && (
                 <>
