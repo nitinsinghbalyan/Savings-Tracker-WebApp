@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-09-10 (v0.33)
+**Last updated:** 2026-09-20 (v0.34)
 
 ## Tech stack
 
@@ -413,6 +413,22 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 - No DB FK between `transactions` and `contributions` (ledger + goals remain separate rows)
 
 ---
+
+## Mobile navigation (session 84)
+
+Two navs on mobile, by design:
+- **`SegmentedTabs`** (top, in `PageHeader`) — full navigation, all five routes.
+- **`BottomNav`** (bottom, in `AppShell`) — quick access: Month / Worth / ( + ) /
+  Ledger. `h-[4.5rem]`, `z-40`, `aria-label="Quick navigation"`.
+
+**The `4.5rem` height is a contract.** `.app-main` reserves
+`calc(4.5rem + env(safe-area-inset-bottom,0px))`, `InstallPrompt` offsets by it,
+and the toast container clears it. Changing the bar's height without updating
+those three mispositions all of them.
+
+There is no FAB any more — the bar's centre **+** navigates to
+`/transactions?new=1` and `TransactionsPage` derives the form's openness from
+that param (it does **not** sync it through an effect).
 
 ## Project location
 

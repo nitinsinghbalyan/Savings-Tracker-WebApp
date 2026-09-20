@@ -86,7 +86,7 @@
   }
 
   .app-main {
-    @apply min-h-dvh min-w-0 flex-1 pb-[env(safe-area-inset-bottom,0px)] lg:pb-0;
+    @apply min-h-dvh min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0;
   }
 
   .page-container {

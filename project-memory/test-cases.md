@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-10 (v0.33)
+**Last updated:** 2026-09-20 (v0.34)
 
 ## Setup
 
@@ -138,10 +138,10 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 
 | ID | Test | Steps | Expected | Result | Date |
 |----|------|-------|----------|--------|------|
-| TC-90 | Bottom nav visible | Sign in; visit all tabs | 4 tabs: Goals, Activity, Summary, Settings | not-run | |
+| TC-90 | Bottom nav visible | Sign in; visit all tabs | **Updated session 84:** Month / Worth / ( + ) / Ledger — 3 destinations plus a raised Add button | not-run | |
 | TC-91 | Bottom nav hidden on login | Open app signed out | No bottom nav on `LoginPage` | not-run | |
 | TC-92 | Active tab highlight | Tap each tab | Current route highlighted in brand color | not-run | |
-| TC-93 | FAB above nav | Open Goals with goals / Activity | FAB not obscured by bottom nav | not-run | |
+| TC-93 | ~~FAB above nav~~ | ~~Open Goals with goals / Activity~~ | **Superseded session 84** — the Ledger FAB was removed; Add now lives in the bar's centre. Replaced by TC-498 | superseded | 2026-09-20 |
 | TC-94 | SPA routes | Refresh on `/transactions`, `/settings` | No 404; `vercel.json` rewrite works | not-run | |
 
 ---
@@ -793,7 +793,7 @@ _Add a row here after each release or bug fix._
 | TC-185 | Goals split | Open Goals with funded and unfunded goals | Funded under "In progress"; unfunded collapse to the colour-bar list; `＋ New goal` is the last row | not-run | |
 | TC-186 | Not started heading hidden when empty | Fund every goal | "Not started" label absent; `＋ New goal` still reachable | not-run | |
 | TC-187 | Segmented tabs navigate | Tap Month / Goals / Ledger / More | Correct route each time; active pill on the tapped tab | not-run | |
-| TC-188 | Bottom nav gone, no dead space | Scroll any tab to the bottom on mobile | No 4.5rem empty band where `BottomNav` was | not-run | |
+| TC-188 | ~~Bottom nav gone, no dead space~~ | ~~Scroll any tab to the bottom on mobile~~ | **Superseded session 84** — the bar is back by request, so the 4.5rem reservation is correct again. Replaced by TC-497 | superseded | 2026-09-20 |
 | TC-189 | Settings plain list | Open Settings | Hairline-ruled rows, no cards-in-cards; email beside the title | not-run | |
 | TC-190 | Webfonts load | Open any screen | Outfit headings, DM Sans text, DM Mono numerals; no fallback flash | not-run | |
 | TC-191 | iOS Safari with install banner | Open on iOS Safari with the install prompt visible | Top tabs tappable; prompt does not overlay them | not-run | |
@@ -857,3 +857,26 @@ TC-193/TC-194 are marked `pass` because they were verified against the real
 synthetic fixtures (arithmetic in Node, components via `vite build --ssr` +
 `renderToStaticMarkup`, the form in a real browser DOM). TC-478 onward are
 `not-run`: they need sign-in and an applied migration, both the user's to do.
+
+---
+
+## v0.34 — Bottom quick-nav bar (session 84)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-496 | Bar geometry at 375px | Render `BottomNav` and measure | 4 equal 93.75px columns; grid exactly 72px (`4.5rem`); flush to viewport bottom; `z-index: 40`; nothing wraps | pass | 2026-09-20 |
+| TC-497 | Content clears the bar | Scroll the Ledger to the very bottom on mobile | Last row fully visible above the bar (`.app-main` reserves `4.5rem`) | not-run | |
+| TC-498 | Centre + opens the form | From Month, tap + | Navigates to Ledger and opens Add transaction; `?new=1` is gone from the URL afterwards | not-run | |
+| TC-499 | Form does not reopen | Open via +, then close it | Form stays closed; no reopen on later renders (`closeForm` clears the param) | not-run | |
+| TC-500 | Active state | Visit each of Month / Worth / Ledger | Only the current one is accent-coloured | pass | 2026-09-20 |
+| TC-501 | Auto-hide on modals | Open each of the five `hideBottomNav` modals | Bar slides fully off-screen, `pointer-events: none`, `aria-hidden="true"`; returns on close. **`RecurringTransactionForm`, `CategoryTransactionsModal` and `HoldingForm` have never been seen with a visible bar** | partial | 2026-09-20 |
+| TC-502 | Toasts clear the bar | Trigger a toast (e.g. delete a transaction) | Toast sits above the bar, not behind it | not-run | |
+| TC-503 | No bar on login | Open signed out | No bottom bar (it lives inside `AppShell`) | pass | 2026-09-20 |
+| TC-504 | No bar on desktop | Open at ≥1024px | Bar hidden (`lg:hidden`); `SidebarNav` used instead | not-run | |
+| TC-505 | Both navs at 375px | Authenticated screen on a 375px viewport | Five top pills and the four-slot bar both fit; vertical squeeze acceptable | not-run | |
+| TC-506 | Install banner sits on the bar | iOS Safari with the install prompt showing | Banner rests directly on top of the bar, not floating above empty space | not-run | |
+
+**Note:** TC-496 / TC-500 / TC-503 are `pass` — measured by rendering the real
+component in a browser DOM at 375px. TC-501 is `partial`: the hide/show cycle
+was proven against the real `useBottomNavAutoHide` hook with a stand-in modal,
+but not against the five actual modals. Everything else needs sign-in.

@@ -1,6 +1,83 @@
 # Changelog
 
-**Last updated:** 2026-09-10 (v0.33)
+**Last updated:** 2026-09-20 (v0.34)
+
+## 2026-09-20 (session 84 — bottom quick-nav bar)
+
+Navigation returns to the bottom edge on mobile, **alongside** the top
+segmented control rather than replacing it. See `decisions.md` — this partially
+reverses the 2026-09-05 decision, by request.
+
+### Added
+
+- **`BottomNav` rewritten and remounted.** It had been dead code since session
+  81 (nothing imported it) and was stale twice over: four tabs with no
+  `/worth`, and pre-redesign slate/brand styling. Now paper-and-ink:
+  **Month · Worth · ( + ) · Ledger**, icon over a 10px label, `z-40`,
+  `aria-label="Quick navigation"` (deliberately *not* `"Main navigation"`,
+  which `SegmentedTabs` already uses — two identical labels is a screen-reader
+  duplicate)
+- **Centre + button** — navigates to `/transactions?new=1`
+
+### Changed
+
+- **`.app-main` reserves `4.5rem` again** — restoring the exact line session 81
+  removed. Without it the last row of every scrolled list hides behind the bar
+- **Toasts lifted** to clear the bar (they sit at `z-[70]`, *above* it)
+- **`TransactionsPage`** — Ledger FAB removed; form openness now **derived**
+  (`formOpen || addFromUrl`) and `closeForm` clears the param
+
+### Fixed
+
+- **The Ledger FAB's stacking bug, by deleting it.** It rendered at `z-[60]` —
+  above the `z-50` modal overlay — and was not gated on `formOpen`, so it
+  floated over the open transaction sheet
+- **`bottomNavHidden` reconnected.** Five modals (`GoalForm`, `TransactionForm`,
+  `RecurringTransactionForm`, `CategoryTransactionsModal`, `HoldingForm`) have
+  been passing `hideBottomNav` into a no-op since session 81 — five producers,
+  zero consumers. Remounting the bar makes all five work with no new code
+
+### Design notes
+
+- **`4.5rem` is a contract.** `InstallPrompt` and `.app-main` both offset by it;
+  those offsets were vestigial and floating above empty space. The bar is
+  exactly `h-[4.5rem]`, which makes them correct again with no edit. Changing
+  the bar's height silently mispositions both
+- **The + is not dead-centre** — three destinations in four equal slots put it
+  at 62.5% width (measured: centre at 234px of 375). Accepted; adding a fourth
+  destination would make it symmetrical, a one-line change to the array
+- **Why derive, not sync.** Calling `openAddForm()` inside an effect that
+  watches the param tripped `react-hooks/set-state-in-effect` and cost a
+  cascading render. Deriving from `searchParams` needs no effect
+
+### Verified
+
+- All five changed modules transform through vite; build green in ~500ms
+- **Bar measured in a real DOM at 375px:** four equal 93.75px columns, grid
+  height exactly **72px**, flush to the viewport bottom, `z-index: 40`, active
+  state correctly highlighting Worth on `/worth`, + button 48×48 with its
+  aria-label, nothing wrapping
+- **Auto-hide round-trips:** visible (top 739) → modal open, fully off-screen
+  (top 812, `translate-y-full`, `pointer-events: none`, `aria-hidden="true"`) →
+  closed, visible again (739). An earlier reading that looked stuck was the
+  200ms transition caught mid-flight, confirmed by re-probing with a settle
+- Both CSS changes confirmed present in the compiled `dist` output
+- **Lint: no new errors.** `TransactionsPage` has 4 pre-existing
+  `set-state-in-effect` / memoization errors on HEAD; the count is still 4 after
+  this change. `BottomNav`, `AppShell` and `ToastContext` are clean
+- Login page correctly shows **no** bar (it lives inside `AppShell`)
+
+### Not done (manual follow-up)
+
+- **Nothing was verified signed in.** Agent testing stops at the login page, so
+  the bar was proven by rendering it directly in the browser DOM, not in the
+  running app. Untested in situ: the bar on real authenticated tabs, the +
+  actually opening the form from another tab, `?new=1` being stripped, toasts
+  clearing the bar, the install banner sitting on top of it, and whether five
+  top pills plus a bottom bar feel too tight at 375px. TC-496…TC-502 are
+  `not-run`
+- **iOS Safari unverified** — `useBodyScrollLock` sets `body { position: fixed }`;
+  a viewport-fixed bar should be unaffected, but that is reasoning, not a test
 
 ## 2026-06-14
 

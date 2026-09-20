@@ -144,7 +144,10 @@ export default function TransactionsPage({ isTabActive = true }) {
     navigate(month ? `/transactions?month=${month}` : '/transactions', { replace: true })
   }, [formOpen, navigate, searchParams])
 
-  const showTransactionForm = formOpen
+  // The bottom bar's centre + navigates here with ?new=1. Derived rather than
+  // synced through an effect, so opening costs no extra render pass.
+  const addFromUrl = Boolean(searchParams.get('new'))
+  const showTransactionForm = formOpen || addFromUrl
 
   const handleMonthChange = useCallback(
     (y, m) => {
@@ -289,7 +292,15 @@ export default function TransactionsPage({ isTabActive = true }) {
   const closeForm = useCallback(() => {
     setFormOpen(false)
     setEditingTx(null)
-  }, [])
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('new')
+        return next
+      },
+      { replace: true },
+    )
+  }, [setSearchParams])
 
   const handleFormError = useCallback((msg) => toast.error(msg), [toast])
 
@@ -458,21 +469,10 @@ export default function TransactionsPage({ isTabActive = true }) {
         {activityBody}
       </main>
 
-      {isTabActive && !showSkeleton && (
-        <button
-          type="button"
-          onClick={openAddForm}
-          aria-label="Add transaction"
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[60] flex h-14 w-14 min-h-11 min-w-11 touch-manipulation items-center justify-center rounded-full bg-brand-600 text-white shadow-fab transition hover:bg-brand-700 active:scale-95 sm:right-6 lg:hidden"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
-      )}
-
       {showTransactionForm && (
         <Suspense fallback={null}>
           <TransactionForm
-            open={formOpen}
+            open={showTransactionForm}
             onClose={closeForm}
             transaction={editingTx}
             accounts={accounts}

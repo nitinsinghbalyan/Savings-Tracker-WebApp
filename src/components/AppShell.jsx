@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import PersistentTabs from './PersistentTabs'
+import BottomNav from './BottomNav'
 import SidebarNav from './SidebarNav'
 import { ShellChromeProvider } from '../context/ShellChromeContext'
 
@@ -15,6 +16,7 @@ export default function AppShell() {
           <Suspense fallback={null}>
             <InstallPrompt />
           </Suspense>
+          <BottomNav />
         </div>
       </div>
     </ShellChromeProvider>
