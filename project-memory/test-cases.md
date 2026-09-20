@@ -216,12 +216,12 @@ _Still used for `claim_device_data` on sign-in; not primary data scope after aut
 | ID | Test | Steps | Expected | Result | Date |
 |----|------|-------|----------|--------|------|
 | TC-50 | Production build | `npm run build` | `dist/` created without errors | pass | 2026-06-14 |
-| TC-51 | Vercel deploy | `npx vercel --prod` | Deployment READY; alias assigned | pass | 2026-06-14 |
+| TC-51 | Vercel deploy | `npx vercel --prod --yes --scope singhnitin-6610s-projects` | Deployment READY; `▲ Aliased` line present. **The `--scope` flag is required** — without it the CLI reports `"Not authorized"` even when correctly logged in | pass | 2026-09-20 |
 | TC-51b | Phase 2 deploy | `npx vercel --prod` after finance | `dpl_8wdpUKN1mdGTHur37Kxc9iCq1F1A` READY | pass | 2026-06-14 |
-| TC-52 | Production page load | Open `savings-tracker-azure.vercel.app` | App shell loads; title "Savings Tracker" | pass | 2026-06-14 |
-| TC-53 | SPA client routing | Refresh on `/` after deploy | No 404; `vercel.json` rewrite works | not-run | |
+| TC-52 | Production page load | Open `savings-tracker-azure.vercel.app` | App shell loads; title "Savings Tracker" | pass | 2026-09-20 |
+| TC-53 | SPA client routing | Request `/worth`, `/transactions`, `/settings`, `/goals` directly after deploy | All 200 via the `vercel.json` rewrite (no server-side file exists for them) | pass | 2026-09-20 |
 | TC-54 | Prod Supabase connect | Create goal on production URL | Goal persists in Supabase | not-run | |
-| TC-55 | Env vars not in git | `git log --all -- .env` | No commits containing `.env` | pass | 2026-06-14 |
+| TC-55 | Env vars not in git | `git log --all -- .env` | No commits containing `.env` | pass | 2026-09-20 |
 | TC-56 | GitHub auto-deploy | Push to connected `main` branch | Vercel preview/production build triggers | blocked | 2026-06-14 |
 
 ---

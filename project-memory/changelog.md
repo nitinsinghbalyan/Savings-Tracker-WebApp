@@ -67,6 +67,20 @@ reverses the 2026-09-05 decision, by request.
   this change. `BottomNav`, `AppShell` and `ToastContext` are clean
 - Login page correctly shows **no** bar (it lives inside `AppShell`)
 
+### Deployed
+
+- `dpl_GpLgHbHyVddSdehR9Z5KGKzgYEQC` — `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `readyState: READY`, target production.
+  Commit `4f80c99`. Deployed with **`--scope singhnitin-6610s-projects`**; the
+  bare command still fails with a misleading `"Not authorized"`
+- **Confirmed the bar is actually live**, not just that the deploy succeeded:
+  production serves `assets/AuthenticatedRoutes-CaNyKwre.js`, and that chunk
+  contains the bar's `aria-label="Quick navigation"`. It also contains exactly
+  **one** `shadow-fab` reference — the bar's centre + — which is positive
+  evidence the Ledger FAB is gone rather than duplicated
+- `/`, `/worth`, `/transactions`, `/settings`, `/goals` all return 200 through
+  the `vercel.json` SPA rewrite
+
 ### Not done (manual follow-up)
 
 - **Nothing was verified signed in.** Agent testing stops at the login page, so
