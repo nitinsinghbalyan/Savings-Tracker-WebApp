@@ -56,6 +56,17 @@ Suggestions, which remain deferred by decision.
 - Build green; whole-tree lint **23 errors, identical to HEAD** — zero added
 - Login screen checked in **both** themes; screenshots taken
 
+### Deployed
+
+- `dpl_GM4zBbK4DKziysof3sV1kBLrvejN` — `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `readyState: READY`. Commit `92defac`,
+  `--scope singhnitin-6610s-projects`
+- **Proven live per artefact**: the pre-paint script is in the deployed HTML,
+  the CSS chunk carries `.dark`, `--slate-900` and `--ink`, `Appearance` is in
+  the `SettingsRoutes` chunk and the date chips are in `TransactionForm` — each
+  code-split separately, so an entry-chunk grep proves none of them
+- `/`, `/summary`, `/settings` all 200
+
 ### Not done (manual follow-up)
 
 - **Only the login screen was seen in dark.** Everything else is behind auth, so

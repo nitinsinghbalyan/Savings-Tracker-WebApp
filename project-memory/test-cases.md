@@ -937,6 +937,7 @@ synthetic fixtures via `vite build --ssr`. TC-525 onward need sign-in.
 | TC-534 | No flash before paint | Store dark, hard reload | Dark from the first painted frame; boot screen dark | pass | 2026-09-20 |
 | TC-535 | Light unchanged | Store light, reload | Identical to pre-change light theme | pass | 2026-09-20 |
 | TC-536 | Auto follows OS | Store auto with system dark | `dark` class applied | pass | 2026-09-20 |
+| TC-541 | Dark mode live in production | Grep the deployed HTML, CSS chunk, SettingsRoutes and TransactionForm chunks | Pre-paint script, `.dark`/`--slate-900`/`--ink`, `Appearance`, `Yesterday` each present | pass | 2026-09-20 |
 | TC-537 | Dark sweep, signed in | Sign in; view Month, Goals, Goal detail, Ledger, Log sheet (both steps), Worth, Settings, a modal, a toast | No light-on-light text, no glowing tints, no invisible borders | not-run | |
 | TC-538 | Category/goal colour chips in dark | Any screen using `COLOR_PALETTES` | Chips legible on a dark ground (light-only classes, left alone deliberately) | not-run | |
 | TC-539 | Log sheet additions | Open Add transaction | Today/Yesterday/Pick date work; account hint shows the right balance; Repeat toggles | not-run | |
