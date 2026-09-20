@@ -56,7 +56,7 @@ function buildHeatmapCells(items, total) {
 
 function HeatmapTooltip({ cell, currency }) {
   return (
-    <div className="pointer-events-none min-w-[9.5rem] max-w-[14rem] rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs shadow-lg">
+    <div className="pointer-events-none min-w-[9.5rem] max-w-[14rem] rounded-xl border border-slate-200 bg-surface px-3 py-2.5 text-xs shadow-lg">
       <div className="flex items-center gap-2 font-medium text-slate-900">
         <span
           className="h-2.5 w-2.5 shrink-0 rounded-sm"
@@ -86,7 +86,7 @@ function ChartSettingsMenu({ prefs, onChange, onReset, onClose }) {
     <div
       role="dialog"
       aria-label="Chart settings"
-      className="absolute right-0 top-full z-20 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-lg"
+      className="absolute right-0 top-full z-20 mt-1.5 w-64 rounded-xl border border-slate-200 bg-surface p-3 shadow-lg"
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Chart options</p>
 

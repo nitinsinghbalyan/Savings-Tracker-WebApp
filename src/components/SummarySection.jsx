@@ -16,6 +16,7 @@ import NetWorthCard from './netWorth/NetWorthCard'
 import TodayList from './TodayList'
 import DeltaBadge from './DeltaBadge'
 import { useNetWorth } from '../hooks/useNetWorth'
+import { useTheme } from '../hooks/useTheme'
 
 const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
 
@@ -44,6 +45,8 @@ function SummarySection({ profile, isTabActive = true }) {
   // enabled:false — read whatever the Worth tab has already cached, never
   // fetch from here. The default tab must not gain a sixth startup request.
   const { summary: netWorthSummary, loaded: netWorthLoaded } = useNetWorth({ enabled: false })
+  // Settings → Compare with. Either way it stays one bounded month query.
+  const { comparePeriod } = useTheme()
   const { transactions, initialLoading, error } = useTransactions({
     // Pause fetches while the tab is hidden; cached rows still render from context.
     enabled: dataReady && isTabActive,
@@ -58,8 +61,9 @@ function SummarySection({ profile, isTabActive = true }) {
   // (F-87 was removed in session 46 for exactly that).
   const prevPeriod = useMemo(() => {
     if (!isMonthly) return null
+    if (comparePeriod === 'year') return { year: year - 1, month }
     return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
-  }, [isMonthly, year, month])
+  }, [isMonthly, year, month, comparePeriod])
 
   const { transactions: prevTransactions, loaded: prevLoaded } = useTransactions({
     // Only after the visible month is on screen, so the default tab's first

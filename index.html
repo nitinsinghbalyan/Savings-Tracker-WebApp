@@ -9,7 +9,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#3B4CC0" />
+    <meta name="theme-color" content="#EFE9DE" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
       content="Track savings goals and contributions toward what matters to you."
@@ -26,8 +27,38 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap"
     />
     <title>Savings Tracker</title>
+    <script>
+      // Runs before first paint. The body below carries an inline background,
+      // so without this a dark user gets a light flash on every load. Mirrors
+      // resolveTheme() in src/lib/theme.js — keep the two in step.
+      (function () {
+        try {
+          var raw = localStorage.getItem('savings-lite-display-preferences');
+          var pref = raw ? (JSON.parse(raw) || {}).theme : 'auto';
+          if (pref !== 'light' && pref !== 'dark') pref = 'auto';
+          var dark =
+            pref === 'dark' ||
+            (pref === 'auto' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          if (dark) root.classList.add('dark');
+          root.style.colorScheme = dark ? 'dark' : 'light';
+          root.style.setProperty('--boot-bg', dark ? '#16130F' : '#EFE9DE');
+          root.style.setProperty('--boot-fg', dark ? '#F7F3EC' : '#16130F');
+          root.style.setProperty(
+            '--boot-fg-soft',
+            dark ? 'rgba(247,243,236,.5)' : 'rgba(22,19,15,.5)'
+          );
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#16130F' : '#EFE9DE');
+        } catch (e) {
+          /* storage blocked — fall through to the light default */
+        }
+      })();
+    </script>
   </head>
-  <body style="margin:0;min-height:100dvh;background:#EFE9DE;color:#16130F;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <body style="margin:0;min-height:100dvh;background:var(--boot-bg,#EFE9DE);color:var(--boot-fg,#16130F);font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
     <div id="root">
       <div
         id="boot-screen"
@@ -35,7 +66,7 @@
         aria-live="polite"
         style="display:flex;min-height:100dvh;align-items:center;justify-content:center;padding:1rem"
       >
-        <p style="margin:0;font-size:0.875rem;color:rgba(22,19,15,.5)">Loading…</p>
+        <p style="margin:0;font-size:0.875rem;color:var(--boot-fg-soft,rgba(22,19,15,.5))">Loading…</p>
       </div>
     </div>
     <script type="module" src="/src/main.jsx"></script>

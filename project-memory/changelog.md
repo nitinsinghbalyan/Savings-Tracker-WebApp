@@ -1,6 +1,73 @@
 # Changelog
 
-**Last updated:** 2026-09-20 (v0.36)
+**Last updated:** 2026-09-20 (v0.37)
+
+## 2026-09-20 (session 87 — redesign part 3 of 3: Log sheet, Compare with, dark mode)
+
+The last two artboards. **All eight are now implemented**, except Insights and
+Suggestions, which remain deferred by decision.
+
+### Added
+
+- **Dark mode — Light / Dark / Auto** (`F-158`). Not a utility migration: the
+  neutral ramp is defined as CSS custom properties in `index.css` and inverted
+  under `.dark`, so the ~394 un-migrated `slate` utilities adapt with **no
+  call-site edits**. `darkMode: 'class'`; `src/lib/theme.js`,
+  `src/hooks/useTheme.js`, `src/lib/displayPreferences.js`
+- **Pre-paint script in `index.html`** — the `<body>` carries an inline
+  background and paints before React, so without this a dark user gets a light
+  flash on every load. It mirrors `resolveTheme()`; the two must stay in step
+- **Compare with — last month / last year** (`F-159`)
+- **Log sheet additions** (`F-160`): Today / Yesterday / Pick date chips, a
+  `Name · ₹X left` account hint, and a compact `↻ Repeat` toggle
+
+### Changed
+
+- 27 `bg-white` → `bg-surface` across 14 files, plus 8 in `index.css`
+- `tailwind.config.js` — every themed family now `rgb(var(--x) / <alpha-value>)`
+
+### Design notes
+
+- **Two traps, both hit and both fixed.** First: storing the variables as *hex*
+  broke the build — Tailwind cannot compute `focus:ring-brand-500/20` from
+  `var(--brand-500)`. There are 18 alpha modifiers in the app, so the variables
+  store **RGB channel triples** and the config wraps them. Second: theming
+  Tailwind's `white` would have fixed 27 `bg-white` surfaces while breaking 35
+  `text-white` labels on accent buttons — so **`white` stays literal** and the
+  surfaces were renamed instead
+- **The ink tiers derive from one `--ink` triple**, so light and dark cannot
+  drift apart
+- **F-141 was not reversed.** The two-step wizard stands; only additive parts
+  of artboard 1f were taken, at the user's direction
+
+### Verified
+
+- **16 helper assertions** via `vite build --ssr`: theme resolution across both
+  media states, preference loading with absent / corrupt / unknown values, and
+  date-chip round-trips across month and year boundaries
+- **Dark and light both confirmed in a real browser**, by computed style rather
+  than by eye: inverted ramp (`text-slate-900` → light, `bg-slate-50` → darkest),
+  working alpha (`bg-accent/25` → `rgba(133,144,245,.25)`), derived ink tiers,
+  and **`text-white` still pure white** — the regression this design could most
+  easily have caused
+- **The flash test passed**: with dark stored, the pre-paint script sets the
+  class, `color-scheme`, boot background and theme-color before first paint
+- `auto` follows the OS (system dark → dark applied)
+- Build green; whole-tree lint **23 errors, identical to HEAD** — zero added
+- Login screen checked in **both** themes; screenshots taken
+
+### Not done (manual follow-up)
+
+- **Only the login screen was seen in dark.** Everything else is behind auth, so
+  Month, Goals, Goal detail, Ledger, the Log sheet, Worth, Settings, modals and
+  toasts are **unverified in dark**. The CSS-variable approach makes a screen
+  *adapt*; it does not make it *correct*. Expect to find low-contrast spots —
+  likeliest in `CategoryBreakdownChart` (hex `#f43f5e`), `GoalCard`'s arbitrary
+  `bg-[#F6E2E6]`, and the `COLOR_PALETTES` chips in `constants.js`, which are
+  DB-persisted and were deliberately left alone. TC-529…TC-536 are `not-run`
+- **"Daily suggestions"** is still not built — it would gate a deferred feature
+- Still open: the Overview delta badges' extra month query, unmeasured against
+  a live cache
 
 ## 2026-09-20 (session 86 — Goal Tracker Mobile redesign, part 2 of 3)
 

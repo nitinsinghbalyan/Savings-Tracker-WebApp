@@ -64,7 +64,7 @@ export default function InstallPrompt() {
       role="region"
       aria-label="Install Savings Lite"
     >
-      <div className="pointer-events-auto mx-auto max-w-app rounded-2xl border border-brand-200 bg-white p-4 shadow-lg shadow-slate-900/10">
+      <div className="pointer-events-auto mx-auto max-w-app rounded-2xl border border-brand-200 bg-surface p-4 shadow-lg shadow-slate-900/10">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
             {ios ? <Share className="h-5 w-5" aria-hidden="true" /> : <Download className="h-5 w-5" aria-hidden="true" />}

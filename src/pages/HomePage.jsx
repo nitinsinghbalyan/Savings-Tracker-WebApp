@@ -226,7 +226,7 @@ export default function HomePage({ isTabActive = true }) {
               ))}
             </div>
           ) : goals.length === 0 ? (
-            <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center sm:px-6">
+            <section className="rounded-2xl border border-dashed border-slate-300 bg-surface px-4 py-12 text-center sm:px-6">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-600">
                 <Target className="h-7 w-7" aria-hidden="true" />
               </span>

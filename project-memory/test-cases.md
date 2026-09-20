@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-20 (v0.36)
+**Last updated:** 2026-09-20 (v0.37)
 
 ## Setup
 
@@ -922,3 +922,26 @@ synthetic fixtures via `vite build --ssr`. TC-514 onward need sign-in.
 
 **Note:** TC-520…TC-524 are `pass` — verified against the real modules with
 synthetic fixtures via `vite build --ssr`. TC-525 onward need sign-in.
+
+---
+
+## v0.37 — Log sheet, Compare with, dark mode (session 87)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-529 | Theme resolution | `resolveTheme` for light/dark/auto under both media states | auto follows the OS; explicit values win; unknown falls back to auto | pass | 2026-09-20 |
+| TC-530 | Preference loading | absent / corrupt JSON / unknown values | Defaults returned; invalid values rejected; valid kept | pass | 2026-09-20 |
+| TC-531 | Date chips round-trip | Today/Yesterday across month and year boundaries | Label and written `yyyy-MM-dd` always agree; `day_of_month` slice intact | pass | 2026-09-20 |
+| TC-532 | Dark tokens resolve | Computed style on probes with dark active | Ramp inverted, alpha modifiers work, ink tiers derived | pass | 2026-09-20 |
+| TC-533 | `text-white` not regressed | Computed colour of `text-white` in dark | `rgb(255,255,255)`; no `white:` key in the config | pass | 2026-09-20 |
+| TC-534 | No flash before paint | Store dark, hard reload | Dark from the first painted frame; boot screen dark | pass | 2026-09-20 |
+| TC-535 | Light unchanged | Store light, reload | Identical to pre-change light theme | pass | 2026-09-20 |
+| TC-536 | Auto follows OS | Store auto with system dark | `dark` class applied | pass | 2026-09-20 |
+| TC-537 | Dark sweep, signed in | Sign in; view Month, Goals, Goal detail, Ledger, Log sheet (both steps), Worth, Settings, a modal, a toast | No light-on-light text, no glowing tints, no invisible borders | not-run | |
+| TC-538 | Category/goal colour chips in dark | Any screen using `COLOR_PALETTES` | Chips legible on a dark ground (light-only classes, left alone deliberately) | not-run | |
+| TC-539 | Log sheet additions | Open Add transaction | Today/Yesterday/Pick date work; account hint shows the right balance; Repeat toggles | not-run | |
+| TC-540 | Compare with | Switch to Last year; open Month | Badges compare against the same month a year earlier | not-run | |
+
+**Note:** TC-529…TC-536 are `pass` — helpers via `vite build --ssr`, theming by
+computed style in a real browser, and the flash test by hard reload. TC-537
+onward need sign-in.

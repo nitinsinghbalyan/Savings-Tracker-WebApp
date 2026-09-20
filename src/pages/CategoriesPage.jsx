@@ -70,7 +70,7 @@ export default function CategoriesPage() {
                   type="button"
                   onClick={() => setCategoryTab(tab.id)}
                   className={`rounded-lg px-4 py-3 text-sm font-semibold transition ${
-                    categoryTab === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                    categoryTab === tab.id ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600'
                   }`}
                 >
                   {tab.label}

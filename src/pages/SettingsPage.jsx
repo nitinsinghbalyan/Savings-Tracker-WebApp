@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, ChevronRight, CircleDollarSign, DollarSign, Repeat, Tags } from 'lucide-react'
+import { BarChart3, Calendar, ChevronRight, CircleDollarSign, DollarSign, Repeat, Sun, Tags } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useGoals } from '../hooks/useGoals'
 import { useProfile } from '../hooks/useProfile'
@@ -10,6 +10,7 @@ import { useToast } from '../hooks/useToast'
 import { CURRENCIES } from '../lib/constants'
 import PageHeader from '../components/PageHeader'
 import SettingsSection from '../components/SettingsSection'
+import { useTheme } from '../hooks/useTheme'
 import UserAccountInfo from '../components/UserAccountInfo'
 import AccountCard from '../components/AccountCard'
 import AccountForm from '../components/AccountForm'
@@ -36,6 +37,8 @@ export default function SettingsPage() {
   const { accounts, createAccount, updateAccount, refetch: refetchAccounts } = useAccounts({
     enabled: Boolean(user) && authReady,
   })
+  const { theme, comparePeriod, setTheme, setComparePeriod } = useTheme()
+
   const { refetch: refetchCategories } = useCategories({
     enabled: Boolean(user) && authReady,
   })
@@ -162,6 +165,66 @@ export default function SettingsPage() {
                     </button>
                   )
                 })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+                <div>
+                  <span className="text-sm font-medium text-slate-700">Compare with</span>
+                  <span className="block text-xs text-slate-400">
+                    Used by the deltas on Month
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-1.5" role="group" aria-label="Compare with">
+                {[
+                  { value: 'month', label: 'Last month' },
+                  { value: 'year', label: 'Last year' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setComparePeriod(opt.value)}
+                    aria-pressed={comparePeriod === opt.value}
+                    className={`${chipBase} px-3 ${
+                      comparePeriod === opt.value
+                        ? 'bg-brand-600 text-white ring-brand-600'
+                        : 'bg-slate-50 text-slate-700 ring-slate-200'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Sun className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
+                <span className="text-sm font-medium text-slate-700">Appearance</span>
+              </div>
+              <div className="flex gap-1.5" role="group" aria-label="Appearance">
+                {[
+                  { value: 'light', label: 'Light' },
+                  { value: 'dark', label: 'Dark' },
+                  { value: 'auto', label: 'Auto' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTheme(opt.value)}
+                    aria-pressed={theme === opt.value}
+                    className={`${chipBase} px-3 ${
+                      theme === opt.value
+                        ? 'bg-brand-600 text-white ring-brand-600'
+                        : 'bg-slate-50 text-slate-700 ring-slate-200'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

@@ -38,7 +38,7 @@ export default function Celebration({ message, onDone }) {
       role="status"
       aria-live="polite"
     >
-      <div className="pointer-events-auto relative max-w-sm animate-celebration-pop rounded-2xl border border-emerald-200 bg-white px-5 py-4 shadow-2xl">
+      <div className="pointer-events-auto relative max-w-sm animate-celebration-pop rounded-2xl border border-emerald-200 bg-surface px-5 py-4 shadow-2xl">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
             <PartyPopper className="h-5 w-5" aria-hidden="true" />

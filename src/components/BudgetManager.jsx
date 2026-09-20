@@ -63,7 +63,7 @@ export default function BudgetManager({ categories, onSave, onError, currency = 
           <div key={cat.id} className="flex items-center gap-3 py-2">
             <span className={`h-2.5 w-2.5 shrink-0 rounded-sm ${palette.swatch}`} />
             <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{cat.name}</span>
-            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 focus-within:border-brand-500">
+            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-surface px-2.5 py-1.5 focus-within:border-brand-500">
               <span className="text-sm text-slate-400">{symbol}</span>
               <input
                 value={currentValue(cat)}

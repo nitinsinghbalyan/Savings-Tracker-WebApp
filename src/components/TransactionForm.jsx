@@ -1,9 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { format } from 'date-fns'
-import { Delete, X } from 'lucide-react'
+import { format, subDays } from 'date-fns'
+import { Delete, Repeat, X } from 'lucide-react'
 import { CURRENCIES, getColorPalette } from '../lib/constants'
 import { buildCategoryPickerTree, getSelectableCategories } from '../lib/categories'
-import { parseAmountInput } from '../lib/format'
+import { formatTransactionDateLabel } from '../lib/transactions'
+import { formatCurrency, parseAmountInput } from '../lib/format'
 import ModalShell from './ModalShell'
 
 const chipBase =
@@ -141,6 +142,7 @@ export default function TransactionForm({
     ? `${transaction?.id ?? 'new'}:${activeAccounts.map((a) => a.id).join(',')}:${expenseCategories.map((c) => c.id).join(',')}:${incomeCategories.map((c) => c.id).join(',')}:${defaultCurrency}`
     : 'closed'
   const lastResetKeyRef = useRef('')
+  const dateInputRef = useRef(null)
 
   useEffect(() => {
     if (!open) {
@@ -182,6 +184,22 @@ export default function TransactionForm({
   if (!open) return null
 
   const selectedAccount = activeAccounts.find((a) => a.id === values.account_id)
+  // Artboard 1f date chips. `isPresetDate` decides whether the third chip reads
+  // "Pick date" or the chosen date, so the three chips are mutually exclusive.
+  const isPresetDate =
+    values.transaction_date === format(new Date(), 'yyyy-MM-dd') ||
+    values.transaction_date === format(subDays(new Date(), 1), 'yyyy-MM-dd')
+
+  const openDatePicker = () => {
+    const input = dateInputRef.current
+    if (!input) return
+    if (typeof input.showPicker === 'function') {
+      input.showPicker()
+    } else {
+      input.focus()
+      input.click()
+    }
+  }
   const currency = selectedAccount?.currency ?? values.currency
   const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? '₹'
   const amountValue = Number(parseAmountInput(values.amount))
@@ -373,7 +391,7 @@ export default function TransactionForm({
                     type="button"
                     onClick={() => handleTypeChange(t.value)}
                     className={`rounded-lg px-2 py-2 text-sm font-semibold transition ${
-                      values.type === t.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                      values.type === t.value ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600'
                     }`}
                   >
                     {t.label}
@@ -417,7 +435,7 @@ export default function TransactionForm({
                         type="button"
                         onClick={() => handleTypeChange(t.value)}
                         className={`rounded-lg px-2 py-2 text-sm font-semibold transition ${
-                          values.type === t.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                          values.type === t.value ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600'
                         }`}
                       >
                         {t.label}
@@ -465,6 +483,18 @@ export default function TransactionForm({
                     </button>
                   ))}
                 </div>
+                {selectedAccount && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    {selectedAccount.name} ·{' '}
+                    <span className="n">
+                      {formatCurrency(
+                        Number(selectedAccount.balance ?? selectedAccount.opening_balance ?? 0),
+                        selectedAccount.currency ?? 'INR',
+                      )}
+                    </span>{' '}
+                    left
+                  </p>
+                )}
               </div>
 
               {values.type === 'transfer' && (
@@ -561,15 +591,54 @@ export default function TransactionForm({
               )}
 
               <div>
-                <label htmlFor="tx-date" className="label-field">Date</label>
-                <input
-                  id="tx-date"
-                  type="date"
-                  value={values.transaction_date}
-                  onChange={(e) => setValues((v) => ({ ...v, transaction_date: e.target.value }))}
-                  className="input-field"
-                  required
-                />
+                <p className="label-field">Date</p>
+                <div className="chip-row">
+                  {[
+                    { label: 'Today', value: format(new Date(), 'yyyy-MM-dd') },
+                    { label: 'Yesterday', value: format(subDays(new Date(), 1), 'yyyy-MM-dd') },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() =>
+                        setValues((v) => ({ ...v, transaction_date: opt.value }))
+                      }
+                      className={`${categoryChipBase} chip-row-item justify-center ${
+                        values.transaction_date === opt.value
+                          ? 'bg-brand-600 text-white ring-brand-600'
+                          : 'bg-slate-50 text-slate-700 ring-slate-200'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={openDatePicker}
+                    className={`${categoryChipBase} chip-row-item justify-center ${
+                      isPresetDate
+                        ? 'bg-slate-50 text-slate-700 ring-slate-200'
+                        : 'bg-brand-600 text-white ring-brand-600'
+                    }`}
+                  >
+                    {isPresetDate ? 'Pick date' : formatTransactionDateLabel(values.transaction_date)}
+                  </button>
+
+                  {/* Visually hidden, opened via showPicker() — same pattern as GoalForm */}
+                  <input
+                    ref={dateInputRef}
+                    id="tx-date"
+                    type="date"
+                    value={values.transaction_date}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, transaction_date: e.target.value }))
+                    }
+                    className="sr-only"
+                    aria-label="Pick a date"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
@@ -584,18 +653,27 @@ export default function TransactionForm({
               </div>
 
               {!isEdit && values.type !== 'transfer' && (
-                <div className="space-y-2.5 rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-inset ring-slate-200">
-                  <label className="flex cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={isRecurring}
-                      onChange={(e) => setIsRecurring(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                    />
-                    <span className="text-sm font-medium text-slate-800">Make recurring</span>
-                  </label>
+                <div className="space-y-2.5">
+                  {/* Artboard 1f: one compact toggle instead of a checkbox card.
+                      isRecurring / frequency and the submit payload are unchanged. */}
+                  <button
+                    type="button"
+                    onClick={() => setIsRecurring((on) => !on)}
+                    aria-pressed={isRecurring}
+                    className={`${categoryChipBase} gap-1.5 ${
+                      isRecurring
+                        ? 'bg-brand-600 text-white ring-brand-600'
+                        : 'bg-slate-50 text-slate-700 ring-slate-200'
+                    }`}
+                  >
+                    <Repeat className="h-3.5 w-3.5" aria-hidden="true" />
+                    {isRecurring
+                      ? (FREQUENCIES.find((f) => f.value === frequency)?.label ?? 'Monthly')
+                      : 'Repeat'}
+                  </button>
+
                   {isRecurring && (
-                    <div className="flex flex-wrap gap-1.5 pl-7">
+                    <div className="flex flex-wrap gap-1.5">
                       {FREQUENCIES.map((f) => (
                         <button
                           key={f.value}
@@ -604,7 +682,7 @@ export default function TransactionForm({
                           className={`${categoryChipBase} ${
                             frequency === f.value
                               ? 'bg-brand-600 text-white ring-brand-600'
-                              : 'bg-white text-slate-700 ring-slate-200'
+                              : 'bg-slate-50 text-slate-700 ring-slate-200'
                           }`}
                         >
                           {f.label}

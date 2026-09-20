@@ -82,7 +82,7 @@ export default function LoginPage() {
     <div className="flex min-h-dvh bg-slate-50">
       <div className="hidden flex-1 flex-col justify-center bg-brand-600 px-12 py-16 text-white lg:flex">
         <div className="mx-auto max-w-md">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface/15">
             <Target className="h-8 w-8" aria-hidden="true" />
           </span>
           <h1 className="mt-6 text-3xl font-bold">Savings Tracker</h1>
@@ -98,7 +98,7 @@ export default function LoginPage() {
       </div>
 
       <div className="flex flex-1 items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-surface p-6 shadow-card sm:p-8">
           <div className="text-center lg:text-left">
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-600 lg:mx-0">
               <Target className="h-7 w-7" aria-hidden="true" />
@@ -124,7 +124,7 @@ export default function LoginPage() {
             <div className="w-full border-t border-slate-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase tracking-wide">
-            <span className="bg-white px-2 text-slate-400">or use email</span>
+            <span className="bg-surface px-2 text-slate-400">or use email</span>
           </div>
         </div>
 
@@ -137,7 +137,7 @@ export default function LoginPage() {
             }}
             disabled={busy}
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              mode === 'signin' ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600'
             }`}
           >
             Sign in
@@ -150,7 +150,7 @@ export default function LoginPage() {
             }}
             disabled={busy}
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-              mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              mode === 'signup' ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600'
             }`}
           >
             Sign up

@@ -102,7 +102,7 @@ export default function CategoryTreeManager({
                 <span className={`${chipBase} ${palette.chip}`}>
                   <span className="truncate">{parent.name}</span>
                   {parent.is_savings && (
-                    <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+                    <span className="rounded-full bg-surface/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
                       Savings
                     </span>
                   )}
@@ -242,7 +242,7 @@ export default function CategoryTreeManager({
 
 export function CategoriesPageHeader({ title = 'Categories' }) {
   return (
-    <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:px-6">
+    <div className="flex items-center gap-3 border-b border-slate-200 bg-surface px-4 py-3 lg:px-6">
       <Link
         to="/settings"
         className="btn-icon -ml-1"

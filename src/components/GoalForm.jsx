@@ -76,7 +76,7 @@ function Chip({ selected, onClick, children, className = '' }) {
       className={`${chipBase} ${
         selected
           ? 'bg-brand-600 text-white ring-brand-600'
-          : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'
+          : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50'
       } ${className}`}
     >
       {children}
@@ -189,8 +189,8 @@ function CurrencyAmountField({ id, amount, currency, onAmountChange, onCurrencyC
                 aria-pressed={selected}
                 className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg font-semibold transition ${
                   selected
-                    ? 'bg-white text-brand-600 shadow-sm ring-1 ring-slate-200'
-                    : 'text-slate-400 hover:bg-white/80 hover:text-slate-600'
+                    ? 'bg-surface text-brand-600 shadow-sm ring-1 ring-slate-200'
+                    : 'text-slate-400 hover:bg-surface/80 hover:text-slate-600'
                 }`}
               >
                 {symbol}
@@ -458,7 +458,7 @@ export default function GoalForm({
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-slate-100 bg-white px-4 py-4 safe-bottom sm:px-6">
+          <div className="shrink-0 border-t border-slate-100 bg-surface px-4 py-4 safe-bottom sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row-reverse">
               <button type="submit" disabled={submitting} className="btn-primary w-full sm:flex-1">
                 {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create goal'}

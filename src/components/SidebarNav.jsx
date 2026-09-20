@@ -16,7 +16,7 @@ export default function SidebarNav() {
 
   return (
     <aside
-      className="sticky top-0 hidden h-dvh w-sidebar shrink-0 flex-col border-r border-slate-200 bg-white lg:flex"
+      className="sticky top-0 hidden h-dvh w-sidebar shrink-0 flex-col border-r border-slate-200 bg-surface lg:flex"
       aria-label="Main navigation"
     >
       <div className="border-b border-slate-100 px-5 py-5">

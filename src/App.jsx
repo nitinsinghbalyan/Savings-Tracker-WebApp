@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
+import { useTheme } from './hooks/useTheme'
 
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const AuthenticatedRoutes = lazy(() => import('./AuthenticatedRoutes'))
@@ -49,6 +50,10 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Applies the stored theme and keeps 'auto' in step with the OS. Mounted at
+  // the root so it covers LoginPage too, which sits outside AppShell.
+  useTheme()
+
   return (
     <AuthProvider>
       <ToastProvider>

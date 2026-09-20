@@ -201,7 +201,7 @@ export default function RecurringTransactionForm({
                     }))
                   }
                   className={`rounded-lg px-2 py-2 text-sm font-semibold transition ${
-                    values.type === t.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                    values.type === t.value ? 'bg-surface text-slate-900 shadow-sm' : 'text-slate-600'
                   }`}
                 >
                   {t.label}

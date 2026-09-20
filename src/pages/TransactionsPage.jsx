@@ -332,7 +332,7 @@ export default function TransactionsPage({ isTabActive = true }) {
           className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition lg:text-sm ${
             filterType === f.value
               ? 'bg-brand-600 text-white ring-brand-600'
-              : 'bg-white text-slate-600 ring-slate-200'
+              : 'bg-surface text-slate-600 ring-slate-200'
           }`}
         >
           {f.label}
@@ -343,7 +343,7 @@ export default function TransactionsPage({ isTabActive = true }) {
 
   const paginationBar =
     transactions.length > 0 ? (
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-surface px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           <span className="text-slate-500">Show</span>
           {PAGE_SIZES.map((size) => (
@@ -354,7 +354,7 @@ export default function TransactionsPage({ isTabActive = true }) {
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset transition ${
                 pageSize === size
                   ? 'bg-brand-600 text-white ring-brand-600'
-                  : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50'
+                  : 'bg-surface text-slate-600 ring-slate-200 hover:bg-slate-50'
               }`}
             >
               {size}
@@ -396,7 +396,7 @@ export default function TransactionsPage({ isTabActive = true }) {
       ))}
     </div>
   ) : groups.length === 0 ? (
-    <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center">
+    <section className="rounded-2xl border border-dashed border-slate-300 bg-surface px-4 py-12 text-center">
       <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         <RupeeIcon className="h-7 w-7" />
       </span>

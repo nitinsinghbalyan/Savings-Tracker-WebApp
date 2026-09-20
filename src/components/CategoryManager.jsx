@@ -58,7 +58,7 @@ export default function CategoryManager({
             >
               <span className="truncate">{cat.name}</span>
               {cat.is_savings && (
-                <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                <span className="rounded-full bg-surface/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                   Savings
                 </span>
               )}

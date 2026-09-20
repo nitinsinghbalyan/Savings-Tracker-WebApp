@@ -2,6 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   Theme palette.
+
+   The app is mid-migration from a legacy slate/brand palette to
+   paper-and-ink (~619 light-only utilities still in place across 33 files).
+   Rather than rewrite every call site, the NEUTRAL RAMP is defined here as
+   custom properties and inverted under `.dark`, so `text-slate-900`,
+   `bg-slate-50` and friends adapt on their own.
+
+   `white` is deliberately NOT themed: it stays literal so `text-white` on
+   accent buttons stays white. The 28 `bg-surface` surfaces were rewritten to
+   `bg-surface` instead.
+   ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  /* Stored as space-separated RGB channels, not hex, so Tailwind's opacity
+     modifiers (bg-accent/25, ring-brand-500/20, …) still resolve. The config
+     wraps each in rgb(var(--x) / <alpha-value>). */
+  --paper: 239 233 222;
+  --paper-card: 255 253 249;
+  --paper-sunk: 247 243 236;
+  --paper-rail: 240 235 225;
+  --paper-line: 237 231 220;
+
+  --ink: 22 19 15;
+
+  --surface: 255 255 255;
+
+  /* Neutral ramp — light: 50 lightest, 900 darkest. */
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+
+  --brand-50: 238 242 255;
+  --brand-100: 224 231 255;
+  --brand-500: 99 102 241;
+  --brand-600: 79 70 229;
+  --brand-700: 67 56 202;
+
+  --accent: 59 76 192;
+  --accent-hover: 43 58 158;
+  --accent-tint: 235 237 250;
+  --accent-track: 231 233 247;
+
+  --positive: 30 122 87;
+  --positive-tint: 228 238 233;
+  --negative: 179 69 43;
+  --negative-tint: 243 227 222;
+
+  --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+  --shadow-fab: 0 4px 14px 0 rgb(79 70 229 / 0.35);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --paper: 22 19 15;
+  --paper-card: 32 28 23;
+  --paper-sunk: 18 16 13;
+  --paper-rail: 38 33 25;
+  --paper-line: 44 38 32;
+
+  /* Ink inverts: the alpha tiers in the config then follow automatically. */
+  --ink: 247 243 236;
+
+  --surface: 32 28 23;
+
+  /* Neutral ramp inverted — 50 darkest, 900 lightest. This single block is
+     what carries the ~394 un-migrated slate utilities. */
+  --slate-50: 27 23 19;
+  --slate-100: 34 30 24;
+  --slate-200: 46 40 32;
+  --slate-300: 61 54 44;
+  --slate-400: 138 129 117;
+  --slate-500: 167 157 143;
+  --slate-600: 195 186 172;
+  --slate-700: 220 212 199;
+  --slate-800: 236 229 218;
+  --slate-900: 247 243 236;
+
+  --brand-50: 30 27 51;
+  --brand-100: 39 34 72;
+  --brand-500: 133 144 245;
+  --brand-600: 116 128 240;
+  --brand-700: 143 153 245;
+
+  --accent: 133 144 245;
+  --accent-hover: 155 164 248;
+  --accent-tint: 35 38 74;
+  --accent-track: 42 45 82;
+
+  --positive: 95 199 155;
+  --positive-tint: 27 46 39;
+  --negative: 232 131 106;
+  --negative-tint: 51 32 27;
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-fab: 0 4px 14px 0 rgb(0 0 0 / 0.55);
+}
+
 @layer base {
   html {
     @apply overflow-x-hidden;
@@ -30,7 +138,7 @@
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-surface px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-danger {
@@ -42,15 +150,15 @@
   }
 
   .input-field {
-    @apply w-full min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+    @apply w-full min-h-11 rounded-xl border border-slate-300 bg-surface px-4 py-3 text-base text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
   }
 
   .currency-amount-field {
-    @apply flex min-h-11 w-full items-stretch overflow-hidden rounded-xl border border-slate-300 bg-white;
+    @apply flex min-h-11 w-full items-stretch overflow-hidden rounded-xl border border-slate-300 bg-surface;
   }
 
   .date-picker-trigger {
-    @apply flex min-h-[3.25rem] items-center gap-3 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-left transition hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 active:scale-[0.99];
+    @apply flex min-h-[3.25rem] items-center gap-3 rounded-xl border border-slate-300 bg-surface px-3 py-2.5 text-left transition hover:border-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 active:scale-[0.99];
   }
 
   .chip-row {
@@ -66,7 +174,7 @@
   }
 
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5;
+    @apply rounded-2xl border border-slate-200 bg-surface p-4 shadow-card sm:p-5;
   }
 
   .alert-error {
@@ -74,7 +182,7 @@
   }
 
   .modal-panel {
-    @apply relative z-10 flex w-full flex-col overflow-hidden bg-white shadow-xl;
+    @apply relative z-10 flex w-full flex-col overflow-hidden bg-surface shadow-xl;
   }
 
   .modal-scroll {
