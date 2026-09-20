@@ -67,6 +67,18 @@ directly.
   committed copy
 - App boots with a clean console
 
+### Deployed
+
+- `dpl_CvYQzoDSKK77RGQijtMuK5s7tycj` — `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `readyState: READY`. Commit `cca798e`,
+  deployed with `--scope singhnitin-6610s-projects`
+- **Confirmed live per screen, not just "deploy ok":** the deployed
+  `AuthenticatedRoutes` chunk contains `To goals` and `Today` (Overview), and
+  the lazy `NetWorthPage` chunk contains `spendable today`, `Personal` and
+  `Owed` (composition band). Checking only the entry chunk would have missed
+  the Worth screen entirely, since it is code-split
+- `/`, `/summary`, `/worth`, `/transactions` all 200 through the SPA rewrite
+
 ### Not done (manual follow-up)
 
 - **Five of the seven in-scope screens remain**: 1c Goals, 1d Goal detail,

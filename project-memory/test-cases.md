@@ -894,6 +894,7 @@ but not against the five actual modals. Everything else needs sign-in.
 | TC-511 | Composition maths | `buildComposition` over fixtures | Assets = fixed+liquid; percentages sum to 100; liquid = spendable | pass | 2026-09-20 |
 | TC-512 | Snapshot delta | `snapshotDelta` with 1 vs 2+ snapshots | `null` with one; 1.4% and prior period with two | pass | 2026-09-20 |
 | TC-513 | Net worth spark degrades | Render composition with 0 / 1 / 6 snapshots | Spark hidden below 2; "Apr – Sep" label at 6 | pass | 2026-09-20 |
+| TC-519 | Redesign live per chunk | Fetch the deployed `AuthenticatedRoutes` and `NetWorthPage` chunks and grep for the new strings | `To goals`/`Today` in the first; `spendable today`/`Personal`/`Owed` in the second | pass | 2026-09-20 |
 | TC-514 | Today list with real data | Sign in, open Month on a day with entries | Rows match the day's ledger; net agrees | not-run | |
 | TC-515 | Delta badges with real data | Sign in, open Month with a populated previous month | Badges appear after the month paints, never before | not-run | |
 | TC-516 | Delta badges cost | Watch the network panel on first Month paint | Previous-month query fires only after the visible month resolves | not-run | |
