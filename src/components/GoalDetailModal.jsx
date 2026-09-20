@@ -17,6 +17,8 @@ import {
   sortedContributions,
 } from '../lib/goalDisplay'
 import { getForecast } from '../lib/forecast'
+import { buildFundingByMonth } from '../lib/goalSummary'
+import FundingByMonth from './FundingByMonth'
 import ModalShell from './ModalShell'
 
 function DetailRow({ label, children }) {
@@ -53,6 +55,9 @@ export default function GoalDetailModal({
   const trackStatus = getTrackStatus(goal)
   const requiredMonthly = getRequiredMonthly(goal)
   const forecast = getForecast(goal)
+  // Artboard 1d "Funding by month" — buckets the contributions already loaded
+  // with the goal; no fetch.
+  const funding = buildFundingByMonth(goal)
   const daysLeft = getDaysRemaining(goal.end_date)
   const priorityStyle =
     PRIORITIES.find((p) => p.value === goal.priority)?.badge ??
@@ -203,6 +208,10 @@ export default function GoalDetailModal({
           {forecast?.label && !forecast.complete && (
             <p className="mt-1 text-sm text-slate-500">{forecast.label}</p>
           )}
+
+          <div className="mt-5">
+            <FundingByMonth funding={funding} currency={goal.currency ?? 'INR'} />
+          </div>
 
           <div className="mt-6">
             <h3 className="text-sm font-semibold text-slate-900">

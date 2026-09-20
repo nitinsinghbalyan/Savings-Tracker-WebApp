@@ -290,3 +290,43 @@ export function percentDelta(current, previous) {
   if (curr === prev) return 0
   return ((curr - prev) / prev) * 100
 }
+
+/**
+ * Per-day expense totals for the Ledger's "Spent by day" chart (artboard 1e).
+ * Operates on the month already in the cache — no fetch, no widening.
+ */
+export function buildSpendByDay(transactions = [], currency = 'INR', daysInMonth = 31) {
+  const byDay = new Map()
+  let total = 0
+
+  for (const tx of transactions) {
+    if (tx.type !== 'expense') continue
+    if ((tx.account?.currency ?? 'INR') !== currency) continue
+    const day = Number(tx.transaction_date?.slice(8, 10))
+    if (!day) continue
+    const amount = Number(tx.amount) || 0
+    byDay.set(day, (byDay.get(day) ?? 0) + amount)
+    total += amount
+  }
+
+  const max = Math.max(...byDay.values(), 0)
+  const bars = []
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const amount = byDay.get(day) ?? 0
+    bars.push({ day, amount, ratio: max > 0 ? amount / max : 0 })
+  }
+
+  return { bars, total, max }
+}
+
+/** Signed net for one day's rows, for the Ledger day headers. */
+export function dayNet(items = [], currency = 'INR') {
+  let net = 0
+  for (const tx of items) {
+    if (tx.type === 'transfer') continue
+    if ((tx.account?.currency ?? 'INR') !== currency) continue
+    const amount = Number(tx.amount) || 0
+    net += tx.type === 'income' ? amount : -amount
+  }
+  return net
+}

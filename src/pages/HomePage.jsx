@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Target } from 'lucide-react'
 import { percentComplete, savedAmount } from '../lib/contributions'
+import { buildGoalsOverview } from '../lib/goalSummary'
 import { formatCurrency } from '../lib/format'
 import { getColorPalette } from '../lib/constants'
 import { useAuth } from '../hooks/useAuth'
@@ -13,6 +14,7 @@ import { useToast } from '../hooks/useToast'
 import { ensureGoalCategory } from '../lib/goalCategory'
 import PageHeader from '../components/PageHeader'
 import GoalCard from '../components/GoalCard'
+import GoalsOverviewHeader from '../components/GoalsOverviewHeader'
 
 const GoalForm = lazy(() => import('../components/GoalForm'))
 const GoalDetailModal = lazy(() => import('../components/GoalDetailModal'))
@@ -49,6 +51,13 @@ export default function HomePage({ isTabActive = true }) {
   const notStartedTarget = useMemo(
     () => notStartedGoals.reduce((sum, goal) => sum + Number(goal.target_amount || 0), 0),
     [notStartedGoals],
+  )
+
+  // Artboard 1c header. Per currency, like every other total here.
+  const goalsCurrency = goals[0]?.currency ?? 'INR'
+  const goalsOverview = useMemo(
+    () => buildGoalsOverview(goals, goalsCurrency),
+    [goals, goalsCurrency],
   )
 
   const [formOpen, setFormOpen] = useState(false)
@@ -236,6 +245,8 @@ export default function HomePage({ isTabActive = true }) {
             </section>
           ) : (
             <>
+              <GoalsOverviewHeader overview={goalsOverview} currency={goalsCurrency} />
+
               {activeGoals.length > 0 && (
                 <>
                   <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">

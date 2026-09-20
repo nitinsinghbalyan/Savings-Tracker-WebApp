@@ -8,6 +8,8 @@ import { useProfile } from '../hooks/useProfile'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useTransactions } from '../hooks/useTransactions'
+import { buildSpendByDay, dayNet } from '../lib/monthlySummary'
+import { formatMoney } from '../lib/format'
 import { useToast } from '../hooks/useToast'
 import { useGoals } from '../hooks/useGoals'
 import { groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate } from '../lib/transactions'
@@ -15,6 +17,7 @@ import { buildGoalContributionFromTransaction, buildGoalLinkedTransactionIds, sh
 import PageHeader from '../components/PageHeader'
 import MonthPicker from '../components/MonthPicker'
 import TransactionRow, { TransactionTableHeader } from '../components/TransactionRow'
+import SpentByDayChart from '../components/SpentByDayChart'
 
 const TransactionForm = lazy(() => import('../components/TransactionForm'))
 
@@ -279,6 +282,19 @@ export default function TransactionsPage({ isTabActive = true }) {
     [deleteTransaction, toast],
   )
 
+  // Artboard 1e "Spent by day". Reads the month already in the cache; it must
+  // never widen the query (F-87, session 46).
+  const ledgerCurrency = profile?.default_currency ?? 'INR'
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const spendByDay = useMemo(
+    () => buildSpendByDay(transactions ?? [], ledgerCurrency, daysInMonth),
+    [transactions, ledgerCurrency, daysInMonth],
+  )
+  const todayDay =
+    new Date().getFullYear() === year && new Date().getMonth() + 1 === month
+      ? new Date().getDate()
+      : null
+
   const openAddForm = useCallback(() => {
     setEditingTx(null)
     setFormOpen(true)
@@ -411,9 +427,23 @@ export default function TransactionsPage({ isTabActive = true }) {
     <div className="space-y-4">
       {groups.map(({ date, items }) => (
         <section key={date} className="card overflow-hidden">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            {formatTransactionDateLabel(date)}
-          </h3>
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              {formatTransactionDateLabel(date)}
+            </h3>
+            {(() => {
+              const net = dayNet(items, ledgerCurrency)
+              if (net === 0) return null
+              return (
+                <span
+                  className={`n text-[11px] ${net > 0 ? 'text-positive' : 'text-ink-faint'}`}
+                >
+                  {net > 0 ? '+' : '−'}
+                  {formatMoney(Math.abs(net), ledgerCurrency)}
+                </span>
+              )
+            })()}
+          </div>
           <TransactionTableHeader />
           <div className="divide-y divide-slate-100">
             {items.map((tx) => (
@@ -466,6 +496,11 @@ export default function TransactionsPage({ isTabActive = true }) {
       </PageHeader>
 
       <main className="page-container space-y-4">
+        <SpentByDayChart
+          spend={spendByDay}
+          currency={ledgerCurrency}
+          todayDay={todayDay}
+        />
         {activityBody}
       </main>
 

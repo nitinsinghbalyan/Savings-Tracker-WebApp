@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-20 (v0.35)
+**Last updated:** 2026-09-20 (v0.36)
 
 ## Setup
 
@@ -903,3 +903,21 @@ but not against the five actual modals. Everything else needs sign-in.
 
 **Note:** TC-507…TC-513 are `pass` — verified against the real modules with
 synthetic fixtures via `vite build --ssr`. TC-514 onward need sign-in.
+
+---
+
+## v0.36 — Goal Tracker Mobile redesign, part 2 (session 86)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-520 | Goals aggregate (synthetic) | `buildGoalsOverview` over 5 INR + 1 USD goal | 15%, ₹1,20,000 of ₹7,75,000, 2 funded / 3 not started; USD excluded | pass | 2026-09-20 |
+| TC-521 | Funding by month (synthetic) | `buildFundingByMonth` 6 months | 6 buckets, last = Sep, Sep total 90,000, average over funded months only | pass | 2026-09-20 |
+| TC-522 | Spend by day (synthetic) | `buildSpendByDay` mixed fixtures | 30 bars; expenses only; other currency excluded; max ratio = 1 | pass | 2026-09-20 |
+| TC-523 | Day net excludes transfers | `dayNet` on a day with a transfer | −2,485 (transfer ignored, income netted) | pass | 2026-09-20 |
+| TC-524 | New components render | SSR-render all three, plus empty states | Render without throwing; all three hide entirely when empty | pass | 2026-09-20 |
+| TC-525 | Goals header with real data | Sign in, open Goals | Percent and counts match the cards below | not-run | |
+| TC-526 | Funding chart with real data | Sign in, open a funded goal | Bars match its contribution history; average plausible | not-run | |
+| TC-527 | Ledger chart + day nets | Sign in, open Ledger | Chart total equals the month's spend; each day's net matches its rows | not-run | |
+
+**Note:** TC-520…TC-524 are `pass` — verified against the real modules with
+synthetic fixtures via `vite build --ssr`. TC-525 onward need sign-in.

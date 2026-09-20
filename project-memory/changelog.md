@@ -1,6 +1,70 @@
 # Changelog
 
-**Last updated:** 2026-09-20 (v0.35)
+**Last updated:** 2026-09-20 (v0.36)
+
+## 2026-09-20 (session 86 — Goal Tracker Mobile redesign, part 2 of 3)
+
+Three more artboards: **1c Goals**, **1d Goal detail**, **1e Ledger**. The
+remaining two are deliberately not built — see "Not done" and `decisions.md`.
+
+### Added
+
+- **`GoalsOverviewHeader`** (1c) — percent, saved of target, and
+  funded / not-started counts across every goal **in one currency**. The
+  artboard's "3 funded" includes a USD goal; blending it into an INR
+  percentage would be meaningless, so it is excluded and gets its own block
+- **`FundingByMonth`** (1d) — six months of contributions with an average,
+  bucketed from the contributions already loaded with the goal
+- **`SpentByDayChart`** (1e) — the month's expense shape above the ledger
+- **`buildGoalsOverview` / `buildFundingByMonth` / `goalPercent`** in a new
+  `src/lib/goalSummary.js`; **`buildSpendByDay` / `dayNet`** appended to
+  `monthlySummary.js`. All pure
+
+### Changed
+
+- **Ledger day headers** now carry a signed net, hidden when it is zero
+- Goal detail gains the funding chart above Contributions
+
+### Design notes
+
+- **The ledger already grouped by day** (`groups.map(({ date, items })`), so 1e
+  needed the chart and the net, not a restructure. Worth checking what exists
+  before rebuilding from an artboard
+- **Nothing here widens a query.** The ledger chart reads the month already in
+  the cache and the funding chart reads contributions already loaded with the
+  goal. Unlike the session 85 delta badges, these cost no extra request
+- **`buildFundingByMonth` averages over funded months only**, not all six, so a
+  goal funded twice in six months reads its real cadence rather than a third of it
+
+### Verified
+
+- **24 assertions** through `vite build --ssr`: 18 on the helpers, 6 render
+  cases. Edge cases: no goals, empty funding history, zero spend, transfers
+  excluded from day net, USD excluded from the INR aggregate
+- The artboard's own figures reproduce exactly — **15% · ₹1,20,000 of ₹7,75,000**
+- All 8 changed modules parse-checked with a **non-empty assertion and a
+  disk-vs-served staleness check** (both false-pass modes are recorded
+  2026-09-07)
+- Build green. **Lint adds zero errors**: 5 total, all pre-existing — 4 in
+  `TransactionsPage` and the `categoryMap` unused-var in `monthlySummary`, both
+  confirmed against HEAD
+- Goals tab loads with a clean console (signed out)
+
+### Not done (manual follow-up)
+
+- **1f Log sheet — blocked on a decision, not on effort.** The artboard is a
+  single-step sheet; the app's form is a deliberate two-step wizard (F-141,
+  session 80). Raised with the user rather than reversed. The existing form
+  already does everything the artboard shows, including "To goal" via F-139
+- **1g Settings — mostly already done** by F-145 (session 81). What remains is
+  **Appearance / dark mode**, which needs a full dark palette and a per-screen
+  token audit, and a "Daily suggestions" toggle that would gate a deferred
+  feature. Both treated as separate work
+- **Nothing verified signed in.** Goals, Goal detail and Ledger all sit behind
+  auth, so every figure here was proven against fixtures and by SSR-rendering
+  the real components — never against real data. TC-520…TC-527 are `not-run`
+- Still open from session 85: the Overview delta badges' second month query has
+  not been measured against a live cache
 
 ## 2026-09-20 (session 85 — Goal Tracker Mobile redesign, part 1 of 3)
 
