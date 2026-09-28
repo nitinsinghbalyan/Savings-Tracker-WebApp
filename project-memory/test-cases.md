@@ -960,6 +960,7 @@ onward need sign-in.
 | TC-546 | No categorical hue in heatmap cells | Render the heatmap and grep the markup | No palette hex present — cells use the sequential ramp only | pass | 2026-09-28 |
 | TC-547 | Component edge cases | Empty, single category, 12 categories, single data point, both themes | All render; single point draws a dot not a line; empty states show a message | pass | 2026-09-28 |
 | TC-548 | Palette validation | Run the dataviz validator on the committed hexes | Light ALL CHECKS PASS; dark no worse than the documented floor | pass | 2026-09-28 |
+| TC-553 | Charts + palette live in production | Grep the deployed chart and palette chunks | `By day`/`Heatmap`/`Trends` present; new `#2a78d6` present, old `#6366f1` absent; remaining old hexes trace to Celebration confetti only | pass | 2026-09-28 |
 | TC-549 | Three modes with real data | Sign in, open Summary, switch Tiles / Heatmap / Trends | Each renders; switcher persists across reload | not-run | |
 | TC-550 | Heatmap with a real category count | Sign in, open the heatmap on a busy month | Rows legible; horizontal scroll works; no clipped tooltip | not-run | |
 | TC-551 | Comparatives with real data | Sign in with a populated previous period | Per-category deltas appear; budget shows on the face | not-run | |

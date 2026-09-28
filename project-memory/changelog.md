@@ -74,6 +74,19 @@ than eyeballed.
   (fixing the bucket removed a long-standing `categoryMap` unused-var)
 - Console clean
 
+### Deployed
+
+- `dpl_EeL2KzNrS2bn93pqYfZY3ceFPkM5` — `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `readyState: READY`. Commit `533bb79`,
+  `--scope singhnitin-6610s-projects`
+- **Proven live per chunk**: `By day`, `Heatmap` and `Trends` in the deployed
+  `CategoryBreakdownChart-*` chunk; the retuned palette in `format-*`, which
+  carries the new `#2a78d6` and **no** old `#6366f1`
+- **Old hexes traced rather than assumed gone**: `#6366f1`/`#10b981` survive
+  only in `Celebration-*` (confetti, deliberately untouched), and `#8b5cf6` in
+  the palette chunk is the *new* dark violet, not a leftover
+- `/`, `/summary`, `/worth`, `/transactions` all 200
+
 ### Not done (manual follow-up)
 
 - **Nothing verified against real data.** All three modes sit behind sign-in, so
