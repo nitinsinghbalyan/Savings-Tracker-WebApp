@@ -133,7 +133,10 @@
 | F-126 | Settings Budgets UI removed | done | `BudgetManager` no longer on Settings page; DB/chart budgets retained (session 65) |
 | F-127 | Summary Overall / Monthly tabs | done | Segmented toggle in `SummarySection`; default Overall (session 66) |
 | F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
-| F-129 | Category spending heatmap | done | Flex tiles in `CategoryBreakdownChart`; intensity by relative spend; replaces pie/donut (session 67) |
+| F-163 | Category comparatives | done | Per-category vs previous period (honours the Compare with setting), budget on the chart face rather than hover-only, and persistent share of total. `joinCategoryComparison` keeps categories present in only one period, flagged new/gone (session 88) |
+| F-162 | Per-category sparklines | done | `CategorySparklines` — small multiples, one row per category, hand-rolled SVG. Single-data-point rows render a dot rather than an empty line (session 88) |
+| F-161 | Real category heatmap (day × category) | done | `CategoryHeatmap` — rows = categories, columns = days, cell darkness = spend from a **sequential single hue**; identity comes from the row label. Chart-type switcher (Tiles / Heatmap / Trends) in the existing settings popover. **Refines F-129**, which called the flex-tile mosaic a heatmap (session 88) |
+| F-129 | Category spending heatmap | superseded | The flex tiles were never a heatmap — they encoded identity by hue and magnitude by alpha, and flexbox only approximates area. Kept as the "Tiles" mode; **see F-161** for the real one (session 88) | Flex tiles in `CategoryBreakdownChart`; intensity by relative spend; replaces pie/donut (session 67) |
 | F-130 | Heatmap category transactions modal | done | Click tile → `CategoryTransactionsModal`; 10/page pagination; filtered by category dedupe key + currency (session 68) |
 | F-131 | Activity without snapshot migration | done | `isMissingSnapshotColumnError()` + retry without snapshot columns; tx cache `loaded` flag (session 70) |
 | F-132 | Savings/goal Activity row highlight | done | Light green row for savings-category or goal-linked txs (session 72) |

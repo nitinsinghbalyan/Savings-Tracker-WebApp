@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Settings2 } from 'lucide-react'
-import { getColorPalette } from '../lib/constants'
+import { getColorPalette, OVER_BUDGET_COLOR } from '../lib/constants'
 import { formatMoney } from '../lib/format'
 import { filterTransactionsForHeatmapCategory } from '../lib/monthlySummary'
 import { useChartPreferences } from '../hooks/useChartPreferences'
 import CategoryTransactionsModal from './CategoryTransactionsModal'
+import CategoryHeatmap from './CategoryHeatmap'
+import CategorySparklines from './CategorySparklines'
+import DeltaBadge from './DeltaBadge'
+import {
+  buildCategoryDayMatrix,
+  buildCategorySeries,
+  joinCategoryComparison,
+} from '../lib/monthlySummary'
 
-const OVER_BUDGET_FILL = '#f43f5e'
+const OVER_BUDGET_FILL = OVER_BUDGET_COLOR
 
 const chipBase =
   'min-h-9 flex-1 rounded-lg px-2 py-1.5 text-xs font-medium ring-1 transition disabled:opacity-50'
@@ -117,6 +125,34 @@ function ChartSettingsMenu({ prefs, onChange, onReset, onClose }) {
             })}
           </div>
         </fieldset>
+
+        <fieldset>
+          <legend className="mb-1.5 block text-xs font-medium text-slate-600">Chart type</legend>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Chart type">
+            {[
+              { value: 'mosaic', label: 'Tiles' },
+              { value: 'heatmap', label: 'Heatmap' },
+              { value: 'sparklines', label: 'Trends' },
+            ].map(({ value, label }) => {
+              const selected = prefs.chartType === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onChange({ chartType: value })}
+                  className={`${chipBase} ${
+                    selected
+                      ? 'bg-brand-600 text-white ring-brand-600'
+                      : 'bg-slate-50 text-slate-600 ring-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </fieldset>
       </div>
 
       <div className="mt-3 flex justify-end gap-2 border-t border-slate-100 pt-3">
@@ -138,12 +174,44 @@ export default function CategoryBreakdownChart({
   budgetTotal = 0,
   large = false,
   transactions = [],
+  prevItems = [],
+  categories = [],
+  daysInMonth = 31,
+  dark = false,
 }) {
   const { prefs, updatePrefs, resetPrefs } = useChartPreferences()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [hoveredId, setHoveredId] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const settingsRef = useRef(null)
+
+  // Derived below the hooks above — a memo placed over its source throws at
+  // render and blanks the tab (error-history.md, three recorded instances).
+  const comparison = useMemo(
+    () => joinCategoryComparison(items, prevItems ?? []),
+    [items, prevItems],
+  )
+
+  const comparisonById = useMemo(
+    () => new Map(comparison.map((c) => [c.categoryId, c])),
+    [comparison],
+  )
+
+  const matrix = useMemo(
+    () =>
+      prefs.chartType === 'heatmap'
+        ? buildCategoryDayMatrix(transactions, categories, { currency, daysInMonth })
+        : null,
+    [prefs.chartType, transactions, categories, currency, daysInMonth],
+  )
+
+  const series = useMemo(
+    () =>
+      prefs.chartType === 'sparklines'
+        ? buildCategorySeries(transactions, categories, { currency, daysInMonth })
+        : null,
+    [prefs.chartType, transactions, categories, currency, daysInMonth],
+  )
 
   const sortedItems = useMemo(
     () => sortItems(items, prefs.sortBy),
@@ -233,11 +301,29 @@ export default function CategoryBreakdownChart({
 
       <div
         className="relative"
-        role="img"
-        aria-label="Spending by category heatmap"
+        aria-label="Spending by category"
         onMouseLeave={() => setHoveredId(null)}
       >
-        <div className="flex flex-wrap gap-1.5">
+        {prefs.chartType === 'heatmap' && (
+          <CategoryHeatmap
+            matrix={matrix}
+            currency={currency}
+            dark={dark}
+            onSelect={setSelectedCategory}
+          />
+        )}
+
+        {prefs.chartType === 'sparklines' && (
+          <CategorySparklines
+            series={series ?? []}
+            comparison={comparison}
+            currency={currency}
+            dark={dark}
+            onSelect={setSelectedCategory}
+          />
+        )}
+
+        <div className={`flex-wrap gap-1.5 ${prefs.chartType === 'mosaic' ? 'flex' : 'hidden'}`}>
           {cells.map((cell) => {
             const flexBasis = `${Math.max(24, Math.round(cell.pct * 100))}%`
             const isHovered = hoveredId === cell.categoryId
@@ -273,11 +359,26 @@ export default function CategoryBreakdownChart({
                 >
                   {formatMoney(cell.total, currency)}
                 </p>
-                <p
-                  className={`mt-0.5 text-xs tabular-nums ${cell.textOnDark ? 'text-white/80' : 'text-slate-500'}`}
-                >
-                  {Math.round(cell.pct * 100)}%
-                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <p
+                    className={`text-xs tabular-nums ${cell.textOnDark ? 'text-white/80' : 'text-slate-500'}`}
+                  >
+                    {Math.round(cell.pct * 100)}%
+                  </p>
+                  {/* Budget on the face, not hidden behind a hover. */}
+                  {cell.budget > 0 && (
+                    <p
+                      className={`text-xs tabular-nums ${cell.textOnDark ? 'text-white/80' : 'text-slate-500'}`}
+                    >
+                      · of {formatMoney(cell.budget, currency)}
+                    </p>
+                  )}
+                </div>
+                {(() => {
+                  const cmp = comparisonById.get(cell.categoryId)
+                  if (!cmp) return null
+                  return <DeltaBadge delta={cmp.delta} higherIsBetter={false} />
+                })()}
               </button>
             )
           })}

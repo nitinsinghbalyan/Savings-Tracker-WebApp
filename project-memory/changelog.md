@@ -1,6 +1,89 @@
 # Changelog
 
-**Last updated:** 2026-09-20 (v0.37)
+**Last updated:** 2026-09-28 (v0.38)
+
+## 2026-09-28 (session 88 — category summary: real heatmap, sparklines, comparatives)
+
+The category summary had one visualisation and one comparative hidden behind a
+hover. It now has three of each, and the palette has been **measured** rather
+than eyeballed.
+
+### Added
+
+- **`CategoryHeatmap`** — rows = categories, columns = days, cell darkness =
+  spend, from a **sequential single hue**. Identity comes from the row label,
+  never the colour. Horizontal scroll rather than squeezing 31 columns into
+  375px; the tooltip sits *under* the grid because the parent card is
+  `overflow-hidden` and would clip a floating one
+- **`CategorySparklines`** — small multiples with name, total, share and a
+  delta badge. A single data point renders a dot, not a degenerate line
+- **Chart-type switcher** (Tiles / Heatmap / Trends) in the existing settings
+  popover; persisted via `chartPreferences`
+- **`buildCategoryDayMatrix` / `buildCategorySeries` / `joinCategoryComparison`**
+  in `monthlySummary.js`
+
+### Changed
+
+- **Comparatives on every mode**: vs previous period (reusing `percentDelta`,
+  `DeltaBadge` and the Compare with setting), budget on the chart face, and
+  persistent share of total
+- **Category palette hexes retuned**, ids unchanged; `COLOR_PALETTES` gains
+  `fillDark`
+
+### Fixed
+
+- **Sub-category budgets never reached their tile** — two code paths keyed the
+  same entity differently
+- **`saveChartPreferences` threw in private mode** — missing try/catch
+- **Over-budget was invisible for rose categories** — the status hex equalled
+  the rose fill
+- `role="img"` removed from a container full of focusable buttons
+
+### Design notes
+
+- **The old chart was not a heatmap.** Hue carried identity while alpha carried
+  magnitude — two jobs in one channel — and `flexBasis` clamped to a 24% floor
+  means flexbox only approximates area. Making the new ramp sequential fixes the
+  encoding *and* sidesteps the palette problem, since cell colour no longer
+  means "which category"
+- **The palette failure was measured, not guessed.** violet↔indigo sat at ΔE 6.3
+  for NORMAL vision (floor is 15) and 0.8 for protan. Light now passes all
+  checks. Dark cannot: an exhaustive search of every six- **and five**-colour
+  subset of the reference palette found **zero** passing all-pairs on a dark
+  surface. Hence labels everywhere — they are what makes the palette legal, and
+  the code comment says so
+- **Ratios are against the global max cell, not each row's own max**, so one
+  ramp reads consistently across rows. Per-row normalisation would make a small
+  category's busiest day look like the biggest spend on the chart
+- **Zero new queries.** The matrix reads the `transactions` prop the chart
+  already had; the comparison reads `prevSummaries[].byExpenseCategory`, which
+  was computed every render and thrown away
+
+### Verified
+
+- **24 data-layer assertions + 14 render cases** via `vite build --ssr`,
+  including the sub-category budget regression (5000, not 0), a category present
+  in only one period surviving the join, income and other-currency exclusion,
+  empty states, single category, 12 categories, and single data point
+- **A guard that no categorical hue leaks into heatmap cells** — the encoding
+  rule is now enforced by a test, not by intention
+- Palette re-validated with the dataviz validator: light **ALL CHECKS PASS**;
+  dark at the documented floor
+- Both themes screenshotted at 390px — no overflow, 240 cells (8 × 30) correct
+- Build green; whole-tree lint **22, one better than the baseline of 23**
+  (fixing the bucket removed a long-standing `categoryMap` unused-var)
+- Console clean
+
+### Not done (manual follow-up)
+
+- **Nothing verified against real data.** All three modes sit behind sign-in, so
+  everything here is proven by fixture and isolated render. The heatmap with a
+  real category count is the thing most worth a look. TC-542…TC-548 `not-run`
+- **Dark-mode category colours remain at the documented floor** — emerald↔cyan
+  ΔE 11.9 normal-vision. Labels mitigate it; only cutting the palette below six
+  would fix it outright, which needs a DB migration
+- Treemap and ranked-bar modes were offered and not chosen; `byIncomeCategory`
+  is still computed and unused
 
 ## 2026-09-20 (session 87 — redesign part 3 of 3: Log sheet, Compare with, dark mode)
 

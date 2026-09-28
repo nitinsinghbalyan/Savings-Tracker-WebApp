@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-20 (v0.37)
+**Last updated:** 2026-09-28 (v0.38)
 
 ## Setup
 
@@ -946,3 +946,25 @@ synthetic fixtures via `vite build --ssr`. TC-525 onward need sign-in.
 **Note:** TC-529…TC-536 are `pass` — helpers via `vite build --ssr`, theming by
 computed style in a real browser, and the flash test by hard reload. TC-537
 onward need sign-in.
+
+---
+
+## v0.38 — Category heatmap, sparklines, comparatives (session 88)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-542 | **Sub-category budget regression** | `buildMonthlySummary` with `monthly_budget` on a child category | Budget attaches to the row (5000, not 0); `expenseBudgetTotal` unchanged at 13000 | pass | 2026-09-28 |
+| TC-543 | Day × category matrix | `buildCategoryDayMatrix` over fixtures | Rows sorted desc; same-day txs merge; income, other currency and savings excluded; shares sum to 100 | pass | 2026-09-28 |
+| TC-544 | Ratio is global, not per row | Two categories, different maxima | A cell's ratio is against the global max, so equal amounts render identically in any row | pass | 2026-09-28 |
+| TC-545 | Comparison join keeps both sides | Category in current only, and in previous only | New flagged `isNew` with null delta; departed survives as `isGone` with total 0 and prevTotal kept | pass | 2026-09-28 |
+| TC-546 | No categorical hue in heatmap cells | Render the heatmap and grep the markup | No palette hex present — cells use the sequential ramp only | pass | 2026-09-28 |
+| TC-547 | Component edge cases | Empty, single category, 12 categories, single data point, both themes | All render; single point draws a dot not a line; empty states show a message | pass | 2026-09-28 |
+| TC-548 | Palette validation | Run the dataviz validator on the committed hexes | Light ALL CHECKS PASS; dark no worse than the documented floor | pass | 2026-09-28 |
+| TC-549 | Three modes with real data | Sign in, open Summary, switch Tiles / Heatmap / Trends | Each renders; switcher persists across reload | not-run | |
+| TC-550 | Heatmap with a real category count | Sign in, open the heatmap on a busy month | Rows legible; horizontal scroll works; no clipped tooltip | not-run | |
+| TC-551 | Comparatives with real data | Sign in with a populated previous period | Per-category deltas appear; budget shows on the face | not-run | |
+| TC-552 | Private-mode preference write | Open in a private window, change chart type | No crash; preference just doesn't persist | not-run | |
+
+**Note:** TC-542…TC-548 are `pass` — verified against the real modules with
+synthetic fixtures via `vite build --ssr`, plus the validator and screenshots in
+both themes. TC-549 onward need sign-in.

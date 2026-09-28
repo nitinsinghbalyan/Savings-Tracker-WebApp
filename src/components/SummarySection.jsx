@@ -46,7 +46,7 @@ function SummarySection({ profile, isTabActive = true }) {
   // fetch from here. The default tab must not gain a sixth startup request.
   const { summary: netWorthSummary, loaded: netWorthLoaded } = useNetWorth({ enabled: false })
   // Settings → Compare with. Either way it stays one bounded month query.
-  const { comparePeriod } = useTheme()
+  const { comparePeriod, resolved: resolvedTheme } = useTheme()
   const { transactions, initialLoading, error } = useTransactions({
     // Pause fetches while the tab is hidden; cached rows still render from context.
     enabled: dataReady && isTabActive,
@@ -184,6 +184,9 @@ function SummarySection({ profile, isTabActive = true }) {
     }
   }
 
+  // Heatmap columns follow the visible month, not a fixed 31.
+  const daysInMonth = new Date(year, month, 0).getDate()
+
   const todayKey = format(now, 'yyyy-MM-dd')
 
   const todayFor = (currency) => buildTodayRows(transactions ?? [], currency, todayKey)
@@ -226,6 +229,12 @@ function SummarySection({ profile, isTabActive = true }) {
             currency={summary.currency}
             budgetTotal={isMonthly ? summary.expenseBudgetTotal : 0}
             transactions={transactions}
+            categories={categories}
+            daysInMonth={daysInMonth}
+            dark={resolvedTheme === 'dark'}
+            prevItems={
+              prevSummaries.find((p) => p.currency === summary.currency)?.byExpenseCategory ?? []
+            }
             large
           />
         </Suspense>

@@ -4,18 +4,33 @@ import { getMonthRange } from './transactions'
 import { resolveTransactionCategory } from './transactionCategory'
 import { buildGoalLinkedTransactionIds, countsAsCategorySavings } from './transactionGoal'
 
-function resolveCategoryBucket(tx) {
+/**
+ * Tiles are keyed by kind + name with `parent_id` forced to root, so a
+ * sub-category merges into its name-mate rather than splitting out. That
+ * flattening is deliberate and long-standing — but it must be applied to
+ * BUDGETS as well, or a budget set on a child never finds its tile. See
+ * `flattenedBudgetKey` below; the two must stay in step.
+ *
+ * `parentId` / `parentName` ride along as metadata (never in the key) so a
+ * future rollup view can group without changing today's grouping. They are
+ * null for snapshot-only transactions: `resolveTransactionCategory` prefers
+ * the frozen category_name/color, which carries no parent.
+ */
+function resolveCategoryBucket(tx, categoryMap) {
   const resolved = resolveTransactionCategory(tx)
   if (resolved?.name) {
+    const live = resolved.id ? categoryMap?.get(resolved.id) : null
+    const parent = live?.parent_id ? categoryMap?.get(live.parent_id) : null
     return {
-      categoryId: categoryDedupeKey({
-        kind: resolved.kind ?? (tx.type === 'income' ? 'income' : 'expense'),
-        name: resolved.name,
-        parent_id: null,
-      }),
+      categoryId: flattenedCategoryKey(
+        resolved.kind ?? (tx.type === 'income' ? 'income' : 'expense'),
+        resolved.name,
+      ),
       name: resolved.name,
       color: resolved.color ?? 'indigo',
       isSavings: Boolean(resolved.is_savings),
+      parentId: live?.parent_id ?? null,
+      parentName: parent?.name ?? null,
     }
   }
 
@@ -24,13 +39,21 @@ function resolveCategoryBucket(tx) {
     name: 'Uncategorized',
     color: 'indigo',
     isSavings: false,
+    parentId: null,
+    parentName: null,
   }
+}
+
+/** The single key shape tiles and budgets must both use. */
+function flattenedCategoryKey(kind, name) {
+  return categoryDedupeKey({ kind, name, parent_id: null })
 }
 
 /** Dedupe key for expense heatmap tiles (excludes savings categories). */
 export function getTransactionExpenseCategoryKey(tx) {
   if (tx.type !== 'expense') return null
-  const bucket = resolveCategoryBucket(tx)
+  // No category map here — the key never depends on parent metadata.
+  const bucket = resolveCategoryBucket(tx, null)
   if (bucket.isSavings) return null
   return bucket.categoryId
 }
@@ -66,11 +89,18 @@ export function buildMonthlySummary(
 ) {
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
 
+  // Keyed with the SAME flattening the tiles use. Previously this used the
+  // category's real parent_id, so a budget on a sub-category silently never
+  // attached to its tile while still counting toward expenseBudgetTotal.
+  // Where two categories flatten to one tile their transactions merge, so
+  // summing their budgets is the consistent choice.
   const expenseBudgets = new Map()
   for (const cat of dedupeCategoriesForDisplay(categories)) {
     if (cat.kind !== 'expense' || cat.is_savings) continue
     const budget = Math.max(0, Number(cat.monthly_budget) || 0)
-    if (budget > 0) expenseBudgets.set(categoryDedupeKey(cat), budget)
+    if (budget <= 0) continue
+    const key = flattenedCategoryKey(cat.kind, cat.name)
+    expenseBudgets.set(key, (expenseBudgets.get(key) ?? 0) + budget)
   }
 
   let filtered = transactions
@@ -92,9 +122,9 @@ export function buildMonthlySummary(
     const amount = Number(tx.amount) || 0
     if (tx.type === 'income') {
       income += amount
-      addToBucket(byIncomeCategory, resolveCategoryBucket(tx), amount)
+      addToBucket(byIncomeCategory, resolveCategoryBucket(tx, categoryMap), amount)
     } else if (tx.type === 'expense') {
-      const bucket = resolveCategoryBucket(tx)
+      const bucket = resolveCategoryBucket(tx, categoryMap)
       if (bucket.isSavings) {
         if (countsAsCategorySavings(tx, goalLinkedTxIds)) {
           categorySavings += amount
@@ -259,7 +289,7 @@ export function buildTodayRows(transactions = [], currency = 'INR', todayKey) {
     if ((tx.account?.currency ?? 'INR') !== currency) continue
     if (tx.transaction_date?.slice(0, 10) !== todayKey) continue
 
-    const bucket = resolveCategoryBucket(tx)
+    const bucket = resolveCategoryBucket(tx, null)
     const amount = Number(tx.amount) || 0
     const signed = tx.type === 'income' ? amount : -amount
     net += signed
@@ -329,4 +359,132 @@ export function dayNet(items = [], currency = 'INR') {
     net += tx.type === 'income' ? amount : -amount
   }
   return net
+}
+
+/**
+ * Day × category matrix for the real heatmap (rows = categories, columns =
+ * days, cell darkness = spend).
+ *
+ * `ratio` is against the GLOBAL max cell, not each row's own max, so one
+ * sequential ramp reads consistently across rows — a dark cell means the same
+ * amount wherever it appears. Per-row normalisation would make a small
+ * category's busiest day look like the biggest spend on the chart.
+ *
+ * Reads only the transactions already passed in. No fetch, nothing widened.
+ */
+export function buildCategoryDayMatrix(
+  transactions = [],
+  categories = [],
+  { currency = 'INR', daysInMonth = 31 } = {},
+) {
+  const categoryMap = new Map(categories.map((c) => [c.id, c]))
+  const rows = new Map()
+  let max = 0
+  let total = 0
+
+  for (const tx of transactions) {
+    if (tx.type !== 'expense') continue
+    if ((tx.account?.currency ?? 'INR') !== currency) continue
+    const day = Number(tx.transaction_date?.slice(8, 10))
+    if (!day || day < 1 || day > daysInMonth) continue
+
+    const bucket = resolveCategoryBucket(tx, categoryMap)
+    if (bucket.isSavings) continue
+
+    let row = rows.get(bucket.categoryId)
+    if (!row) {
+      row = {
+        categoryId: bucket.categoryId,
+        name: bucket.name,
+        color: bucket.color,
+        parentName: bucket.parentName,
+        byDay: new Map(),
+        total: 0,
+      }
+      rows.set(bucket.categoryId, row)
+    }
+
+    const amount = Number(tx.amount) || 0
+    const next = (row.byDay.get(day) ?? 0) + amount
+    row.byDay.set(day, next)
+    row.total += amount
+    total += amount
+    if (next > max) max = next
+  }
+
+  const out = [...rows.values()]
+    .sort((a, b) => b.total - a.total)
+    .map((row) => ({
+      categoryId: row.categoryId,
+      name: row.name,
+      color: row.color,
+      parentName: row.parentName,
+      total: row.total,
+      share: total > 0 ? (row.total / total) * 100 : 0,
+      cells: Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1
+        const amount = row.byDay.get(day) ?? 0
+        return { day, amount, ratio: max > 0 ? amount / max : 0 }
+      }),
+    }))
+
+  return { rows: out, max, total, daysInMonth }
+}
+
+/**
+ * Per-category daily series for the sparklines — the same buckets as the
+ * matrix, reshaped to bare values so the SVG path code stays trivial.
+ */
+export function buildCategorySeries(transactions, categories, options) {
+  const { rows, daysInMonth } = buildCategoryDayMatrix(transactions, categories, options)
+  return rows.map((row) => ({
+    categoryId: row.categoryId,
+    name: row.name,
+    color: row.color,
+    total: row.total,
+    share: row.share,
+    values: row.cells.map((c) => c.amount),
+    max: Math.max(...row.cells.map((c) => c.amount), 0),
+    daysInMonth,
+  }))
+}
+
+/**
+ * Join this period's categories against the previous period's.
+ *
+ * Categories present in only one period must survive: a category that just
+ * appeared (`isNew`) and one that stopped (`isGone`, total 0) are exactly the
+ * changes worth seeing, and an inner join would hide both.
+ */
+export function joinCategoryComparison(current = [], previous = []) {
+  const prevById = new Map(previous.map((p) => [p.categoryId, p]))
+  const seen = new Set()
+
+  const joined = current.map((item) => {
+    seen.add(item.categoryId)
+    const prev = prevById.get(item.categoryId)
+    const prevTotal = prev ? prev.total : 0
+    return {
+      ...item,
+      prevTotal,
+      delta: percentDelta(item.total, prevTotal),
+      isNew: !prev,
+      isGone: false,
+    }
+  })
+
+  for (const prev of previous) {
+    if (seen.has(prev.categoryId)) continue
+    joined.push({
+      ...prev,
+      total: 0,
+      share: 0,
+      prevTotal: prev.total,
+      delta: null,
+      isNew: false,
+      isGone: true,
+    })
+  }
+
+  return joined
 }
