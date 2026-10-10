@@ -40,7 +40,10 @@ export default function CategoryHeatmap({ matrix, currency = 'INR', dark = false
     return <p className="py-6 text-center text-sm text-ink-faint">No spending to chart yet.</p>
   }
 
-  const { rows, daysInMonth } = matrix
+  const { rows, daysInMonth, columns = [] } = matrix
+  const axisStart = columns[0]?.label ?? '1'
+  const axisMid = columns[Math.floor((columns.length - 1) / 2)]?.label ?? String(Math.round(daysInMonth / 2))
+  const axisEnd = columns[columns.length - 1]?.label ?? String(daysInMonth)
 
   return (
     <div>
@@ -72,22 +75,22 @@ export default function CategoryHeatmap({ matrix, currency = 'INR', dark = false
               <div className="flex gap-[2px]">
                 {row.cells.map((cell) => {
                   const active =
-                    hover && hover.categoryId === row.categoryId && hover.day === cell.day
+                    hover && hover.categoryId === row.categoryId && hover.key === cell.key
                   return (
                     <button
-                      key={cell.day}
+                      key={cell.key}
                       type="button"
                       onMouseEnter={() =>
-                        setHover({ categoryId: row.categoryId, day: cell.day, cell, row })
+                        setHover({ categoryId: row.categoryId, key: cell.key, cell, row })
                       }
                       onMouseLeave={() => setHover(null)}
                       onFocus={() =>
-                        setHover({ categoryId: row.categoryId, day: cell.day, cell, row })
+                        setHover({ categoryId: row.categoryId, key: cell.key, cell, row })
                       }
                       onBlur={() => setHover(null)}
-                      onClick={() => onSelect?.({ categoryId: row.categoryId, name: row.name })}
-                      title={`${row.name} · day ${cell.day}: ${formatMoney(cell.amount, currency)}`}
-                      aria-label={`${row.name}, day ${cell.day}, ${formatMoney(cell.amount, currency)}`}
+                      onClick={() => onSelect?.({ categoryId: row.categoryId, name: row.name, icon: row.icon })}
+                      title={`${row.name} · ${cell.label}: ${formatMoney(cell.amount, currency)}`}
+                      aria-label={`${row.name}, ${cell.label}, ${formatMoney(cell.amount, currency)}`}
                       className={`h-5 min-w-0 flex-1 rounded-[2px] border transition ${
                         active ? 'border-accent' : 'border-ink-hairline'
                       }`}
@@ -100,9 +103,9 @@ export default function CategoryHeatmap({ matrix, currency = 'INR', dark = false
           ))}
 
           <div className="mt-1.5 flex justify-between text-[9.5px] text-ink-faint">
-            <span className="n">1</span>
-            <span className="n">{Math.round(daysInMonth / 2)}</span>
-            <span className="n">{daysInMonth}</span>
+            <span className="n">{axisStart}</span>
+            <span className="n">{axisMid}</span>
+            <span className="n">{axisEnd}</span>
           </div>
         </div>
       </div>
@@ -112,7 +115,7 @@ export default function CategoryHeatmap({ matrix, currency = 'INR', dark = false
       <div className="mt-2 min-h-[1.25rem]" aria-live="polite">
         {hover && (
           <p className="text-[11.5px] text-ink-muted">
-            <span className="text-ink">{hover.row.name}</span> · day {hover.day} ·{' '}
+            <span className="text-ink">{hover.row.name}</span> · {hover.cell.label} ·{' '}
             <span className="n text-ink">{formatMoney(hover.cell.amount, currency)}</span>
           </p>
         )}

@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-09-28 (v0.38)
+**Last updated:** 2026-10-10 (v0.39)
 
 ## Setup
 
@@ -969,3 +969,22 @@ onward need sign-in.
 **Note:** TC-542…TC-548 are `pass` — verified against the real modules with
 synthetic fixtures via `vite build --ssr`, plus the validator and screenshots in
 both themes. TC-549 onward need sign-in.
+
+## v0.39 — Category icons, 44px chips, Goals + Summary (session 89)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-554 | Icon defaults | `defaultIconForName` over the 12 starter + 5 goal-preset names; collision names | Intended icon each; "Insurance premium" → umbrella, "Credit card bill" → card | pass | 2026-10-10 |
+| TC-555 | Icon fallback | `getCategoryIconId` with bogus stored id / goal-linked / savings / null | name default / target / piggy / tag | pass | 2026-10-10 |
+| TC-556 | Period days, start day 25 | `buildPeriodDays(2026,10,25)` + matrix with a 3 Nov expense | 25 Oct → 24 Nov, 31 columns, 3 Nov in column 10 | pass | 2026-10-10 |
+| TC-557 | Saved + cash flow | `groupSummariesByCurrency` fixture | Saved = category + goal savings; cashFlow = income − spent; savings excluded from expenses | pass | 2026-10-10 |
+| TC-558 | Top movers | `buildTopMovers` with changed, unchanged, new, gone | Ordered by absolute change; unchanged dropped; new/gone flagged | pass | 2026-10-10 |
+| TC-559 | Goal completion + sort + currencies | `isGoalComplete` at 100 / 99.99; `sortGoals` 4 modes; per-currency overview | Exactly 100 completes; sorts correct; INR and USD separate | pass | 2026-10-10 |
+| TC-560 | Backdated contribution | `contributionTimestamp` today / past / bad; funding bucket | Today → DB default; past keeps its date; lands in its month | pass | 2026-10-10 |
+| TC-561 | 44px chips, no overflow | Component harness, Chromium 375 + 390, light + dark | Every Log sheet chip and icon cell ≥ 44px; no horizontal scroll; no page errors | pass | 2026-10-10 |
+| TC-562 | Card pace + overview render | SSR render of on-track / behind / overdue cards, overview, funding | Pace text per state; bar uses `fill` hex; both currencies; "₹60k" not "₹60T" | pass | 2026-10-10 |
+| TC-563 | Backdated Add money in production | Sign in, Goals → Add money dated last month | Contribution saves (RLS accepts `created_at`); appears in last month's funding bar and Summary | not-run | |
+| TC-564 | Icon picker saves | Sign in, Settings › Categories, tap a chip, pick an icon, save | Icon persists after reload and shows on Ledger rows | not-run | |
+| TC-565 | Summary with real data | Sign in, open Summary on a month with a previous period | Net + savings rate; Biggest changes rows open their transactions; income list expands | not-run | |
+| TC-566 | Compare with sync | Change Compare with in Settings, switch to Month without reload | Deltas and "vs" label follow immediately | not-run | |
+| TC-567 | Goals completed + sort | Sign in with a funded-to-100% goal; change sort | Goal in Completed with "Reached" date; sort persists after reload | not-run | |

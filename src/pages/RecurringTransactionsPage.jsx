@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Pause, Play, Plus, SkipForward, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Pause, Play, Plus, SkipForward, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '../hooks/useAuth'
 import { useAccounts } from '../hooks/useAccounts'
@@ -9,9 +9,11 @@ import { useProfile } from '../hooks/useProfile'
 import { useRecurringTransactions } from '../hooks/useRecurringTransactions'
 import { useToast } from '../hooks/useToast'
 import { formatCurrency } from '../lib/format'
+import { getColorPalette } from '../lib/constants'
 import { CategoriesPageHeader } from '../components/CategoryTreeManager'
 import RecurringTransactionForm from '../components/RecurringTransactionForm'
 import SettingsSection from '../components/SettingsSection'
+import CategoryIcon from '../components/CategoryIcon'
 
 function formatFrequency(rule) {
   const n = rule.interval_count ?? 1
@@ -128,7 +130,19 @@ export default function RecurringTransactionsPage() {
                 return (
                   <li key={rule.id} className="px-4 py-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                      <span
+                        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                          rule.category ? getColorPalette(rule.category.color).chip : 'bg-slate-100 text-slate-600'
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {rule.type === 'transfer' ? (
+                          <ArrowLeftRight className="h-4 w-4" />
+                        ) : (
+                          <CategoryIcon category={rule.category} className="h-[18px] w-[18px]" />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
                         <p className="font-medium text-slate-900">{label}</p>
                         <p className="mt-0.5 text-sm text-slate-600">
                           {formatCurrency(rule.amount, currency)} · {formatFrequency(rule)}

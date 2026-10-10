@@ -661,9 +661,9 @@ export function AppDataProvider({ children }) {
   )
 
   const handleAddContribution = useCallback(
-    (goalId, amount, note, sourceTransactionId) =>
+    (goalId, amount, note, sourceTransactionId, options) =>
       runGoalsMutation(
-        () => addContribution(goalId, amount, note, sourceTransactionId),
+        () => addContribution(goalId, amount, note, sourceTransactionId, options),
         'Failed to add contribution',
         { mutationKind: 'addContribution' },
       ),

@@ -28,6 +28,8 @@ function resolveCategoryBucket(tx, categoryMap) {
       ),
       name: resolved.name,
       color: resolved.color ?? 'indigo',
+      // Live row first (current icon), then the join; null → name default at render.
+      icon: live?.icon ?? resolved.icon ?? null,
       isSavings: Boolean(resolved.is_savings),
       parentId: live?.parent_id ?? null,
       parentName: parent?.name ?? null,
@@ -38,6 +40,7 @@ function resolveCategoryBucket(tx, categoryMap) {
     categoryId: 'uncategorized',
     name: 'Uncategorized',
     color: 'indigo',
+    icon: 'tag',
     isSavings: false,
     parentId: null,
     parentName: null,
@@ -76,6 +79,7 @@ function addToBucket(map, bucket, amount) {
     categoryId: bucket.categoryId,
     name: bucket.name,
     color: bucket.color,
+    icon: bucket.icon,
     total: 0,
   }
   existing.total += amount
@@ -268,6 +272,9 @@ export function groupSummariesByCurrency(
       savings,
       balances,
       net: balances,
+      // Income − spent for the period. Savings are not spending, so they are
+      // not subtracted; savingsRate says how much of income was put away.
+      cashFlow: summary.income - summary.expenses,
       savingsRate,
     }
   })
@@ -298,6 +305,8 @@ export function buildTodayRows(transactions = [], currency = 'INR', todayKey) {
       id: tx.id,
       name: tx.note?.trim() || bucket.name,
       color: bucket.color,
+      icon: bucket.icon,
+      categoryName: bucket.name,
       signed,
       isIncome: tx.type === 'income',
       createdAt: tx.created_at ?? null,
@@ -375,8 +384,23 @@ export function dayNet(items = [], currency = 'INR') {
 export function buildCategoryDayMatrix(
   transactions = [],
   categories = [],
-  { currency = 'INR', daysInMonth = 31 } = {},
+  { currency = 'INR', daysInMonth = 31, periodDays = null } = {},
 ) {
+  // Columns are the period's real dates. Keying by day-of-month (the old
+  // behaviour) broke whenever month_start_day ≠ 1: a 25 Oct → 24 Nov period
+  // folded 1–24 Nov onto 1–24 Oct's columns.
+  const columns =
+    periodDays ??
+    Array.from({ length: daysInMonth }, (_, i) => ({
+      key: null,
+      day: i + 1,
+      label: String(i + 1),
+    }))
+  const columnByKey = new Map()
+  columns.forEach((col, i) => {
+    if (col.key) columnByKey.set(col.key, i)
+  })
+
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
   const rows = new Map()
   let max = 0
@@ -385,8 +409,16 @@ export function buildCategoryDayMatrix(
   for (const tx of transactions) {
     if (tx.type !== 'expense') continue
     if ((tx.account?.currency ?? 'INR') !== currency) continue
-    const day = Number(tx.transaction_date?.slice(8, 10))
-    if (!day || day < 1 || day > daysInMonth) continue
+    const dateKey = tx.transaction_date?.slice(0, 10)
+    let day
+    if (periodDays) {
+      const index = columnByKey.get(dateKey)
+      if (index == null) continue
+      day = index + 1
+    } else {
+      day = Number(tx.transaction_date?.slice(8, 10))
+      if (!day || day < 1 || day > daysInMonth) continue
+    }
 
     const bucket = resolveCategoryBucket(tx, categoryMap)
     if (bucket.isSavings) continue
@@ -397,6 +429,7 @@ export function buildCategoryDayMatrix(
         categoryId: bucket.categoryId,
         name: bucket.name,
         color: bucket.color,
+        icon: bucket.icon,
         parentName: bucket.parentName,
         byDay: new Map(),
         total: 0,
@@ -418,17 +451,44 @@ export function buildCategoryDayMatrix(
       categoryId: row.categoryId,
       name: row.name,
       color: row.color,
+      icon: row.icon,
       parentName: row.parentName,
       total: row.total,
       share: total > 0 ? (row.total / total) * 100 : 0,
-      cells: Array.from({ length: daysInMonth }, (_, i) => {
-        const day = i + 1
-        const amount = row.byDay.get(day) ?? 0
-        return { day, amount, ratio: max > 0 ? amount / max : 0 }
+      cells: columns.map((col, i) => {
+        const amount = row.byDay.get(i + 1) ?? 0
+        return {
+          index: i + 1,
+          day: col.day,
+          key: col.key ?? String(i + 1),
+          label: col.label,
+          amount,
+          ratio: max > 0 ? amount / max : 0,
+        }
       }),
     }))
 
-  return { rows: out, max, total, daysInMonth }
+  return { rows: out, max, total, daysInMonth: columns.length, columns }
+}
+
+/**
+ * Every date in the visible period, honouring month_start_day — the same range
+ * `getMonthRange` fetches, so the day strip and heatmap columns line up with
+ * the data. `day` is the calendar day number; `label` is "25 Oct".
+ */
+export function buildPeriodDays(year, month, monthStartDay = 1) {
+  const { start, end } = getMonthRange(year, month, monthStartDay)
+  const [sy, sm, sd] = start.split('-').map(Number)
+  const cursor = new Date(sy, sm - 1, sd)
+  const days = []
+  // Hard cap: a period is at most 31 days; guards against a malformed range.
+  while (days.length < 31) {
+    const key = format(cursor, 'yyyy-MM-dd')
+    days.push({ key, day: cursor.getDate(), label: format(cursor, 'd MMM') })
+    if (key >= end) break
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return days
 }
 
 /**
@@ -441,6 +501,7 @@ export function buildCategorySeries(transactions, categories, options) {
     categoryId: row.categoryId,
     name: row.name,
     color: row.color,
+    icon: row.icon,
     total: row.total,
     share: row.share,
     values: row.cells.map((c) => c.amount),
@@ -487,4 +548,18 @@ export function joinCategoryComparison(current = [], previous = []) {
   }
 
   return joined
+}
+
+/**
+ * The categories whose spending moved most against the comparison period, by
+ * absolute amount (a ₹40 → ₹120 jump is +200% but rarely the story). Built on
+ * `joinCategoryComparison`, so a category that appeared or vanished counts.
+ * Reads summaries already computed — no fetch.
+ */
+export function buildTopMovers(current = [], previous = [], limit = 3) {
+  return joinCategoryComparison(current, previous)
+    .map((item) => ({ ...item, change: (item.total ?? 0) - (item.prevTotal ?? 0) }))
+    .filter((item) => item.change !== 0)
+    .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+    .slice(0, limit)
 }

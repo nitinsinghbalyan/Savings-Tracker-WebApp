@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-09-20 (v0.34)
+**Last updated:** 2026-10-10 (v0.39)
 
 ## Tech stack
 
@@ -732,6 +732,7 @@ Per currency in `groupSummariesByCurrency(transactions, categories, accounts, { 
 ### Transaction form category chips (v0.22, session 65)
 
 - **`TransactionForm` / `RecurringTransactionForm`** — flat `selectableCategories` in one `flex-wrap` row; `categoryChipLabel()` for parent · child
+- **Superseded (session 89):** `TransactionForm` renders grouped `categoryRows` (parent headings); `RecurringTransactionForm` stays flat with `categoryChipLabel()`. Both use the shared 44px `CategoryChip` (icon + name). Icons: `lib/categoryIcons.js` (static Lucide map, ids stored in `categories.icon`), `CategoryIcon`, `IconPicker`. Chip classes in `lib/chipStyles.js`
 - **`.chip-row`** — `flex-wrap` globally in `index.css`
 
 ### Settings layout (v0.22, session 65)

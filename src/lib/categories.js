@@ -3,6 +3,7 @@ import { requireUserId } from './auth'
 import { assertNoError, isMissingSnapshotColumnError } from './errors'
 import { categorySnapshotFromRow } from './transactionCategory'
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from './constants'
+import { isValidIconId } from './categoryIcons'
 
 function categoryNameKey(name) {
   return String(name ?? '').trim().toLowerCase()
@@ -216,6 +217,8 @@ export async function createCategory(data) {
       kind,
       parent_id: parentId,
       color: data.color ?? 'indigo',
+      // Optional — null renders the name-based default (categoryIcons.js).
+      icon: isValidIconId(data.icon) ? data.icon : null,
       sort_order: data.sort_order ?? 99,
       is_system: false,
       is_savings: Boolean(data.is_savings) && kind === 'expense',

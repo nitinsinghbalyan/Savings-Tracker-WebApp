@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   loadDisplayPreferences,
   saveDisplayPreferences,
+  subscribeDisplayPreferences,
 } from '../lib/displayPreferences'
 import { applyTheme, prefersDark, resolveTheme, watchSystemTheme } from '../lib/theme'
 
@@ -12,6 +13,20 @@ export function useTheme() {
   // Keep 'auto' honest when the OS flips while the app is open.
   useEffect(() => watchSystemTheme(setSystemDark), [])
 
+  // Follow changes made by any other useTheme() — Settings and Summary are both
+  // kept mounted, so each instance must hear the other's writes.
+  useEffect(
+    () =>
+      subscribeDisplayPreferences((next) => {
+        setPrefs((prev) =>
+          prev.theme === next.theme && prev.comparePeriod === next.comparePeriod
+            ? prev
+            : { theme: next.theme, comparePeriod: next.comparePeriod },
+        )
+      }),
+    [],
+  )
+
   // Declared below the state it reads — a derived value above its source throws
   // at render and blanks the screen (error-history.md, three recorded instances).
   const resolved = resolveTheme(prefs.theme, systemDark)
@@ -20,21 +35,24 @@ export function useTheme() {
     applyTheme(resolved)
   }, [resolved])
 
-  const setTheme = useCallback((theme) => {
-    setPrefs((prev) => {
-      const next = { ...prev, theme }
-      saveDisplayPreferences(next)
-      return next
-    })
+  // Save outside the state updater: saving notifies the other mounted
+  // instances, and setState-ing another component from inside an updater is a
+  // render-phase update React warns about.
+  const prefsRef = useRef(prefs)
+  useEffect(() => {
+    prefsRef.current = prefs
+  }, [prefs])
+
+  const update = useCallback((patch) => {
+    const next = { ...prefsRef.current, ...patch }
+    prefsRef.current = next
+    setPrefs(next)
+    saveDisplayPreferences(next)
   }, [])
 
-  const setComparePeriod = useCallback((comparePeriod) => {
-    setPrefs((prev) => {
-      const next = { ...prev, comparePeriod }
-      saveDisplayPreferences(next)
-      return next
-    })
-  }, [])
+  const setTheme = useCallback((theme) => update({ theme }), [update])
+
+  const setComparePeriod = useCallback((comparePeriod) => update({ comparePeriod }), [update])
 
   return {
     theme: prefs.theme,

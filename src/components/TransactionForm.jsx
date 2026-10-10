@@ -1,17 +1,18 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { format, subDays } from 'date-fns'
 import { Delete, Repeat, X } from 'lucide-react'
-import { CURRENCIES, getColorPalette } from '../lib/constants'
+import { CURRENCIES } from '../lib/constants'
 import { buildCategoryPickerTree, getSelectableCategories } from '../lib/categories'
 import { formatTransactionDateLabel } from '../lib/transactions'
 import { formatCurrency, parseAmountInput } from '../lib/format'
+import { SELECT_CHIP_BASE, SELECT_CHIP_IDLE, SELECT_CHIP_ON } from '../lib/chipStyles'
 import ModalShell from './ModalShell'
+import CategoryChip from './CategoryChip'
 
 const chipBase =
   'inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-medium ring-1 ring-inset transition active:scale-95'
 
-const categoryChipBase =
-  'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-inset transition active:scale-95 sm:text-sm'
+const categoryChipBase = SELECT_CHIP_BASE
 
 const TYPES = [
   { value: 'expense', label: 'Expense' },
@@ -326,23 +327,14 @@ export default function TransactionForm({
     ? (goals.find((g) => g.id === values.goal_id) ?? null)
     : null
 
-  const renderCategoryChip = (c) => {
-    const palette = getColorPalette(c.color)
-    return (
-      <button
-        key={c.id}
-        type="button"
-        onClick={() => setValues((v) => ({ ...v, category_id: c.id }))}
-        className={`${categoryChipBase} ${
-          values.category_id === c.id
-            ? `${palette.chip} ring-2`
-            : 'bg-slate-50 text-slate-700 ring-slate-200'
-        }`}
-      >
-        {c.name}
-      </button>
-    )
-  }
+  const renderCategoryChip = (c) => (
+    <CategoryChip
+      key={c.id}
+      category={c}
+      selected={values.category_id === c.id}
+      onSelect={(id) => setValues((v) => ({ ...v, category_id: id }))}
+    />
+  )
 
   return (
     <ModalShell open={open} onClose={onClose} closeDisabled={submitting} hideBottomNav>
@@ -475,8 +467,8 @@ export default function TransactionForm({
                       onClick={() => setValues((v) => ({ ...v, account_id: a.id, currency: a.currency }))}
                       className={`${chipBase} ${
                         values.account_id === a.id
-                          ? 'bg-brand-600 text-white ring-brand-600'
-                          : 'bg-slate-50 text-slate-700 ring-slate-200'
+                          ? SELECT_CHIP_ON
+                          : SELECT_CHIP_IDLE
                       }`}
                     >
                       {a.name}
@@ -510,8 +502,8 @@ export default function TransactionForm({
                           onClick={() => setValues((v) => ({ ...v, transfer_to_account_id: a.id }))}
                           className={`${chipBase} ${
                             values.transfer_to_account_id === a.id
-                              ? 'bg-brand-600 text-white ring-brand-600'
-                              : 'bg-slate-50 text-slate-700 ring-slate-200'
+                              ? SELECT_CHIP_ON
+                              : SELECT_CHIP_IDLE
                           }`}
                         >
                           {a.name}
@@ -540,7 +532,7 @@ export default function TransactionForm({
                               {row.label}
                             </p>
                           )}
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {row.items.map(renderCategoryChip)}
                           </div>
                         </div>
@@ -553,7 +545,7 @@ export default function TransactionForm({
               {values.type !== 'transfer' && !isEdit && goals.length > 0 && (
                 <div>
                   <p className="label-field">Goal (optional)</p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {goals.map((g) => (
                       <button
                         key={g.id}
@@ -566,8 +558,8 @@ export default function TransactionForm({
                         }
                         className={`${categoryChipBase} ${
                           values.goal_id === g.id
-                            ? 'bg-brand-600 text-white ring-brand-600'
-                            : 'bg-slate-50 text-slate-700 ring-slate-200'
+                            ? SELECT_CHIP_ON
+                            : SELECT_CHIP_IDLE
                         }`}
                       >
                         {g.name}
@@ -605,8 +597,8 @@ export default function TransactionForm({
                       }
                       className={`${categoryChipBase} chip-row-item justify-center ${
                         values.transaction_date === opt.value
-                          ? 'bg-brand-600 text-white ring-brand-600'
-                          : 'bg-slate-50 text-slate-700 ring-slate-200'
+                          ? SELECT_CHIP_ON
+                          : SELECT_CHIP_IDLE
                       }`}
                     >
                       {opt.label}
@@ -618,8 +610,8 @@ export default function TransactionForm({
                     onClick={openDatePicker}
                     className={`${categoryChipBase} chip-row-item justify-center ${
                       isPresetDate
-                        ? 'bg-slate-50 text-slate-700 ring-slate-200'
-                        : 'bg-brand-600 text-white ring-brand-600'
+                        ? SELECT_CHIP_IDLE
+                        : SELECT_CHIP_ON
                     }`}
                   >
                     {isPresetDate ? 'Pick date' : formatTransactionDateLabel(values.transaction_date)}
@@ -662,18 +654,18 @@ export default function TransactionForm({
                     aria-pressed={isRecurring}
                     className={`${categoryChipBase} gap-1.5 ${
                       isRecurring
-                        ? 'bg-brand-600 text-white ring-brand-600'
-                        : 'bg-slate-50 text-slate-700 ring-slate-200'
+                        ? SELECT_CHIP_ON
+                        : SELECT_CHIP_IDLE
                     }`}
                   >
-                    <Repeat className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Repeat className="h-4 w-4" aria-hidden="true" />
                     {isRecurring
                       ? (FREQUENCIES.find((f) => f.value === frequency)?.label ?? 'Monthly')
                       : 'Repeat'}
                   </button>
 
                   {isRecurring && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {FREQUENCIES.map((f) => (
                         <button
                           key={f.value}
@@ -681,8 +673,8 @@ export default function TransactionForm({
                           onClick={() => setFrequency(f.value)}
                           className={`${categoryChipBase} ${
                             frequency === f.value
-                              ? 'bg-brand-600 text-white ring-brand-600'
-                              : 'bg-slate-50 text-slate-700 ring-slate-200'
+                              ? SELECT_CHIP_ON
+                              : SELECT_CHIP_IDLE
                           }`}
                         >
                           {f.label}

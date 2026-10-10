@@ -17,7 +17,24 @@ export async function getContributions(goalId) {
   return data ?? []
 }
 
-export async function addContribution(goalId, amount, note, sourceTransactionId) {
+/**
+ * `created_at` for a contribution funded by a transaction on `transactionDate`
+ * (yyyy-MM-dd). Contributions have no date column of their own, so a backdated
+ * "Add money" used to be stamped with today and land in the wrong month on the
+ * funding chart, the forecast and the Summary. Today → undefined (the DB
+ * default `now()` is exact); any other day → that date at the current local
+ * time of day, so same-day entries keep their order.
+ */
+export function contributionTimestamp(transactionDate, now = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(transactionDate ?? ''))) return undefined
+  const [y, m, d] = transactionDate.split('-').map(Number)
+  if (y === now.getFullYear() && m === now.getMonth() + 1 && d === now.getDate()) return undefined
+  const stamped = new Date(now)
+  stamped.setFullYear(y, m - 1, d)
+  return stamped.toISOString()
+}
+
+export async function addContribution(goalId, amount, note, sourceTransactionId, { createdAt } = {}) {
   const userId = await requireUserId()
   const value = Number(amount)
   if (!Number.isFinite(value) || value <= 0) {
@@ -30,6 +47,7 @@ export async function addContribution(goalId, amount, note, sourceTransactionId)
     amount: value,
     note: note ?? null,
     ...(sourceTransactionId ? { source_transaction_id: sourceTransactionId } : {}),
+    ...(createdAt ? { created_at: createdAt } : {}),
   }
 
   let { data: contribution, error } = await supabase.from('contributions').insert(row).select().single()

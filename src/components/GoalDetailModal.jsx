@@ -1,12 +1,13 @@
 import { useId, useState } from 'react'
-import { Calendar, Pencil, Plus, Tag, Trash2, X } from 'lucide-react'
+import { CircleCheck, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { format } from 'date-fns'
 import {
   percentComplete,
   remainingAmount,
   savedAmount,
 } from '../lib/contributions'
 import { formatCurrency } from '../lib/format'
-import { CURRENCIES, getColorPalette, PRIORITIES } from '../lib/constants'
+import { getColorPalette, PRIORITIES } from '../lib/constants'
 import {
   formatContributionDate,
   formatDaysRemaining,
@@ -17,15 +18,17 @@ import {
   sortedContributions,
 } from '../lib/goalDisplay'
 import { getForecast } from '../lib/forecast'
-import { buildFundingByMonth } from '../lib/goalSummary'
+import { buildFundingByMonth, goalCompletedAt, isGoalComplete } from '../lib/goalSummary'
+import CategoryIcon from './CategoryIcon'
 import FundingByMonth from './FundingByMonth'
 import ModalShell from './ModalShell'
 
-function DetailRow({ label, children }) {
+function DetailRow({ label, hint, hintClassName = 'text-ink-faint', children }) {
   return (
-    <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5">
-      <p className="text-xs text-slate-500">{label}</p>
-      <div className="mt-0.5 truncate text-sm font-semibold text-slate-900">{children}</div>
+    <div className="min-w-0 rounded-xl bg-paper-sunk px-3 py-2.5">
+      <p className="text-xs text-ink-soft">{label}</p>
+      <div className="n mt-0.5 truncate text-sm font-semibold text-ink">{children}</div>
+      {hint && <p className={`mt-0.5 truncate text-[11px] ${hintClassName}`}>{hint}</p>}
     </div>
   )
 }
@@ -64,7 +67,24 @@ export default function GoalDetailModal({
     PRIORITIES.find((p) => p.value === 'medium').badge
   const palette = getColorPalette(goal.color)
   const currency = goal.currency ?? 'INR'
-  const currencyLabel = CURRENCIES.find((c) => c.code === currency)?.label ?? currency
+  const complete = isGoalComplete(goal)
+  const completedAt = complete ? goalCompletedAt(goal) : null
+  const forecastValue = complete
+    ? 'Complete'
+    : forecast?.estimatedDate
+      ? format(forecast.estimatedDate, 'MMM yyyy')
+      : '—'
+  const forecastHint = complete
+    ? completedAt
+      ? `Reached ${formatContributionDate(completedAt)}`
+      : null
+    : forecast?.deadlineComparison
+      ? forecast.deadlineComparison.monthsLate > 0
+        ? `${forecast.deadlineComparison.monthsLate} mo late`
+        : forecast.deadlineComparison.monthsEarly > 0
+          ? `${forecast.deadlineComparison.monthsEarly} mo early`
+          : 'On time'
+      : (forecast?.label ?? null)
 
   const handleDelete = async () => {
     if (
@@ -109,16 +129,18 @@ export default function GoalDetailModal({
         aria-modal="true"
         aria-labelledby={titleId}
         data-modal-panel
-        className={`modal-panel max-h-[min(90dvh,720px)] max-w-lg rounded-t-2xl border-l-4 shadow-2xl lg:max-w-2xl lg:rounded-2xl ${palette.border}`}
+        className="modal-panel max-h-[min(90dvh,720px)] max-w-lg overflow-hidden rounded-t-2xl shadow-2xl lg:max-w-2xl lg:rounded-2xl"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+        {/* Goal colour as a 3px top edge — the same treatment as the card. */}
+        <div className="h-[3px] shrink-0" style={{ background: palette.fill }} aria-hidden="true" />
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-ink-hairline px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="truncate text-lg font-semibold text-slate-900">
+            <h2 id={titleId} className="truncate text-lg font-semibold text-ink">
               {goal.name}
             </h2>
             {goal.category && (
-              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-slate-500">
-                <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-ink-soft">
+                <CategoryIcon category={{ name: goal.category }} className="h-3.5 w-3.5" />
                 <span className="truncate">{goal.category}</span>
               </p>
             )}
@@ -136,11 +158,18 @@ export default function GoalDetailModal({
 
         <div data-modal-scroll className="modal-scroll px-4 py-4 sm:px-6">
           <div className="flex flex-wrap gap-1.5">
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${trackStatus.className}`}
-            >
-              {trackStatus.label}
-            </span>
+            {complete ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-positive-tint px-2.5 py-1 text-xs font-semibold text-positive ring-1 ring-inset ring-positive/30">
+                <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                Completed
+              </span>
+            ) : (
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${trackStatus.className}`}
+              >
+                {trackStatus.label}
+              </span>
+            )}
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${priorityStyle}`}
             >
@@ -150,18 +179,18 @@ export default function GoalDetailModal({
 
           <div className="mt-4">
             <div className="mb-2 flex items-baseline justify-between gap-2">
-              <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+              <p className="min-w-0 truncate text-sm font-medium text-ink">
                 {formatCurrency(saved, currency)}{' '}
-                <span className="font-normal text-slate-400">
+                <span className="font-normal text-ink-faint">
                   of {formatCurrency(target, currency)}
                 </span>
               </p>
-              <p className="shrink-0 text-sm font-semibold text-slate-700">
+              <p className="shrink-0 text-sm font-semibold text-ink">
                 {Math.round(progress)}%
               </p>
             </div>
             <div
-              className="h-3 overflow-hidden rounded-full bg-slate-100"
+              className="h-3 overflow-hidden rounded-full bg-paper-line"
               role="progressbar"
               aria-valuenow={Math.round(progress)}
               aria-valuemin={0}
@@ -169,62 +198,59 @@ export default function GoalDetailModal({
               aria-label={`${goal.name} progress`}
             >
               <div
-                className={`h-full rounded-full transition-all duration-300 ${palette.bar}`}
-                style={{ width: `${progress}%` }}
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${progress}%`, background: palette.fill }}
               />
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          {/* Each fact once: the old grid repeated the due date three times and
+              the monthly target twice. */}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <DetailRow label="Saved">{formatCurrency(saved, currency)}</DetailRow>
             <DetailRow label="Remaining">{formatCurrency(remaining, currency)}</DetailRow>
             <DetailRow label="Target">{formatCurrency(target, currency)}</DetailRow>
-            <DetailRow label="Currency">{currencyLabel}</DetailRow>
-            <DetailRow label="Start date">{formatGoalDate(goal.start_date)}</DetailRow>
-            <DetailRow label="End date">{formatGoalDate(goal.end_date)}</DetailRow>
-            <DetailRow label="Time left">{formatDaysRemaining(daysLeft)}</DetailRow>
-            <DetailRow label="Required monthly">
+            <DetailRow
+              label="Due"
+              hint={complete ? null : formatDaysRemaining(daysLeft)}
+              hintClassName={daysLeft < 0 ? 'text-negative' : 'text-ink-faint'}
+            >
+              {formatGoalDate(goal.end_date)}
+            </DetailRow>
+            <DetailRow label="Needed monthly" hint={remaining > 0 ? 'to finish on time' : null}>
               {remaining > 0 ? `${formatCurrency(requiredMonthly, currency)}/mo` : '—'}
+            </DetailRow>
+            <DetailRow
+              label="Forecast"
+              hint={forecastHint}
+              hintClassName={
+                forecast?.deadlineComparison?.monthsLate > 0 ? 'text-negative' : 'text-ink-faint'
+              }
+            >
+              {forecastValue}
             </DetailRow>
           </div>
 
-          <div className="mt-3 flex items-center gap-1.5 text-sm text-slate-600">
-            <Calendar className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-            <span>
-              Due {formatGoalDate(goal.end_date)} · {formatDaysRemaining(daysLeft)}
-            </span>
-          </div>
-
-          {remaining > 0 && (
-            <p className="mt-3 text-sm text-slate-600">
-              Save{' '}
-              <span className="font-semibold text-slate-900">
-                {formatCurrency(requiredMonthly, currency)}/month
-              </span>{' '}
-              to stay on track
-            </p>
-          )}
-
-          {forecast?.label && !forecast.complete && (
-            <p className="mt-1 text-sm text-slate-500">{forecast.label}</p>
-          )}
-
           <div className="mt-5">
-            <FundingByMonth funding={funding} currency={goal.currency ?? 'INR'} />
+            <FundingByMonth
+              funding={funding}
+              currency={currency}
+              pace={complete ? null : forecast?.monthlyPace}
+            />
           </div>
 
           <div className="mt-6">
-            <h3 className="text-sm font-semibold text-slate-900">
+            <h3 className="text-sm font-semibold text-ink">
               Contributions
               {contributions.length > 0 && (
-                <span className="ml-1.5 font-normal text-slate-400">
+                <span className="ml-1.5 font-normal text-ink-faint">
                   ({contributions.length})
                 </span>
               )}
             </h3>
             <div className="mt-2 space-y-2">
               {contributions.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-500">
+                <p className="rounded-xl bg-paper-sunk px-3 py-3 text-sm text-ink-soft">
                   No contributions yet.
                 </p>
               ) : (
@@ -235,16 +261,16 @@ export default function GoalDetailModal({
                   return (
                     <div
                       key={contribution.id}
-                      className="flex min-w-0 items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5"
+                      className="flex min-w-0 items-start gap-2 rounded-xl bg-paper-sunk px-3 py-2.5"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-ink">
                           {formatCurrency(contribution.amount, currency)}
                         </p>
-                        <p className="mt-0.5 truncate text-sm text-slate-600">
+                        <p className="mt-0.5 truncate text-sm text-ink-muted">
                           {contribution.note || '—'}
                         </p>
-                        <p className="mt-0.5 text-xs text-slate-400">
+                        <p className="mt-0.5 text-xs text-ink-faint">
                           {formatContributionDate(contribution.created_at)}
                         </p>
                       </div>
@@ -257,8 +283,8 @@ export default function GoalDetailModal({
                         }
                         className={`btn-icon shrink-0 rounded-lg ${
                           isConfirming
-                            ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                            : 'text-rose-600 hover:bg-rose-50 hover:text-rose-700'
+                            ? 'bg-negative-tint text-negative ring-1 ring-negative/40'
+                            : 'text-negative hover:bg-negative-tint'
                         }`}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -271,7 +297,7 @@ export default function GoalDetailModal({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-slate-100 px-4 py-4 safe-bottom sm:px-6">
+        <div className="shrink-0 border-t border-ink-hairline px-4 py-4 safe-bottom sm:px-6">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -291,7 +317,7 @@ export default function GoalDetailModal({
                 onEdit(goal)
               }}
               aria-label="Edit goal"
-              className="btn-icon shrink-0 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              className="btn-icon shrink-0 rounded-xl text-ink-muted hover:bg-paper-line hover:text-ink"
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -300,13 +326,13 @@ export default function GoalDetailModal({
               onClick={handleDelete}
               disabled={deleting}
               aria-label={deleting ? 'Deleting goal' : 'Delete goal'}
-              className="btn-icon shrink-0 rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
+              className="btn-icon shrink-0 rounded-xl text-negative hover:bg-negative-tint disabled:opacity-60"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           {deleteError && (
-            <p role="alert" className="mt-2 text-center text-xs text-rose-600">
+            <p role="alert" className="mt-2 text-center text-xs text-negative">
               {deleteError}
             </p>
           )}

@@ -1,6 +1,7 @@
 import { formatMoney } from '../lib/format'
 import { getColorPalette } from '../lib/constants'
 import DeltaBadge from './DeltaBadge'
+import CategoryIcon from './CategoryIcon'
 
 // Small multiples: one row per category with its own shape over the period.
 // Hand-rolled SVG per the house idiom (NetWorthTrend) — no chart library.
@@ -78,7 +79,7 @@ export default function CategorySparklines({
           <button
             key={row.categoryId}
             type="button"
-            onClick={() => onSelect?.({ categoryId: row.categoryId, name: row.name })}
+            onClick={() => onSelect?.({ categoryId: row.categoryId, name: row.name, icon: row.icon })}
             className="flex w-full items-center gap-3 border-b border-ink-hairline px-0.5 py-2.5 text-left transition hover:bg-paper-sunk"
           >
             <span
@@ -86,6 +87,7 @@ export default function CategorySparklines({
               style={{ background: color }}
               aria-hidden="true"
             />
+            <CategoryIcon category={row} className="h-4 w-4 text-ink-soft" />
 
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] text-ink">{row.name}</span>

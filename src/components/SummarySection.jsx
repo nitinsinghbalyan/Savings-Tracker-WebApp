@@ -7,7 +7,15 @@ import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useTransactions } from '../hooks/useTransactions'
 import { useGoals } from '../hooks/useGoals'
-import { buildTodayRows, groupSummariesByCurrency, percentDelta } from '../lib/monthlySummary'
+import {
+  buildPeriodDays,
+  buildTodayRows,
+  buildTopMovers,
+  filterTransactionsForHeatmapCategory,
+  groupSummariesByCurrency,
+  percentDelta,
+} from '../lib/monthlySummary'
+import { getColorPalette } from '../lib/constants'
 import { formatMoney } from '../lib/format'
 import MonthPicker from './MonthPicker'
 import AccountCard from './AccountCard'
@@ -15,10 +23,15 @@ import SavingsBreakdownList from './SavingsBreakdownList'
 import NetWorthCard from './netWorth/NetWorthCard'
 import TodayList from './TodayList'
 import DeltaBadge from './DeltaBadge'
+import CategoryMovers from './CategoryMovers'
+import CollapsibleSection from './CollapsibleSection'
+import CategoryIcon from './CategoryIcon'
 import { useNetWorth } from '../hooks/useNetWorth'
 import { useTheme } from '../hooks/useTheme'
 
 const CategoryBreakdownChart = lazy(() => import('./CategoryBreakdownChart'))
+// Opened only on tap — keep it out of the default tab's first paint.
+const CategoryTransactionsModal = lazy(() => import('./CategoryTransactionsModal'))
 
 const SUMMARY_VIEWS = [
   { value: 'monthly', label: 'Monthly' },
@@ -33,6 +46,7 @@ function SummarySection({ profile, isTabActive = true }) {
   const [view, setView] = useState('monthly')
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
+  const [selectedMover, setSelectedMover] = useState(null)
 
   const isMonthly = view === 'monthly'
 
@@ -89,22 +103,25 @@ function SummarySection({ profile, isTabActive = true }) {
     return byCurrency
   }, [transactions])
 
+  // The period's real dates (honours month_start_day). Keying bars by calendar
+  // day 1..N dropped every day past the month boundary when the period starts
+  // on, say, the 25th.
+  const periodDays = useMemo(
+    () => (isMonthly ? buildPeriodDays(year, month, monthStartDay) : []),
+    [isMonthly, year, month, monthStartDay],
+  )
+
+  const todayKey = format(now, 'yyyy-MM-dd')
+  const periodHasToday = periodDays.some((d) => d.key === todayKey)
+
   const buildDayBars = (currency) => {
     const days = spendByDay.get(currency) ?? new Map()
-    const dayCount = new Date(year, month, 0).getDate()
-    const today = new Date()
-    const isCurrentMonth =
-      today.getFullYear() === year && today.getMonth() + 1 === month
-    const bars = []
-    for (let day = 1; day <= dayCount; day += 1) {
-      const key = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      bars.push({ day, amount: days.get(key) ?? 0 })
-    }
+    const bars = periodDays.map((d) => ({ ...d, amount: days.get(d.key) ?? 0 }))
     const max = bars.reduce((peak, bar) => Math.max(peak, bar.amount), 0)
     return bars.map((bar) => ({
       ...bar,
       height: max > 0 && bar.amount > 0 ? `${Math.max(6, (bar.amount / max) * 100)}%` : '2px',
-      isToday: isCurrentMonth && bar.day === today.getDate(),
+      isToday: bar.key === todayKey,
     }))
   }
 
@@ -181,13 +198,40 @@ function SummarySection({ profile, isTabActive = true }) {
         summaries.find((x) => x.currency === currency)?.savings ?? 0,
         prev.savings,
       ),
+      cashFlow: percentDelta(
+        summaries.find((x) => x.currency === currency)?.cashFlow ?? 0,
+        prev.cashFlow,
+      ),
     }
   }
 
-  // Heatmap columns follow the visible month, not a fixed 31.
-  const daysInMonth = new Date(year, month, 0).getDate()
+  // Heatmap columns follow the visible period, not a fixed 31.
+  const daysInMonth = periodDays.length || new Date(year, month, 0).getDate()
 
-  const todayKey = format(now, 'yyyy-MM-dd')
+  const compareLabel = prevPeriod
+    ? comparePeriod === 'year'
+      ? format(new Date(prevPeriod.year, prevPeriod.month - 1, 1), 'MMM yyyy')
+      : 'last month'
+    : ''
+
+  const moversFor = (summary) => {
+    if (!isMonthly || !prevLoaded) return []
+    const prev = prevSummaries.find((p) => p.currency === summary.currency)
+    if (!prev) return []
+    return buildTopMovers(summary.byExpenseCategory, prev.byExpenseCategory)
+  }
+
+  const selectedMoverTransactions = useMemo(
+    () =>
+      selectedMover
+        ? filterTransactionsForHeatmapCategory(
+            transactions ?? [],
+            selectedMover.categoryId,
+            selectedMover.currency,
+          )
+        : [],
+    [selectedMover, transactions],
+  )
 
   const todayFor = (currency) => buildTodayRows(transactions ?? [], currency, todayKey)
 
@@ -231,6 +275,7 @@ function SummarySection({ profile, isTabActive = true }) {
             transactions={transactions}
             categories={categories}
             daysInMonth={daysInMonth}
+            periodDays={isMonthly ? periodDays : null}
             dark={resolvedTheme === 'dark'}
             prevItems={
               prevSummaries.find((p) => p.currency === summary.currency)?.byExpenseCategory ?? []
@@ -282,10 +327,6 @@ function SummarySection({ profile, isTabActive = true }) {
         )}
       </div>
 
-      <h2 className="text-sm font-semibold text-slate-900 lg:text-base">
-        {isMonthly ? 'Monthly summary' : 'Overall summary'}
-      </h2>
-
       {error && <p className="alert-error">{error}</p>}
 
       {!dataReady || initialLoading ? (
@@ -314,43 +355,67 @@ function SummarySection({ profile, isTabActive = true }) {
             )}
 
             <section className="overflow-hidden rounded-xl border border-ink-rule bg-paper-card p-4">
-              <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">
-                Balance
-              </p>
-              <p
-                className={`n mt-1.5 text-[29px] font-medium leading-none tracking-[-.02em] ${
-                  summary.balances >= 0 ? 'text-ink' : 'text-negative'
-                }`}
-              >
-                {formatMoney(summary.balances, summary.currency)}
-              </p>
+              {/* Headline answers "how did this period go": income − spent,
+                  with the savings rate beside it. The account balance is a
+                  stock figure, so it drops to a supporting line. */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">
+                    {isMonthly ? 'Net this month' : 'Net all time'}
+                  </p>
+                  <p
+                    className={`n mt-1.5 text-[29px] font-medium leading-none tracking-[-.02em] ${
+                      summary.cashFlow >= 0 ? 'text-ink' : 'text-negative'
+                    }`}
+                  >
+                    {summary.cashFlow >= 0 ? '+' : '−'}
+                    {formatMoney(Math.abs(summary.cashFlow), summary.currency)}
+                  </p>
+                  <p className="mt-1 text-[11px] text-ink-faint">
+                    Income − spent
+                    {isMonthly && (
+                      <>
+                        {' '}
+                        <DeltaBadge delta={deltasFor(summary.currency)?.cashFlow} />
+                      </>
+                    )}
+                  </p>
+                </div>
+                {summary.income > 0 && (
+                  <div className="shrink-0 rounded-lg bg-paper-sunk px-2.5 py-1.5 text-right">
+                    <p className="text-[10px] text-ink-faint">Savings rate</p>
+                    <p className="n text-base font-medium text-accent">
+                      {Math.round(summary.savingsRate)}%
+                    </p>
+                  </div>
+                )}
+              </div>
 
-              {isMonthly && (
+              {isMonthly && periodDays.length > 0 && (
                 <div
                   className="mt-3.5 flex h-11 items-end gap-[2px]"
-                  aria-label="Daily spending this month"
+                  aria-label="Daily spending this period"
                 >
                   {buildDayBars(summary.currency).map((bar) => (
                     <div
-                      key={bar.day}
+                      key={bar.key}
                       className={`min-h-[2px] flex-1 rounded-t-sm ${
                         bar.isToday ? 'bg-accent' : 'bg-accent/25'
                       }`}
                       style={{ height: bar.height }}
-                      title={`${bar.day}: ${formatMoney(bar.amount, summary.currency)}`}
+                      title={`${bar.label}: ${formatMoney(bar.amount, summary.currency)}`}
                     />
                   ))}
                 </div>
               )}
 
-              {isMonthly && (
+              {isMonthly && periodDays.length > 0 && (
                 <div className="mt-1.5 flex justify-between">
+                  <span className="n text-[9.5px] text-ink-faint">{periodDays[0].label}</span>
+                  {/* Only when the period actually contains today. */}
+                  {periodHasToday && <span className="n text-[9.5px] text-accent">today</span>}
                   <span className="n text-[9.5px] text-ink-faint">
-                    {format(new Date(year, month - 1, 1), 'd MMM')}
-                  </span>
-                  <span className="n text-[9.5px] text-accent">today</span>
-                  <span className="n text-[9.5px] text-ink-faint">
-                    {new Date(year, month, 0).getDate()}
+                    {periodDays[periodDays.length - 1].label}
                   </span>
                 </div>
               )}
@@ -376,13 +441,27 @@ function SummarySection({ profile, isTabActive = true }) {
                   {isMonthly && <DeltaBadge delta={deltasFor(summary.currency)?.income} />}
                 </div>
                 <div>
-                  <p className="text-[10.5px] text-ink-faint">To goals</p>
+                  {/* "Saved", not "To goals": this is category savings + goal
+                      contributions, and the breakdown below has its own
+                      "To goals" subtotal — one label, one number. */}
+                  <p className="text-[10.5px] text-ink-faint">Saved</p>
                   <p className="n mt-0.5 text-sm font-medium text-accent">
                     {formatMoney(summary.savings, summary.currency)}
                   </p>
                   {isMonthly && <DeltaBadge delta={deltasFor(summary.currency)?.savings} />}
                 </div>
               </div>
+
+              <p className="mt-3 flex items-baseline justify-between gap-2 border-t border-ink-hairline pt-2.5 text-[11px] text-ink-faint">
+                <span>Account balance</span>
+                <span
+                  className={`n text-[12.5px] font-medium ${
+                    summary.balances >= 0 ? 'text-ink' : 'text-negative'
+                  }`}
+                >
+                  {formatMoney(summary.balances, summary.currency)}
+                </span>
+              </p>
             </section>
 
             {isMonthly &&
@@ -397,27 +476,65 @@ function SummarySection({ profile, isTabActive = true }) {
                 )
               })()}
 
+            <CategoryMovers
+              movers={moversFor(summary)}
+              currency={summary.currency}
+              compareLabel={compareLabel}
+              onSelect={(item) =>
+                setSelectedMover({
+                  categoryId: item.categoryId,
+                  name: item.name,
+                  icon: item.icon,
+                  currency: summary.currency,
+                })
+              }
+            />
+
             {renderChart(summary)}
 
             {renderSavingsBreakdown(summary)}
+
+            {summary.byIncomeCategory.length > 0 && (
+              <CollapsibleSection
+                title="Income by category"
+                meta={formatMoney(summary.income, summary.currency)}
+              >
+                {summary.byIncomeCategory.map((item) => (
+                  <div
+                    key={item.categoryId}
+                    className="flex items-center gap-[11px] border-b border-ink-hairline px-3.5 py-3 last:border-b-0"
+                  >
+                    <span
+                      className="h-[18px] w-[3px] shrink-0 rounded-sm"
+                      style={{ background: getColorPalette(item.color).fill }}
+                      aria-hidden="true"
+                    />
+                    <CategoryIcon category={item} className="h-4 w-4 text-ink-soft" />
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{item.name}</span>
+                    <span className="n shrink-0 text-[11.5px] text-ink-faint">
+                      {summary.income > 0 ? `${Math.round((item.total / summary.income) * 100)}% · ` : ''}
+                      {formatMoney(item.total, summary.currency)}
+                    </span>
+                  </div>
+                ))}
+              </CollapsibleSection>
+            )}
           </div>
         ))
       )}
 
       {netWorthLoaded && <NetWorthCard summary={netWorthSummary} />}
 
-      <div className="space-y-2">
-        <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Balances
-        </h3>
-        <div className="card divide-y divide-slate-100 p-0">
+      {/* Collapsed by default: Settings and the Ledger already list accounts. */}
+      <CollapsibleSection title="Balances" meta={summaryAccounts.length ? String(summaryAccounts.length) : null}>
+        <div className="divide-y divide-ink-hairline">
           {summaryAccounts.length === 0 ? (
-            <p className="px-4 py-4 text-sm text-slate-500">Add balances in Settings.</p>
+            <p className="px-4 py-4 text-sm text-ink-soft">Add balances in Settings.</p>
           ) : (
             summaryAccounts.map((account) => <AccountCard key={account.id} account={account} />)
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       <Link
         to={isMonthly ? `/transactions?month=${monthKey}` : '/transactions'}
@@ -425,6 +542,19 @@ function SummarySection({ profile, isTabActive = true }) {
       >
         {isMonthly ? 'View transactions this month' : 'View all transactions'}
       </Link>
+
+      {selectedMover && (
+        <Suspense fallback={null}>
+          <CategoryTransactionsModal
+            open
+            onClose={() => setSelectedMover(null)}
+            categoryName={selectedMover.name}
+            categoryIcon={selectedMover.icon ?? null}
+            transactions={selectedMoverTransactions}
+            currency={selectedMover.currency}
+          />
+        </Suspense>
+      )}
     </section>
   )
 }

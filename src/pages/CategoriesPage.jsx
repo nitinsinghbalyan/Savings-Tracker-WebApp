@@ -18,6 +18,7 @@ export default function CategoriesPage() {
     categories,
     loading,
     createCategory,
+    updateCategory,
     deleteCategory,
     deleteAllCategories,
     refetch,
@@ -93,6 +94,7 @@ export default function CategoriesPage() {
                 kind={categoryTab}
                 categories={categories}
                 onAdd={createCategory}
+                onUpdate={updateCategory}
                 onDelete={deleteCategory}
                 onError={(msg) => toast.error(msg)}
               />

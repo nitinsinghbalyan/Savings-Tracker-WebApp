@@ -7,18 +7,27 @@ import {
 } from 'date-fns'
 import { percentComplete, remainingAmount } from './contributions'
 
+// Theme tokens, not literal emerald/amber/rose, so the chips follow dark mode.
+// `tone` drives the one-line pace on goal cards; the label always rides along
+// so status is never carried by colour alone.
 export const TRACK_STATUS = {
   onTrack: {
+    key: 'onTrack',
     label: 'On track',
-    className: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+    tone: 'text-positive',
+    className: 'bg-positive-tint text-positive ring-positive/30',
   },
   slightlyBehind: {
+    key: 'slightlyBehind',
     label: 'Slightly behind',
-    className: 'bg-amber-100 text-amber-800 ring-amber-200',
+    tone: 'text-ink-muted',
+    className: 'bg-paper-line text-ink ring-ink-rule',
   },
   behind: {
+    key: 'behind',
     label: 'Behind',
-    className: 'bg-rose-100 text-rose-800 ring-rose-200',
+    tone: 'text-negative',
+    className: 'bg-negative-tint text-negative ring-negative/30',
   },
 }
 

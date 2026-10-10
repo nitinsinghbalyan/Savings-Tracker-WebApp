@@ -10,13 +10,19 @@ export function categorySnapshotFromRow(category) {
   }
 }
 
-/** Display category for a transaction — prefers frozen snapshot over live join */
+/**
+ * Display category for a transaction — prefers frozen snapshot over live join.
+ * There is no icon snapshot column: the icon comes from the live join when the
+ * category still exists, and `getCategoryIconId` falls back to a name-based
+ * default when it does not, so no migration is needed.
+ */
 export function resolveTransactionCategory(tx) {
   if (tx?.category_name) {
     return {
       id: tx.category_id ?? null,
       name: tx.category_name,
       color: tx.category_color ?? 'indigo',
+      icon: tx.category?.icon ?? null,
       is_savings: Boolean(tx.category_is_savings),
       kind: tx.type === 'income' ? 'income' : 'expense',
     }

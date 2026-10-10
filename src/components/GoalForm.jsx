@@ -16,6 +16,7 @@ import {
   parseAmountInput,
 } from '../lib/format'
 import ModalShell from './ModalShell'
+import CategoryIcon from './CategoryIcon'
 
 const chipBase =
   'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium ring-1 ring-inset transition active:scale-95'
@@ -44,7 +45,7 @@ function goalToForm(goal) {
   }
 }
 
-function validateForm(values) {
+function validateForm(values, { isEdit = false, originalEndDate = null } = {}) {
   const errors = {}
 
   if (!values.name.trim()) {
@@ -60,7 +61,10 @@ function validateForm(values) {
     errors.endDate = 'End date is required'
   } else {
     const end = parseISO(values.endDate)
-    if (!isAfter(end, startOfDay(new Date()))) {
+    // Editing an overdue goal (to rename it or change the target) must not
+    // force the deadline forward — only a new or changed date has to be future.
+    const unchangedOnEdit = isEdit && values.endDate === originalEndDate
+    if (!unchangedOnEdit && !isAfter(end, startOfDay(new Date()))) {
       errors.endDate = 'End date must be in the future'
     }
   }
@@ -249,7 +253,7 @@ export default function GoalForm({
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const errors = validateForm(values)
+    const errors = validateForm(values, { isEdit, originalEndDate: goal?.end_date ?? null })
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
@@ -420,7 +424,9 @@ export default function GoalForm({
 
             <div>
               <p className="label-field">Category</p>
-              <div className="chip-row">
+              {/* Wrapping chips sized to their label, not five flex-1 cells:
+                  at 375px the equal cells truncated "Emergency". */}
+              <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((category) => (
                   <Chip
                     key={category}
@@ -439,9 +445,10 @@ export default function GoalForm({
                         setChipField('category', DEFAULT_CATEGORY)
                       }
                     }}
-                    className="chip-row-item"
+                    className="gap-1.5"
                   >
-                    {category}
+                    <CategoryIcon category={{ name: category }} />
+                    <span className="truncate">{category}</span>
                   </Chip>
                 ))}
               </div>

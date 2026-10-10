@@ -1,7 +1,8 @@
 import { formatMoney } from '../lib/format'
 import { getColorPalette } from '../lib/constants'
+import CategoryIcon from './CategoryIcon'
 
-// Artboard 1a "Today": the day's entries with a category dot, read straight
+// Artboard 1a "Today": the day's entries with a category icon, read straight
 // from the month already in the context cache. No fetch of its own.
 export default function TodayList({ rows, net, currency }) {
   if (!rows?.length) return null
@@ -27,10 +28,11 @@ export default function TodayList({ rows, net, currency }) {
             }`}
           >
             <span
-              className="h-[7px] w-[7px] shrink-0 rounded-sm"
-              style={{ background: getColorPalette(row.color).fill }}
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${getColorPalette(row.color).chip}`}
               aria-hidden="true"
-            />
+            >
+              <CategoryIcon category={{ icon: row.icon, name: row.categoryName ?? row.name }} className="h-3.5 w-3.5" />
+            </span>
             <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{row.name}</span>
             <span
               className={`n shrink-0 text-[13px] font-medium ${

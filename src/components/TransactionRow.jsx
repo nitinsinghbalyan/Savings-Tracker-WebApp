@@ -3,6 +3,7 @@ import { ArrowLeftRight, Pencil, Trash2 } from 'lucide-react'
 import { formatMoney } from '../lib/format'
 import { getColorPalette } from '../lib/constants'
 import { resolveTransactionCategory } from '../lib/transactionCategory'
+import CategoryIcon from './CategoryIcon'
 
 export const TRANSACTION_TABLE_GRID =
   'w-full lg:grid lg:grid-cols-[2.5rem_minmax(0,1fr)_minmax(8rem,14rem)_minmax(6rem,9rem)_5rem] lg:items-center lg:gap-x-4'
@@ -53,8 +54,10 @@ function TransactionRow({ transaction, highlightSavingsOrGoal = false, onEdit, o
       >
         {type === 'transfer' ? (
           <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+        ) : category ? (
+          <CategoryIcon category={category} className="h-[18px] w-[18px]" />
         ) : (
-          <span className={`h-3 w-3 rounded-full ${palette?.swatch ?? 'bg-slate-300'}`} />
+          <span className="h-3 w-3 rounded-full bg-slate-300" />
         )}
       </span>
 

@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react'
-import { ChevronDown, Pencil, Plus, Tag, Trash2 } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   percentComplete,
   remainingAmount,
@@ -12,9 +12,11 @@ import {
   formatDaysRemaining,
   getDaysRemaining,
   getRequiredMonthly,
+  getTrackStatus,
   sortedContributions,
 } from '../lib/goalDisplay'
 import { getForecast } from '../lib/forecast'
+import CategoryIcon from './CategoryIcon'
 
 function stopCardClick(event) {
   event.stopPropagation()
@@ -43,6 +45,7 @@ function GoalCard({
   const requiredMonthly = useMemo(() => getRequiredMonthly(goal), [goal])
   const forecast = useMemo(() => getForecast(goal), [goal])
   const daysLeft = useMemo(() => getDaysRemaining(goal.end_date), [goal.end_date])
+  const trackStatus = useMemo(() => getTrackStatus(goal), [goal])
   const palette = useMemo(() => getColorPalette(goal.color), [goal.color])
   const currency = goal.currency ?? 'INR'
 
@@ -88,14 +91,16 @@ function GoalCard({
       <div className={compact ? 'p-3.5' : 'p-4 sm:p-[18px]'}>
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className={`truncate font-medium text-ink ${compact ? 'text-[13.5px]' : 'text-base'}`}>
-            {goal.name}
+          <h3
+            className={`flex min-w-0 items-center gap-1.5 font-medium text-ink ${compact ? 'text-[13.5px]' : 'text-base'}`}
+          >
+            {goal.category && (
+              <CategoryIcon category={{ name: goal.category }} className="h-4 w-4 text-ink-soft" />
+            )}
+            <span className="truncate">{goal.name}</span>
           </h3>
           {!compact && goal.category && (
-            <p className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-slate-500">
-              <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">{goal.category}</span>
-            </p>
+            <p className="mt-1 truncate text-sm text-ink-soft">{goal.category}</p>
           )}
         </div>
         <span
@@ -103,7 +108,7 @@ function GoalCard({
             daysLeft < 0
               ? 'bg-negative-tint text-negative'
               : daysLeft <= 7
-                ? 'bg-[#F6E2E6] text-[#8E2340]'
+                ? 'bg-accent-tint text-accent'
                 : 'text-ink-faint'
           }`}
         >
@@ -123,18 +128,31 @@ function GoalCard({
         </div>
 
         <div
-          className={`overflow-hidden rounded-full bg-paper-line ${compact ? 'h-1.5' : 'h-2'}`}
+          className={`overflow-hidden rounded-full bg-paper-line ${compact ? 'h-2' : 'h-2.5'}`}
           role="progressbar"
           aria-valuenow={Math.round(progress)}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`${goal.name} progress`}
         >
+          {/* palette.fill, the same hex as the top edge — palette.bar is a
+              Tailwind class that differs from it for cyan and violet. */}
           <div
-            className={`h-full rounded-full transition-all duration-300 ${palette.bar}`}
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full transition-all duration-300"
+            style={{ width: `${progress}%`, background: palette.fill }}
           />
         </div>
+
+        {/* One-line pace from track status + required monthly. Label + amount,
+            never colour alone (decisions.md 2026-10-10 supersedes "no track
+            badge on cards"). */}
+        {compact && remaining > 0 && (
+          <p className={`n mt-2 truncate text-[11px] ${daysLeft < 0 ? 'text-negative' : trackStatus.tone}`}>
+            {daysLeft < 0
+              ? `Past due · ${formatCurrency(remaining, currency)} to go`
+              : `${trackStatus.label} · ${formatCurrency(requiredMonthly, currency)}/mo`}
+          </p>
+        )}
       </div>
 
       {remaining > 0 && !compact && (
@@ -189,17 +207,17 @@ function GoalCard({
           }
           className={`btn-icon shrink-0 rounded-xl disabled:opacity-60 ${
             confirmingDelete
-              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-              : 'text-rose-600 hover:bg-rose-50 hover:text-rose-700'
+              ? 'bg-negative-tint text-negative ring-1 ring-negative/40'
+              : 'text-negative hover:bg-negative-tint'
           }`}
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
-      {confirmingDelete && !deleting && !compact && (
-        <p className="mt-2 text-center text-xs text-slate-500" onClick={stopCardClick}>
-          Tap the <span className="font-medium text-rose-600">delete icon</span> again to remove this goal.
+      {confirmingDelete && !deleting && (
+        <p className="mt-2 text-center text-xs text-ink-soft" onClick={stopCardClick}>
+          Tap <span className="font-medium text-negative">delete</span> again to remove.
         </p>
       )}
 

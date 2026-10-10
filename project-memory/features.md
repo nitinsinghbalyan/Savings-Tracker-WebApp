@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-09-07 (v0.33)
+**Last updated:** 2026-10-10 (v0.39)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -14,7 +14,7 @@
 | F-08 | Contributions UI | done | `AddMoneyModal`, expandable list on card |
 | F-09 | Progress display | done | Bar, %, saved/remaining, on-track badge |
 | F-10 | Routing (`react-router-dom`) | done | `/` → `Dashboard` |
-| F-11 | Priority / category filters | deferred | Post-MVP |
+| F-11 | Priority / category filters | deferred | Post-MVP. Goal **sort** shipped as F-168 (session 89); filters still deferred |
 | F-12 | Data export / import | done | `backup.js`, header Download/Upload, `ImportBackupModal`; merge or replace |
 | F-13 | Supabase data layer | done | `goals.js`, `contributions.js`, `useGoals` |
 | F-14 | Dashboard page | done | Summary, FAB, grid, skeleton, empty state |
@@ -133,6 +133,12 @@
 | F-126 | Settings Budgets UI removed | done | `BudgetManager` no longer on Settings page; DB/chart budgets retained (session 65) |
 | F-127 | Summary Overall / Monthly tabs | done | Segmented toggle in `SummarySection`; default Overall (session 66) |
 | F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
+| F-169 | Summary hero, movers, income list | done | Headline **Net this month** (income − spent, `cashFlow`) + **savings rate**; `CategoryMovers` (top 3 by absolute change, new/gone included, tap → transactions); collapsed income-by-category; collapsed Balances; "To goals" cell → "Saved" (session 89) |
+| F-168 | Goals list: completed, sort, header CTA, pace | done | Collapsed **Completed** section (derived `saved ≥ target`); sort Deadline/Progress/Priority/Name (localStorage); **New goal** in header; one-line pace on cards — **updates** the 2026-07-04 "no track badge" and "New goal CTA below grid" decisions (session 89) |
+| F-167 | Goal detail cleanup | done | Six facts once each incl. Forecast; funding bars carry values (k/L/Cr) and quote the forecast pace; paper/ink tokens (session 89) |
+| F-166 | Category icon picker | done | Settings › Categories: tap a chip → 51-icon grid (44px cells) → `updateCategory({ icon })`; add forms pre-fill from the name; all 6 colours (session 89) |
+| F-165 | Category icons everywhere | done | `lib/categoryIcons.js` + `CategoryIcon`; stored `categories.icon` (existing column, no migration) else name default. Rows, Today, tiles, sparklines, breakdowns, modal, recurring list, goals (session 89) |
+| F-164 | 44px category chips | done | Shared `CategoryChip` (icon + name, `min-h-11`) in Log sheet + recurring form; Goal/Date/Repeat/frequency chips also 44px; dark-mode palette tints (session 89). **Refines F-124** |
 | F-163 | Category comparatives | done | Per-category vs previous period (honours the Compare with setting), budget on the chart face rather than hover-only, and persistent share of total. `joinCategoryComparison` keeps categories present in only one period, flagged new/gone (session 88) |
 | F-162 | Per-category sparklines | done | `CategorySparklines` — small multiples, one row per category, hand-rolled SVG. Single-data-point rows render a dot rather than an empty line (session 88) |
 | F-161 | Real category heatmap (day × category) | done | `CategoryHeatmap` — rows = categories, columns = days, cell darkness = spend from a **sequential single hue**; identity comes from the row label. Chart-type switcher (Tiles / Heatmap / Trends) in the existing settings popover. **Refines F-129**, which called the flex-tile mosaic a heatmap (session 88) |
@@ -337,7 +343,7 @@
 | Explicit goal picker on transaction form | **Done** — F-139 (session 78); deployed `dpl_CP8Ma31JRgHr3G1zFGmqJEuBgvLo` |
 | Paste-a-bank-SMS quick add | **Planned** — parser + prefill sheet scoped in session 77; iPhone cannot grant SMS read to a web app, so input is paste / clipboard / iOS Shortcuts only |
 | Mount `BudgetManager` in Settings | **Planned** — component exists, not rendered anywhere since F-126 |
-| Surface `savingsRate` on Summary | **Planned** — already computed in `monthlySummary.js`, never displayed |
+| Surface `savingsRate` on Summary | **Done** — F-169 (session 89) |
 | CSV export | **Planned** — extend `backup.js` |
 | Debt payoff mode for credit accounts | **Deferred** — needs `apr` / `min_payment` migration |
 | Recurring processing via Supabase Edge Function + `pg_cron` | **Deferred** — currently posts on app open |

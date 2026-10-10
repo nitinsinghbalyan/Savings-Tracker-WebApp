@@ -267,3 +267,25 @@
   }
 
 }
+
+/* ------------------------------------------------------------------
+   Dark mode for the category palette tints.
+
+   `palette.chip` (constants.js) uses bg-{hue}-50 / text-{hue}-700, which the
+   neutral-ramp swap above does not reach — selected category chips and the
+   transaction-row icon discs stayed light pastel on a dark page. A translucent
+   500 for the tint and the 300 shade for text keeps each hue recognisable
+   with ≥ 4.5:1 text contrast on the dark card.
+   ------------------------------------------------------------------ */
+.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.18); }
+.dark .text-indigo-700 { color: rgb(165 180 252); }
+.dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.18); }
+.dark .text-rose-700 { color: rgb(253 164 175); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.18); }
+.dark .text-emerald-700 { color: rgb(110 231 183); }
+.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.18); }
+.dark .text-amber-700 { color: rgb(252 211 77); }
+.dark .bg-violet-50 { background-color: rgb(139 92 246 / 0.2); }
+.dark .text-violet-700 { color: rgb(196 181 253); }
+.dark .bg-cyan-50 { background-color: rgb(6 182 212 / 0.18); }
+.dark .text-cyan-700 { color: rgb(103 232 249); }

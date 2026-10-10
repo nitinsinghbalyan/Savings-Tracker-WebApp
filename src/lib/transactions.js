@@ -64,7 +64,7 @@ export async function getTransactions({ startDate, endDate, type, accountId } = 
 
   let query = supabase
     .from('transactions')
-    .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency), transfer_to:accounts!transactions_transfer_to_account_id_fkey(id, name, currency)')
+    .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency), transfer_to:accounts!transactions_transfer_to_account_id_fkey(id, name, currency)')
     .eq('user_id', userId)
     .order('transaction_date', { ascending: false })
     .order('created_at', { ascending: false })
@@ -100,7 +100,7 @@ export async function createTransaction(data) {
     }
     const { data: tx, error: fetchError } = await supabase
       .from('transactions')
-      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency), transfer_to:accounts!transactions_transfer_to_account_id_fkey(id, name, currency)')
+      .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency), transfer_to:accounts!transactions_transfer_to_account_id_fkey(id, name, currency)')
       .eq('id', id)
       .eq('user_id', userId)
       .single()
@@ -137,7 +137,7 @@ export async function createTransaction(data) {
   let { data: tx, error } = await supabase
     .from('transactions')
     .insert(insertRow)
-    .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+    .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
     .single()
 
   if (error && isMissingSnapshotColumnError(error)) {
@@ -145,7 +145,7 @@ export async function createTransaction(data) {
     ;({ data: tx, error } = await supabase
       .from('transactions')
       .insert(insertRow)
-      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+      .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
       .single())
   }
 
@@ -154,7 +154,7 @@ export async function createTransaction(data) {
     ;({ data: tx, error } = await supabase
       .from('transactions')
       .insert(withoutGoal)
-      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+      .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
       .single())
   }
 
@@ -186,7 +186,7 @@ export async function updateTransaction(id, patch) {
     .update(safePatch)
     .eq('id', id)
     .eq('user_id', userId)
-    .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+    .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
     .single()
 
   if (error && isMissingSnapshotColumnError(error) && Object.keys(snapshot).length > 0) {
@@ -198,7 +198,7 @@ export async function updateTransaction(id, patch) {
       .update(safePatch)
       .eq('id', id)
       .eq('user_id', userId)
-      .select('*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
+      .select('*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)')
       .single())
   }
 
@@ -212,7 +212,7 @@ export async function deleteTransaction(id, { goals = [] } = {}) {
   const { data: tx, error: fetchError } = await supabase
     .from('transactions')
     .select(
-      '*, category:categories(id, name, kind, color, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)',
+      '*, category:categories(id, name, kind, color, icon, is_savings), account:accounts!transactions_account_id_fkey(id, name, currency)',
     )
     .eq('id', id)
     .eq('user_id', userId)

@@ -2,15 +2,13 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { X } from 'lucide-react'
 import { buildCategoryPickerTree, getSelectableCategories } from '../lib/categories'
-import { CURRENCIES, getColorPalette } from '../lib/constants'
+import { CURRENCIES } from '../lib/constants'
 import { parseAmountInput } from '../lib/format'
 import ModalShell from './ModalShell'
+import CategoryChip from './CategoryChip'
 
 const chipBase =
   'inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-medium ring-1 ring-inset transition active:scale-95'
-
-const categoryChipBase =
-  'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-inset transition active:scale-95 sm:text-sm'
 
 function categoryChipLabel(category, pickerGroups) {
   const group = pickerGroups.find((g) => g.items.some((item) => item.id === category.id))
@@ -276,24 +274,16 @@ export default function RecurringTransactionForm({
                 {pickerGroups.length === 0 ? (
                   <p className="text-sm text-slate-500">Add categories in Settings first.</p>
                 ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectable.map((c) => {
-                      const palette = getColorPalette(c.color)
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setValues((v) => ({ ...v, category_id: c.id }))}
-                          className={`${categoryChipBase} ${
-                            values.category_id === c.id
-                              ? palette.chip + ' ring-2'
-                              : 'bg-slate-50 text-slate-700 ring-slate-200'
-                          }`}
-                        >
-                          {categoryChipLabel(c, pickerGroups)}
-                        </button>
-                      )
-                    })}
+                  <div className="flex flex-wrap gap-2">
+                    {selectable.map((c) => (
+                      <CategoryChip
+                        key={c.id}
+                        category={c}
+                        label={categoryChipLabel(c, pickerGroups)}
+                        selected={values.category_id === c.id}
+                        onSelect={(id) => setValues((v) => ({ ...v, category_id: id }))}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

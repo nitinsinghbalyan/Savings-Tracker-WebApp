@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { formatMoney } from '../lib/format'
 import { formatTransactionDateLabel } from '../lib/transactions'
 import ModalShell from './ModalShell'
+import CategoryIcon from './CategoryIcon'
 
 const PAGE_SIZE = 10
 
@@ -10,6 +11,7 @@ export default function CategoryTransactionsModal({
   open,
   onClose,
   categoryName,
+  categoryIcon = null,
   transactions,
   currency,
 }) {
@@ -42,12 +44,13 @@ export default function CategoryTransactionsModal({
         data-modal-panel
         className="modal-panel flex max-h-[min(85dvh,640px)] w-full max-w-lg flex-col rounded-t-3xl lg:max-w-xl lg:rounded-2xl"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-ink-hairline px-4 py-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="truncate text-lg font-semibold text-slate-900">
-              {categoryName}
+            <h2 id={titleId} className="flex min-w-0 items-center gap-2 text-lg font-semibold text-ink">
+              <CategoryIcon category={{ icon: categoryIcon, name: categoryName }} className="h-5 w-5 text-ink-soft" />
+              <span className="truncate">{categoryName}</span>
             </h2>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <p className="mt-0.5 text-sm text-ink-soft">
               {transactions.length} transaction{transactions.length === 1 ? '' : 's'}
             </p>
           </div>
@@ -58,9 +61,9 @@ export default function CategoryTransactionsModal({
 
         <div data-modal-scroll className="modal-scroll min-h-0 flex-1 px-4 py-3">
           {transactions.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">No transactions in this category.</p>
+            <p className="py-8 text-center text-sm text-ink-soft">No transactions in this category.</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-ink-hairline">
               {paginated.map((tx) => {
                 const accountName = tx.account?.name ?? '—'
                 const label = tx.note?.trim() || accountName
@@ -68,12 +71,12 @@ export default function CategoryTransactionsModal({
                 return (
                   <li key={tx.id} className="flex items-start justify-between gap-3 py-3">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-900">{label}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="truncate font-medium text-ink">{label}</p>
+                      <p className="mt-0.5 text-xs text-ink-soft">
                         {formatTransactionDateLabel(tx.transaction_date)} · {accountName}
                       </p>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-rose-600">
+                    <span className="shrink-0 text-sm font-semibold tabular-nums text-negative">
                       −{formatMoney(tx.amount, currency)}
                     </span>
                   </li>
@@ -84,8 +87,8 @@ export default function CategoryTransactionsModal({
         </div>
 
         {transactions.length > PAGE_SIZE && (
-          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
-            <p className="text-xs text-slate-500">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-ink-hairline px-4 py-3">
+            <p className="text-xs text-ink-soft">
               {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, transactions.length)} of{' '}
               {transactions.length}
             </p>
@@ -98,7 +101,7 @@ export default function CategoryTransactionsModal({
               >
                 Previous
               </button>
-              <span className="text-sm font-medium text-slate-700">
+              <span className="text-sm font-medium text-ink">
                 {page} / {totalPages}
               </span>
               <button

@@ -117,7 +117,7 @@ export async function getRecurringTransactions() {
   const { data, error } = await supabase
     .from('recurring_transactions')
     .select(
-      '*, account:accounts!recurring_transactions_account_id_fkey(id, name, currency), category:categories(id, name, kind, color), transfer_to:accounts!recurring_transactions_transfer_to_account_id_fkey(id, name, currency)',
+      '*, account:accounts!recurring_transactions_account_id_fkey(id, name, currency), category:categories(id, name, kind, color, icon), transfer_to:accounts!recurring_transactions_transfer_to_account_id_fkey(id, name, currency)',
     )
     .eq('user_id', userId)
     .order('next_run_date', { ascending: true })

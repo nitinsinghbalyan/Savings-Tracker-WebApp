@@ -1,9 +1,17 @@
 # Decision Log
 
-**Last updated:** 2026-09-07 (v0.33)
+**Last updated:** 2026-10-10 (v0.39)
 
 | Date | Decision | Rationale | Alternatives considered |
 |------|----------|-----------|-------------------------|
+| 2026-10-10 | Category icons: a curated **static** Lucide set keyed by stable string ids in the existing `categories.icon` column; name-based default when null | No migration (column exists since phase 2); static imports keep the `lucide` chunk at ~10.7 kB gz. Icons are a second cue next to the label, never a replacement (extends the 2026-09-28 "colour is never the sole carrier" rule) | Emoji (renders differently per device, clashes with Lucide line icons — rejected by the user); `DynamicIcon` / full `icons` map (pulls ~4k modules); an icon snapshot column on transactions (needs a migration for little gain — deleted categories fall back to the name default) |
+| 2026-10-10 | Category picker stays **wrapping chips**, enlarged to 44px with an icon | User's choice over an icon-tile grid; keeps the 2026-08-02 "all options visible, no sideways scrub" layout | 4-column icon tile grid with most-used first |
+| 2026-10-10 | Icon sheet edits the **icon only**, not colour | Transactions freeze `category_color` at write time, so recolouring would split one category's history across two colours | Icon + colour editor |
+| 2026-10-10 | Goal cards show a **one-line pace** ("On track · ₹X/mo"); **supersedes** 2026-07-04 "No track-status badge on goal cards" | User asked for better Goals; the status already existed but sat only in the detail modal. Text + token colour, never colour alone; one line, not a chip, to keep the compact card quiet | Leave status in the modal only; a coloured chip |
+| 2026-10-10 | **New goal** button in the header as well as the row under the list; **amends** 2026-07-04 "New goal CTA below card grid" | Once goals exist, the only create path was the last row of "Not started" | Mobile FAB (clashes with the bottom bar's +) |
+| 2026-10-10 | Contributions are dated by their **transaction date** (`created_at` set client-side when backdated); **reverses** the alternative rejected on 2026-09-06 | A backdated Add money landed in today's month on the funding chart, forecast and Summary. Contributions have no date column, so `created_at` carries it; same-day entries keep the DB default `now()` | New `contribution_date` column (migration); leave it |
+| 2026-10-10 | Summary headline is **income − spent** ("Net this month") + savings rate; account balance drops to a supporting line | The balance is a stock figure and says nothing about the month. Savings are not subtracted — the savings rate reports them | Keep balance as headline; income − spent − saved |
+| 2026-10-10 | "Completed" goals are **derived** (`saved ≥ target`), no status column | No migration; can never disagree with the contributions | `goals.status` / `completed_at` columns |
 | 2026-06-14 | No authentication | Faster MVP; personal single-device use case | Supabase Auth, magic links |
 | 2026-06-14 | `device_id` in localStorage | Simple anonymous identity without sign-up | Fingerprinting, cookies |
 | 2026-06-14 | Permissive RLS for `anon` | App filters by `device_id`; no JWT claims available | RLS policies checking `device_id` header (not native in Supabase REST) |
@@ -131,8 +139,8 @@
 | 2026-07-04 | Pagination bar bottom-only on Activity | Less clutter; user scans filters → list → page controls | Top + bottom duplicate pagination bars |
 | 2026-07-04 | GoalCard grid on Goals tab | User request; card actions visible at a glance; up to 6 cols on xl | `GoalsProgressBars` list (session 48–64) |
 | 2026-07-04 | Days left only on goal cards | Save space; full date in detail modal | End date + days row on card |
-| 2026-07-04 | No track-status badge on goal cards | Reduce noise on compact cards | On track / slightly behind chips on `GoalCard` |
-| 2026-07-04 | New goal CTA below card grid | Natural add flow after scanning goals | Header button + mobile FAB |
+| 2026-07-04 | No track-status badge on goal cards **(superseded 2026-10-10 — one-line pace on cards)** | Reduce noise on compact cards | On track / slightly behind chips on `GoalCard` |
+| 2026-07-04 | New goal CTA below card grid **(amended 2026-10-10 — header button added too)** | Natural add flow after scanning goals | Header button + mobile FAB |
 | 2026-07-04 | Summary first in nav + default route | Summary as home dashboard | Goals first; `/` → `/goals` |
 | 2026-07-04 | Activity full-width table | More room for Description / Account columns | Sidebar filter column (25% width) |
 | 2026-07-04 | Activity type chips only | Simpler filter UX | Search + account + amount range filters |

@@ -13,6 +13,7 @@ export function buildGoalsOverview(goals = [], currency = 'INR') {
   let target = 0
   let funded = 0
   let notStarted = 0
+  let completed = 0
 
   for (const goal of goals) {
     if ((goal.currency ?? 'INR') !== currency) continue
@@ -23,6 +24,7 @@ export function buildGoalsOverview(goals = [], currency = 'INR') {
     target += goalTarget
     if (goalSaved > 0) funded += 1
     else notStarted += 1
+    if (goalTarget > 0 && goalSaved >= goalTarget) completed += 1
   }
 
   return {
@@ -30,6 +32,7 @@ export function buildGoalsOverview(goals = [], currency = 'INR') {
     target,
     funded,
     notStarted,
+    completed,
     percent: target > 0 ? Math.min(100, (saved / target) * 100) : 0,
     hasGoals: funded + notStarted > 0,
   }
@@ -81,4 +84,71 @@ export function buildFundingByMonth(goal, { months = 6, now = new Date() } = {})
 /** Percent funded for one goal, clamped — thin wrapper so callers stay tidy. */
 export function goalPercent(goal) {
   return Math.min(100, Math.max(0, percentComplete(goal)))
+}
+
+/** Saved ≥ target (and a real target). Derived — there is no status column. */
+export function isGoalComplete(goal) {
+  const target = Number(goal?.target_amount) || 0
+  return target > 0 && savedAmount(goal) >= target
+}
+
+/**
+ * When the goal crossed its target: the date of the contribution that took the
+ * running total to ≥ target, walking oldest → newest. Null if not complete.
+ */
+export function goalCompletedAt(goal) {
+  const target = Number(goal?.target_amount) || 0
+  if (target <= 0) return null
+  const ordered = [...(goal?.contributions ?? [])]
+    .filter((c) => c.created_at)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  let running = 0
+  for (const c of ordered) {
+    running += Number(c.amount) || 0
+    if (running >= target) return c.created_at
+  }
+  return null
+}
+
+/** One overview per currency present, in first-seen order (never blended). */
+export function buildGoalsOverviewByCurrency(goals = []) {
+  const currencies = []
+  for (const goal of goals) {
+    const code = goal.currency ?? 'INR'
+    if (!currencies.includes(code)) currencies.push(code)
+  }
+  return currencies.map((currency) => ({ currency, ...buildGoalsOverview(goals, currency) }))
+}
+
+/** Sum of target_amount per currency: [{ currency, total }]. */
+export function targetTotalsByCurrency(goals = []) {
+  const totals = new Map()
+  for (const goal of goals) {
+    const code = goal.currency ?? 'INR'
+    totals.set(code, (totals.get(code) ?? 0) + (Number(goal.target_amount) || 0))
+  }
+  return [...totals.entries()].map(([currency, total]) => ({ currency, total }))
+}
+
+export const GOAL_SORTS = [
+  { value: 'deadline', label: 'Deadline' },
+  { value: 'progress', label: 'Progress' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'name', label: 'Name' },
+]
+
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
+
+/** Stable sort; ties fall back to deadline, then name. */
+export function sortGoals(goals = [], sortBy = 'deadline') {
+  const byDeadline = (a, b) => String(a.end_date ?? '').localeCompare(String(b.end_date ?? ''))
+  const byName = (a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''))
+  const compare = {
+    deadline: (a, b) => byDeadline(a, b) || byName(a, b),
+    progress: (a, b) => percentComplete(b) - percentComplete(a) || byDeadline(a, b),
+    priority: (a, b) =>
+      (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1) || byDeadline(a, b),
+    name: (a, b) => byName(a, b) || byDeadline(a, b),
+  }[sortBy] ?? ((a, b) => byDeadline(a, b) || byName(a, b))
+  return [...goals].sort(compare)
 }

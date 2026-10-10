@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { getColorPalette } from '../lib/constants'
 import { formatMoney } from '../lib/format'
+import CategoryIcon from './CategoryIcon'
 
 // Splits the combined Savings figure into where the money actually went:
 // savings categories, and goal contributions. The two subtotals add up to the
@@ -11,7 +12,7 @@ import { formatMoney } from '../lib/format'
 // `monthlySummary.js` / `countsAsCategorySavings`, so these totals must come
 // from the summary and never be re-derived from transactions here.
 
-function Row({ name, total, currency, fill }) {
+function Row({ name, total, currency, fill, icon }) {
   return (
     <div className="flex items-center gap-[11px] border-b border-ink-hairline px-3.5 py-3 last:border-b-0">
       <span
@@ -19,6 +20,7 @@ function Row({ name, total, currency, fill }) {
         style={{ background: fill }}
         aria-hidden="true"
       />
+      <CategoryIcon category={icon} className="h-4 w-4 text-ink-soft" />
       <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{name}</span>
       <span className="n shrink-0 text-[11.5px] text-ink-faint">
         {formatMoney(total, currency)}
@@ -60,6 +62,7 @@ function SavingsBreakdownList({
               total={item.total}
               currency={currency}
               fill={getColorPalette(item.color).fill}
+              icon={{ icon: item.icon, name: item.name, is_savings: true }}
             />
           ))}
         </>
@@ -75,6 +78,7 @@ function SavingsBreakdownList({
               total={item.total}
               currency={currency}
               fill={getColorPalette(goalColors?.[item.goalId]).fill}
+              icon={{ icon: 'target' }}
             />
           ))}
         </>

@@ -1,8 +1,17 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Target } from 'lucide-react'
-import { percentComplete, savedAmount } from '../lib/contributions'
-import { buildGoalsOverview } from '../lib/goalSummary'
+import { ChevronDown, CircleCheck, Plus, Target } from 'lucide-react'
+import { contributionTimestamp, percentComplete, savedAmount } from '../lib/contributions'
+import {
+  buildGoalsOverviewByCurrency,
+  GOAL_SORTS,
+  goalCompletedAt,
+  isGoalComplete,
+  sortGoals,
+  targetTotalsByCurrency,
+} from '../lib/goalSummary'
+import { formatContributionDate } from '../lib/goalDisplay'
+import { loadGoalSort, saveGoalSort } from '../lib/displayPreferences'
 import { formatCurrency } from '../lib/format'
 import { getColorPalette } from '../lib/constants'
 import { useAuth } from '../hooks/useAuth'
@@ -15,6 +24,7 @@ import { ensureGoalCategory } from '../lib/goalCategory'
 import PageHeader from '../components/PageHeader'
 import GoalCard from '../components/GoalCard'
 import GoalsOverviewHeader from '../components/GoalsOverviewHeader'
+import CategoryIcon from '../components/CategoryIcon'
 
 const GoalForm = lazy(() => import('../components/GoalForm'))
 const GoalDetailModal = lazy(() => import('../components/GoalDetailModal'))
@@ -38,27 +48,43 @@ export default function HomePage({ isTabActive = true }) {
     deleteContribution,
   } = useGoals({ enabled: Boolean(user) && authReady })
 
+  const [sortBy, setSortBy] = useState(() => loadGoalSort())
+  const [completedOpen, setCompletedOpen] = useState(false)
+
+  const handleSortChange = useCallback((value) => {
+    setSortBy(value)
+    saveGoalSort(value)
+  }, [])
+
+  // Declared below the state it reads (error-history.md: a derived value above
+  // its source throws at render and blanks the tab).
+  const sortedGoals = useMemo(() => sortGoals(goals, sortBy), [goals, sortBy])
+
   // Artboard 1e splits goals by whether anything has been saved yet, so the
   // unfunded ones collapse into a list rather than padding the card grid.
+  // Finished goals move to their own collapsed section instead of sitting in
+  // "In progress" with an Add button and an overdue chip.
+  const completedGoals = useMemo(
+    () => sortedGoals.filter((goal) => isGoalComplete(goal)),
+    [sortedGoals],
+  )
   const activeGoals = useMemo(
-    () => goals.filter((goal) => savedAmount(goal) > 0),
-    [goals],
+    () => sortedGoals.filter((goal) => savedAmount(goal) > 0 && !isGoalComplete(goal)),
+    [sortedGoals],
   )
   const notStartedGoals = useMemo(
-    () => goals.filter((goal) => savedAmount(goal) <= 0),
-    [goals],
+    () => sortedGoals.filter((goal) => savedAmount(goal) <= 0),
+    [sortedGoals],
   )
-  const notStartedTarget = useMemo(
-    () => notStartedGoals.reduce((sum, goal) => sum + Number(goal.target_amount || 0), 0),
+  // Per currency — the old single total summed INR and USD targets and
+  // printed the result as INR.
+  const notStartedTargets = useMemo(
+    () => targetTotalsByCurrency(notStartedGoals),
     [notStartedGoals],
   )
 
   // Artboard 1c header. Per currency, like every other total here.
-  const goalsCurrency = goals[0]?.currency ?? 'INR'
-  const goalsOverview = useMemo(
-    () => buildGoalsOverview(goals, goalsCurrency),
-    [goals, goalsCurrency],
-  )
+  const goalsOverviews = useMemo(() => buildGoalsOverviewByCurrency(goals), [goals])
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState(null)
@@ -169,7 +195,11 @@ export default function HomePage({ isTabActive = true }) {
         throw new Error('Transaction was not created. Please try again.')
       }
 
-      await addContribution(goal.id, contributionAmount, contributionNote, tx.id)
+      // Dated like its transaction, not "now" — a backdated Add money must
+      // land in its own month (error-history.md 2026-10-10).
+      await addContribution(goal.id, contributionAmount, contributionNote, tx.id, {
+        createdAt: contributionTimestamp(transactionDate),
+      })
       toast.success('Added to goal and Activity')
 
       if (before < 100 && projected >= 100) {
@@ -182,6 +212,16 @@ export default function HomePage({ isTabActive = true }) {
   return (
     <>
       <PageHeader title="Goals">
+        {goals.length > 0 && (
+          <button
+            type="button"
+            onClick={openCreateForm}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-hover lg:min-h-9 lg:px-3 lg:text-xs"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New goal
+          </button>
+        )}
         <Link
           to="/summary"
           className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200 lg:inline-flex"
@@ -199,13 +239,24 @@ export default function HomePage({ isTabActive = true }) {
       <main className="page-container space-y-10 pb-8">
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-slate-900 lg:text-base">Your goals</h2>
-            <Link
-              to="/summary"
-              className="text-xs font-semibold text-brand-600 hover:text-brand-700 lg:hidden"
-            >
-              Summary →
-            </Link>
+            <h2 className="text-sm font-semibold text-ink lg:text-base">Your goals</h2>
+            {goals.length > 1 && (
+              <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+                <span>Sort</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className="min-h-11 rounded-lg border border-ink-rule bg-paper-card px-2 text-sm text-ink lg:min-h-9"
+                  aria-label="Sort goals"
+                >
+                  {GOAL_SORTS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
 
           {error && (
@@ -245,7 +296,7 @@ export default function HomePage({ isTabActive = true }) {
             </section>
           ) : (
             <>
-              <GoalsOverviewHeader overview={goalsOverview} currency={goalsCurrency} />
+              <GoalsOverviewHeader overviews={goalsOverviews} />
 
               {activeGoals.length > 0 && (
                 <>
@@ -277,7 +328,11 @@ export default function HomePage({ isTabActive = true }) {
                     Not started
                   </p>
                   <span className="n text-[10.5px] text-ink-faint">
-                    {notStartedGoals.length} · {formatCurrency(notStartedTarget, 'INR')} target
+                    {notStartedGoals.length} ·{' '}
+                    {notStartedTargets
+                      .map(({ currency, total }) => formatCurrency(total, currency))
+                      .join(' + ')}{' '}
+                    target
                   </span>
                 </div>
               )}
@@ -287,13 +342,14 @@ export default function HomePage({ isTabActive = true }) {
                     key={goal.id}
                     type="button"
                     onClick={() => setDetailGoal(goal)}
-                    className="flex w-full items-center gap-[11px] border-b border-ink-hairline px-3.5 py-3 text-left transition hover:bg-paper-sunk"
+                    className="flex min-h-11 w-full items-center gap-[11px] border-b border-ink-hairline px-3.5 py-3 text-left transition hover:bg-paper-sunk"
                   >
                     <span
                       className="h-[18px] w-[3px] shrink-0 rounded-sm"
                       style={{ background: getColorPalette(goal.color).fill }}
                       aria-hidden="true"
                     />
+                    <CategoryIcon category={{ name: goal.category }} className="h-4 w-4 text-ink-soft" />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{goal.name}</span>
                     <span className="n shrink-0 text-[11.5px] text-ink-faint">
                       {formatCurrency(Number(goal.target_amount), goal.currency ?? 'INR')}
@@ -303,12 +359,60 @@ export default function HomePage({ isTabActive = true }) {
                 <button
                   type="button"
                   onClick={openCreateForm}
-                  className="flex w-full items-center justify-center gap-1.5 py-3 text-[12.5px] font-medium text-accent transition hover:bg-paper-sunk"
+                  className="flex min-h-11 w-full items-center justify-center gap-1.5 py-3 text-[12.5px] font-medium text-accent transition hover:bg-paper-sunk"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                   New goal
                 </button>
               </div>
+
+              {completedGoals.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setCompletedOpen((v) => !v)}
+                    aria-expanded={completedOpen}
+                    className="flex min-h-11 w-full items-center gap-2 text-left"
+                  >
+                    <p className="text-[10px] font-medium uppercase tracking-[.1em] text-ink-faint">
+                      Completed
+                    </p>
+                    <span className="n text-[10.5px] text-ink-faint">{completedGoals.length}</span>
+                    <ChevronDown
+                      className={`ml-auto h-4 w-4 text-ink-faint transition-transform ${completedOpen ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {completedOpen && (
+                    <div className="overflow-hidden rounded-xl border border-ink-rule bg-paper-card">
+                      {completedGoals.map((goal) => {
+                        const doneAt = goalCompletedAt(goal)
+                        return (
+                          <button
+                            key={goal.id}
+                            type="button"
+                            onClick={() => setDetailGoal(goal)}
+                            className="flex min-h-11 w-full items-center gap-[11px] border-b border-ink-hairline px-3.5 py-3 text-left transition last:border-b-0 hover:bg-paper-sunk"
+                          >
+                            <CircleCheck className="h-4 w-4 shrink-0 text-positive" aria-hidden="true" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[13px] text-ink">{goal.name}</span>
+                              {doneAt && (
+                                <span className="block text-[11px] text-ink-faint">
+                                  Reached {formatContributionDate(doneAt)}
+                                </span>
+                              )}
+                            </span>
+                            <span className="n shrink-0 text-[11.5px] text-ink-soft">
+                              {formatCurrency(savedAmount(goal), goal.currency ?? 'INR')}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </section>

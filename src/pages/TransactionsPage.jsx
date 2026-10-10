@@ -10,6 +10,7 @@ import { useCategories } from '../hooks/useCategories'
 import { useTransactions } from '../hooks/useTransactions'
 import { buildSpendByDay, dayNet } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
+import { contributionTimestamp, percentComplete, savedAmount } from '../lib/contributions'
 import { useToast } from '../hooks/useToast'
 import { useGoals } from '../hooks/useGoals'
 import { groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate } from '../lib/transactions'
@@ -20,6 +21,7 @@ import TransactionRow, { TransactionTableHeader } from '../components/Transactio
 import SpentByDayChart from '../components/SpentByDayChart'
 
 const TransactionForm = lazy(() => import('../components/TransactionForm'))
+const Celebration = lazy(() => import('../components/Celebration'))
 
 const FILTER_TYPES = [
   { value: '', label: 'All' },
@@ -60,6 +62,7 @@ export default function TransactionsPage({ isTabActive = true }) {
   const [filterType, setFilterType] = useState('')
   const [pageSize, setPageSize] = useState(10)
   const [page, setPage] = useState(1)
+  const [celebrationMessage, setCelebrationMessage] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingTx, setEditingTx] = useState(null)
 
@@ -205,8 +208,19 @@ export default function TransactionsPage({ isTabActive = true }) {
             if (!contribution.amount || contribution.amount <= 0) {
               throw new Error('Converted goal amount must be greater than 0')
             }
-            await addContribution(contribution.goalId, contribution.amount, contribution.note, tx.id)
+            await addContribution(contribution.goalId, contribution.amount, contribution.note, tx.id, {
+              createdAt: contributionTimestamp(data.transaction_date),
+            })
             appliedGoal = true
+            // Same celebration as Goals → Add money; this path never fired it.
+            const target = Number(goal.target_amount) || 0
+            if (
+              target > 0 &&
+              percentComplete(goal) < 100 &&
+              savedAmount(goal) + contribution.amount >= target
+            ) {
+              setCelebrationMessage(`You reached your ${goal.name} goal!`)
+            }
           } catch (err) {
             toast.error(
               err instanceof Error ? err.message : 'Transaction saved but goal contribution failed',
@@ -518,6 +532,12 @@ export default function TransactionsPage({ isTabActive = true }) {
             onSubmit={handleSubmit}
             onError={handleFormError}
           />
+        </Suspense>
+      )}
+
+      {celebrationMessage && (
+        <Suspense fallback={null}>
+          <Celebration message={celebrationMessage} onDone={() => setCelebrationMessage(null)} />
         </Suspense>
       )}
     </>

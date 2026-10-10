@@ -1,6 +1,124 @@
 # Changelog
 
-**Last updated:** 2026-09-28 (v0.38)
+**Last updated:** 2026-10-10 (v0.39)
+
+## 2026-10-10 (session 89 — category icons + 44px chips, Goals and Summary improvements)
+
+The user asked for bigger category chips with icons, and better Goals and
+Summary screens. They chose Lucide icons over emoji, and **bigger chips with an
+icon** over an icon-tile grid. They also chose not to add any new features
+outside those three areas this session.
+
+### Added
+
+- **Category icons**, with no migration. `categories.icon` has existed since
+  `phase2_finance.sql` and was never used. New `lib/categoryIcons.js` holds a
+  curated set of 51 statically imported Lucide icons (stable string ids), plus
+  `defaultIconForName()` (ordered keyword rules) and `getCategoryIconId()`. The
+  order of resolution is: stored id, then `target` for goal-linked categories,
+  then the name default, then `tag`. `CategoryIcon` is always `aria-hidden`
+  because the name label stays the identity.
+- **Icons appear on** the transaction rows (in place of the 3px dot), the Today
+  list, the tiles, the tooltip, the sparklines, the savings breakdown, the
+  category modal header, the recurring list, goal cards, goal detail and the
+  goal form chips.
+- **Icon picker in Settings › Categories.** Tap a chip to change its icon. The
+  add forms preview a name-based icon that the user can override. All six
+  colours are offered (it was 4). Delete is a 44px target.
+- **Goals:**
+  - A collapsed **Completed** section, with a "Reached <date>" line.
+  - A **sort** control (Deadline / Progress / Priority / Name, kept in
+    localStorage).
+  - A **New goal** button in the header.
+  - A one-line **pace** on each card: "On track · ₹X/mo", "Behind · ₹X/mo" or
+    "Past due · ₹X to go".
+- **Summary:**
+  - The headline is now **Net this month** (income − spent) with a delta, plus
+    the **savings rate**, which used to be computed and never shown.
+  - **Biggest changes:** the top 3 movers by absolute amount, built on
+    `joinCategoryComparison`. They include new and gone categories, and tapping
+    one opens the category's transactions.
+  - A collapsed **Income by category** list (`byIncomeCategory`, previously
+    unused).
+  - **Balances** is now collapsed by default.
+
+### Changed
+
+- **Shared `CategoryChip`** (`min-h-11`, icon + name) replaces the duplicated
+  ~28px chip in `TransactionForm` and `RecurringTransactionForm`. The Goal,
+  Date, Repeat and frequency chips are also 44px now (`lib/chipStyles.js`).
+- **Goal detail:** six facts, each shown once (the due date used to appear three
+  times), including a Forecast cell. `FundingByMonth` puts the values on the
+  bars (k / L / Cr) and quotes the forecast's pace, so the two numbers agree.
+- **Goal card:** the bar colour comes from `palette.fill`, the same as the top
+  edge. Goal chips use tokens instead of hardcoded hex. The goal form category
+  chips wrap instead of using five equal `flex-1` cells, which truncated
+  "Emergency".
+- **Goals overview header:** one block per currency. The "Not started" total is
+  per currency.
+- **"To goals" cell renamed "Saved".** It shows category savings + goal savings,
+  while the breakdown below it has its own "To goals" subtotal.
+- **Styling:** the duplicate "Monthly summary" `h2` is removed. The category
+  chart popover, tooltip and tiles, the category modal, the goal detail and the
+  track-status chips use paper/ink tokens.
+- **Dark mode:** `.dark` overrides for the six `bg-*-50` / `text-*-700` palette
+  tints. Selected chips and the icon discs had stayed light pastel.
+- **Removed:** dead `GoalsProgressBars.jsx`.
+
+### Fixed
+
+See `error-history.md` 2026-10-10.
+
+- **Day strip and heatmap with `month_start_day ≠ 1`.** They now walk the real
+  period through `buildPeriodDays`.
+- **"today" label on past months.** It now appears only when the period
+  contains today.
+- **Backdated Add money dated today.** Fixed with `contributionTimestamp`.
+- **Compare with and theme stale on Summary.** Fixed with
+  `subscribeDisplayPreferences`.
+- **Overdue goal not editable without moving its deadline.**
+- **No celebration when a goal is funded from the Log sheet.**
+- **Overview header showing `goals[0].currency` only.** Each currency now has
+  its own block.
+- **Mixed-currency "not started" total printed as INR.**
+- **Card bar colour ≠ top-edge colour** for cyan and violet.
+
+### Verified
+
+- **79 data-layer and render assertions** via `vite build --ssr`:
+  - All 12 starter names and 5 goal presets map to the intended icons. The
+    "Insurance premium" (`emi`) and "Credit card" (`car`) collisions are fixed.
+  - An invalid stored id falls back to the name default.
+  - A start-day-25 period runs 25 Oct → 24 Nov, and 3 Nov lands in column 10.
+  - Saved = category savings + goal savings, and cash flow = income − spent.
+  - Top movers include isNew and isGone.
+  - A goal is complete at exactly 100% and not at 99.99%.
+  - A backdated contribution lands in its own month's bucket.
+  - Per-currency totals are correct.
+  - Card pace text renders for on-track, behind and overdue goals.
+- **Component screenshots in headless Chromium, at 375 and 390, light and
+  dark.** These used a temporary sample-data page, since deleted.
+  - Every Log sheet chip measures **44px**.
+  - Icon sheet cells are 44px.
+  - No horizontal overflow, and no page errors.
+  - One fix came out of this: the tile icon moved to the % line so narrow tiles
+    don't truncate names.
+- **Build green; whole-tree lint 22 errors + 1 warning** (baseline 23). An
+  unused `Trash2` import went away, and nothing was added.
+
+### Not done (manual follow-up)
+
+- **Authenticated screens not seen with real data.** This container has no
+  Supabase keys and the user's login can't be used. To check after deploy:
+  - Summary hero, Biggest changes and Income list.
+  - Goals list and Completed section.
+  - Settings › Categories icon sheet saving to the DB.
+  - That `contributions.created_at` accepts a client value under the
+    production RLS (TC-563).
+- **Deploy:** run `npx vercel --prod` from a machine with the Vercel CLI
+  logged in. There are no Vercel credentials in this cloud session.
+- **`NetWorthTrend` still uses `formatCurrencyCompact`.** That is the en-IN
+  Intl compact format which renders thousands as "T". Not touched this session.
 
 ## 2026-09-28 (session 88 — category summary: real heatmap, sparklines, comparatives)
 
