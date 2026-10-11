@@ -1,6 +1,6 @@
 # Changelog
 
-**Last updated:** 2026-10-10 (v0.39)
+**Last updated:** 2026-10-11 (v0.39)
 
 ## 2026-10-10 (session 89 — category icons + 44px chips, Goals and Summary improvements)
 
@@ -115,10 +115,33 @@ See `error-history.md` 2026-10-10.
   - Settings › Categories icon sheet saving to the DB.
   - That `contributions.created_at` accepts a client value under the
     production RLS (TC-563).
-- **Deploy:** run `npx vercel --prod` from a machine with the Vercel CLI
-  logged in. There are no Vercel credentials in this cloud session.
+- ~~**Deploy:** run `npx vercel --prod` from a machine with the Vercel CLI
+  logged in.~~ **Done 2026-10-11**, see Deployed below.
 - **`NetWorthTrend` still uses `formatCurrencyCompact`.** That is the en-IN
   Intl compact format which renders thousands as "T". Not touched this session.
+
+### Deployed
+
+- **Merge:** `master` fast-forwarded `2a0af72 → dc7da3b` and pushed on
+  2026-10-11. No merge commit was needed.
+- **Deploy:** `dpl_BSd1noHBcLftKpk8daxbTpQFX5z4`, `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `EXIT:0`.
+- **How it was deployed:** from the Claude Code cloud environment. That
+  environment now allows `vercel.com` / `api.vercel.com` and holds a
+  team-scoped `VERCEL_TOKEN` (an environment variable, never committed).
+  - `vercel whoami` returns "User not found" for a team-scoped token. That is
+    expected and not a failure; the token can still read and deploy the
+    project.
+  - The project was linked by writing `.vercel/project.json` by hand
+    (`prj_v7KAWRAWR8Bcr7m8SaFbpAgBcE1Y`, `team_hVEIaSPWKtsksRE2DAob5HqA`).
+    `.vercel` is gitignored.
+- **Live check:**
+  - `/` and a direct `/goals` load both return 200, and the new entry is
+    `index-Biwc623I.js`.
+  - The deployed chunks contain the new strings: "Biggest changes", "Net this
+    month" and "Savings rate" (AuthenticatedRoutes); "Reached" (HomePage and
+    GoalDetailModal); "Past due" (HomePage); "Change icon for"
+    (CategoryTreeManager); and the 44px `CategoryChip` classes.
 
 ## 2026-09-28 (session 88 — category summary: real heatmap, sparklines, comparatives)
 
