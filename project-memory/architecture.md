@@ -1,6 +1,6 @@
 # Architecture
 
-**Last updated:** 2026-10-10 (v0.39)
+**Last updated:** 2026-10-12 (v0.40)
 
 ## Tech stack
 
@@ -475,6 +475,7 @@ Verified directly against production PostgREST (see "Checking live schema withou
 | `add_category_budget.sql` | `categories.monthly_budget` | **Applied** |
 | `add_subcategories_recurring_bank.sql` | `categories.parent_id`, `recurring_transactions.frequency` | **Applied** |
 | `add_recurring_daily_frequency.sql` | `recurring_transactions.frequency` enum | **Applied** |
+| `add_more_category_colors.sql` | `categories_color_check` → 12 ids (orange, sky, pink, lime, fuchsia, teal) | **NOT applied** as of 2026-10-12 — optional; the app saves the base fallback and toasts until it is run (session 90) |
 | `add_goal_category_link.sql` | `categories.goal_id`, `goals.linked_category_id` | **NOT applied** — optional since session 78; app degrades gracefully |
 
 ---

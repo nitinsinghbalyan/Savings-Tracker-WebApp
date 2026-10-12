@@ -97,6 +97,7 @@ export default function CategoriesPage() {
                 onUpdate={updateCategory}
                 onDelete={deleteCategory}
                 onError={(msg) => toast.error(msg)}
+                onNotice={(msg) => toast.success(msg)}
               />
             </div>
           )}

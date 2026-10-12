@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-10-11 (v0.39)
+**Last updated:** 2026-10-12 (v0.40)
 
 ## Setup
 
@@ -989,3 +989,16 @@ both themes. TC-549 onward need sign-in.
 | TC-565 | Summary with real data | Sign in, open Summary on a month with a previous period | Net + savings rate; Biggest changes rows open their transactions; income list expands | not-run | |
 | TC-566 | Compare with sync | Change Compare with in Settings, switch to Month without reload | Deltas and "vs" label follow immediately | not-run | |
 | TC-567 | Goals completed + sort | Sign in with a funded-to-100% goal; change sort | Goal in Completed with "Reached" date; sort persists after reload | not-run | |
+
+## v0.40 — Pastel 12-colour chips, merged mobile top bar (session 90)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-568 | Palette integrity | Assert all 12 palettes' fields and fallbacks | Every field present; each new id falls back to a base id; goal/account pickers = 6 | pass | 2026-10-12 |
+| TC-569 | Colour fallback without migration | Mocked insert/update returning `23514` for a new colour | One retry with the base colour; `colorFellBack` set; base colours insert once; migrated DB keeps the new colour | pass | 2026-10-12 |
+| TC-570 | Pastel chip states | SSR-render idle and selected `CategoryChip` | Idle `bg-{h}-50`; selected `bg-{h}-100` + `ring-{h}-500` + ✓ | pass | 2026-10-12 |
+| TC-571 | Chips at 375/390, both themes | Harness: Log sheet with all 12 hues; Settings › Categories | ≥ 44px; no overflow; text contrast ≥ 4.5:1 (measured 6.84 light, 7.3 dark) | pass | 2026-10-12 |
+| TC-572 | Merged header | Harness: PageHeader on all five routes, with Goals/Worth actions | One row, 56–58px; active tab is the large title and fully visible; h1 retained | pass | 2026-10-12 |
+| TC-573 | New colour, signed in, before migration | Settings › Categories: add a category with Pink | Saves as Rose; toast names `add_more_category_colors.sql` | not-run | |
+| TC-574 | New colour after migration | Run the SQL, add a Teal category | Saves as Teal; chip and charts show teal | not-run | |
+| TC-575 | Header on a real phone | Open each tab on iOS Safari | Swipe works; active tab scrolls into view; safe-area respected | not-run | |

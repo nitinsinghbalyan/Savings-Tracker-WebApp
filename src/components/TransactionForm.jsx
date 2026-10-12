@@ -547,23 +547,15 @@ export default function TransactionForm({
                   <p className="label-field">Goal (optional)</p>
                   <div className="flex flex-wrap gap-2">
                     {goals.map((g) => (
-                      <button
+                      // Same pastel chip as categories, in the goal's colour.
+                      <CategoryChip
                         key={g.id}
-                        type="button"
-                        onClick={() =>
-                          setValues((v) => ({
-                            ...v,
-                            goal_id: v.goal_id === g.id ? '' : g.id,
-                          }))
+                        category={{ id: g.id, name: g.name, color: g.color, icon: 'target' }}
+                        selected={values.goal_id === g.id}
+                        onSelect={(id) =>
+                          setValues((v) => ({ ...v, goal_id: v.goal_id === id ? '' : id }))
                         }
-                        className={`${categoryChipBase} ${
-                          values.goal_id === g.id
-                            ? SELECT_CHIP_ON
-                            : SELECT_CHIP_IDLE
-                        }`}
-                      >
-                        {g.name}
-                      </button>
+                      />
                     ))}
                   </div>
                   {selectedGoal && (

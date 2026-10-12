@@ -1,6 +1,85 @@
 # Changelog
 
-**Last updated:** 2026-10-11 (v0.39)
+**Last updated:** 2026-10-12 (v0.40)
+
+## 2026-10-12 (session 90 — pastel category chips in 12 shades, merged mobile top bar)
+
+The user asked for colourful pastel category chips and a smarter merge of the
+top bar with the horizontal nav. They chose **"tabs become the title"** for the
+bar and **"pastel + more shades"** (12 colours) for the chips.
+
+### Added
+
+- **Six new category colours:** `orange`, `sky`, `pink`, `lime`, `fuchsia`,
+  `teal`. There are now 12 in `COLOR_PALETTES`.
+  - Each new colour has `fill`/`fillDark` hexes validated with the dataviz
+    validator. Both light (`#fffdf9`) and dark (`#201c17`) come back **ALL
+    CHECKS PASS** on adjacent pairs. The worst CVD values are 7.2 and 6.8,
+    which are legal only with labels, and every chart has them.
+  - Each new colour also has a `fallback` base id.
+- **`pastel` / `pastelOn` fields on all 12 palettes.**
+  - Idle chips are `bg-{h}-50 text-{h}-800 ring-{h}-200`.
+  - The selected chip is `bg-{h}-100 text-{h}-900 ring-2 ring-{h}-500`,
+    with a ✓ in place of the icon, so selection never rests on colour alone.
+- **`supabase/add_more_category_colors.sql`** (optional, re-runnable). It
+  widens `categories_color_check` to the 12 ids. Goals and accounts keep 6.
+- **`isColorCheckViolation()`.** `createCategory` / `updateCategory` retry once
+  with the base fallback on `23514`. The result is flagged `colorFellBack`, and
+  Settings › Categories shows a toast naming the migration.
+- **`leastUsedColor()`.** New categories default to the least-used hue rather
+  than indigo.
+
+### Changed
+
+- **Pastel chips:** every category chip, in the Log sheet, the recurring form
+  and Settings, is tinted in its own pastel. The Log sheet goal chips are
+  pastel in the goal's colour.
+- **Goal form preset chips** get a fixed display hue (Home indigo, Travel sky,
+  Emergency rose, Health emerald, Other amber). Nothing is stored.
+- **Colour pickers:** the goal and account pickers use the six base colours
+  only (`GOAL_ACCOUNT_COLOR_PALETTES`), because their CHECKs are unchanged.
+  Settings › Categories shows all 12 swatches (two rows of six at 375px).
+- **Dark mode:** the `.dark` overrides now cover all 12 hues across `bg-50`,
+  `bg-100`, `text-700/800/900` and `ring-200`.
+- **Merged mobile header.** `PageHeader` + `SegmentedTabs` are one row below
+  `lg`:
+  - The **active tab is the page title** (21px display face). The other tabs
+    sit at 13px and scroll sideways, with a right-edge fade only when they
+    overflow, and the active tab is scrolled into view on navigation.
+  - The More tab reads **"Settings"** when it is active.
+  - The real `<h1>` is kept as `sr-only` on mobile and is visible on desktop.
+    The mobile subtitle line is dropped.
+  - The header goes from about 110px to **56–58px**.
+  - On phones the Goals "New goal" and Worth "Add" actions are 44px icon-only
+    buttons with aria-labels, and labelled from `sm` up.
+
+### Verified
+
+- **33 SSR assertions** (`vite build --ssr`, with a mocked Supabase client):
+  - All 12 palettes have every field, and each fallback is a base id.
+  - `leastUsedColor` picks correctly.
+  - A colour CHECK `23514` is detected, and an unrelated `23514` is not.
+  - **Without the migration** a pink create retries as rose with the flag set.
+    A base colour inserts once. **With the migration** teal is kept. Update
+    falls back too.
+  - Chip idle and selected classes render, and the ✓ appears only when
+    selected.
+  - The header renders a large active label (Month / Settings / Ledger), a
+    real h1, and no separate pill track.
+- **Harness screenshots** at 375 and 390, light and dark (temporary page,
+  deleted):
+  - All chips are 44px, with no horizontal overflow and no page errors.
+  - The lowest chip text contrast is **6.84:1** light and **7.3:1** dark.
+  - Every header is 56–58px tall and its active tab is fully on screen.
+- **Build green; whole-tree lint 22 errors + 1 warning**, unchanged.
+
+### Not done (manual follow-up)
+
+- **Run `supabase/add_more_category_colors.sql`** in the Supabase SQL editor to
+  unlock orange / sky / pink / lime / fuchsia / teal. Until then those picks
+  save as their base fallback and a toast says so.
+- **Signed-in screens not seen with real data** (the same limitation as
+  session 89).
 
 ## 2026-10-10 (session 89 — category icons + 44px chips, Goals and Summary improvements)
 

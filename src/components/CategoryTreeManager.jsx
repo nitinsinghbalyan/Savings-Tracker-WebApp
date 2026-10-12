@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Plus, X } from 'lucide-react'
 import { buildCategoryTree } from '../lib/categories'
-import { COLOR_PALETTES, getColorPalette } from '../lib/constants'
+import { CATEGORY_COLOR_PALETTES, getColorPalette, leastUsedColor } from '../lib/constants'
 import { defaultIconForName, getCategoryIconId } from '../lib/categoryIcons'
 import CategoryIcon from './CategoryIcon'
 import IconPicker from './IconPicker'
@@ -12,16 +12,17 @@ const chipBase =
   'inline-flex min-h-11 items-center rounded-full text-sm font-medium ring-1 ring-inset transition'
 
 function ColorSwatches({ value, onChange }) {
+  // 12 swatches: two rows of six at 375px (each cell 44px tall).
   return (
-    <div className="flex flex-wrap gap-1">
-      {COLOR_PALETTES.map((p) => (
+    <div className="grid w-full grid-cols-6 gap-x-1 sm:flex sm:w-auto sm:flex-wrap">
+      {CATEGORY_COLOR_PALETTES.map((p) => (
         <button
           key={p.id}
           type="button"
           aria-label={p.label}
           aria-pressed={value === p.id}
           onClick={() => onChange(p.id)}
-          className="flex h-11 w-9 items-center justify-center"
+          className="flex h-11 min-w-9 items-center justify-center"
         >
           <span
             className={`h-7 w-7 rounded-full ${p.swatch} ring-2 ring-offset-1 ${
@@ -38,7 +39,7 @@ function ColorSwatches({ value, onChange }) {
 function CategoryTreeChip({ category, onEdit, onDelete, badge }) {
   const palette = getColorPalette(category.color)
   return (
-    <span className={`${chipBase} ${palette.chip} max-w-full`}>
+    <span className={`${chipBase} ${palette.pastel} max-w-full`}>
       <button
         type="button"
         onClick={() => onEdit(category)}
@@ -126,9 +127,11 @@ export default function CategoryTreeManager({
   onUpdate,
   onDelete,
   onError,
+  onNotice,
 }) {
   const [parentName, setParentName] = useState('')
-  const [parentColor, setParentColor] = useState('indigo')
+  // null = "not chosen yet" → the least-used colour of this kind (see below).
+  const [parentColor, setParentColor] = useState(null)
   const [parentIcon, setParentIcon] = useState(null)
   const [subIcon, setSubIcon] = useState(null)
   // { kind: 'category', category } | { kind: 'parent' } | { kind: 'sub' } | null
@@ -136,11 +139,27 @@ export default function CategoryTreeManager({
   const setEditing = (category) => setSheet({ kind: 'category', category })
   const [isSavings, setIsSavings] = useState(false)
   const [subName, setSubName] = useState('')
-  const [subColor, setSubColor] = useState('indigo')
+  const [subColor, setSubColor] = useState(null)
   const [subParentId, setSubParentId] = useState('')
   const [adding, setAdding] = useState(false)
 
   const tree = useMemo(() => buildCategoryTree(categories, kind), [categories, kind])
+  // Declared after `categories` is in scope; new categories default to a fresh hue.
+  const suggestedColor = useMemo(
+    () => leastUsedColor(categories.filter((c) => c.kind === kind && !c.is_archived)),
+    [categories, kind],
+  )
+  const effectiveParentColor = parentColor ?? suggestedColor
+  const effectiveSubColor = subColor ?? suggestedColor
+
+  const reportFallback = (created) => {
+    if (!created?.colorFellBack) return
+    const asked = getColorPalette(created.requestedColor).label
+    const saved = getColorPalette(created.color).label
+    onNotice?.(
+      `Saved as ${saved} — ${asked} needs the add_more_category_colors.sql migration in Supabase.`,
+    )
+  }
   const parents = useMemo(
     () => tree.map((t) => t.parent),
     [tree],
@@ -153,15 +172,16 @@ export default function CategoryTreeManager({
     }
     setAdding(true)
     try {
-      await onAdd({
+      const created = await onAdd({
         name: parentName.trim(),
         kind,
-        color: parentColor,
+        color: effectiveParentColor,
         icon: parentIcon ?? defaultIconForName(parentName, { isSavings }),
         is_savings: kind === 'expense' && isSavings,
       })
+      reportFallback(created)
       setParentName('')
-      setParentColor('indigo')
+      setParentColor(null)
       setParentIcon(null)
       setIsSavings(false)
     } catch (err) {
@@ -182,15 +202,16 @@ export default function CategoryTreeManager({
     }
     setAdding(true)
     try {
-      await onAdd({
+      const created = await onAdd({
         name: subName.trim(),
         kind,
-        color: subColor,
+        color: effectiveSubColor,
         icon: subIcon ?? defaultIconForName(subName),
         parent_id: subParentId,
       })
+      reportFallback(created)
       setSubName('')
-      setSubColor('indigo')
+      setSubColor(null)
       setSubIcon(null)
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'Failed to add sub-category')
@@ -284,7 +305,7 @@ export default function CategoryTreeManager({
               placeholder="Category name"
               className="input-field min-h-11 min-w-[8rem] flex-1 py-2 text-sm"
             />
-            <ColorSwatches value={parentColor} onChange={setParentColor} />
+            <ColorSwatches value={effectiveParentColor} onChange={setParentColor} />
             <button
               type="button"
               onClick={handleAddParent}
@@ -342,7 +363,7 @@ export default function CategoryTreeManager({
                 placeholder="Sub-category name"
                 className="input-field min-h-11 min-w-[8rem] flex-1 py-2 text-sm"
               />
-              <ColorSwatches value={subColor} onChange={setSubColor} />
+              <ColorSwatches value={effectiveSubColor} onChange={setSubColor} />
               <button
                 type="button"
                 onClick={handleAddSub}

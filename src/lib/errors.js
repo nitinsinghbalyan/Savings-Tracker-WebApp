@@ -95,3 +95,15 @@ export function isMissingNetWorthTargetColumnError(error) {
       message.includes('could not find'))
   )
 }
+
+/**
+ * True when a write hit `categories_color_check` — i.e. one of the six newer
+ * category colours on a database where add_more_category_colors.sql has not
+ * been applied. Postgres check_violation is 23514.
+ */
+export function isColorCheckViolation(error) {
+  if (!error) return false
+  const code = String(error.code ?? '')
+  const message = String(error.message ?? '').toLowerCase()
+  return code === '23514' && message.includes('color')
+}

@@ -266,26 +266,83 @@
     padding-top: max(0px, env(safe-area-inset-top));
   }
 
+  /* Swipeable strips (merged header nav) without a visible scrollbar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
 }
 
 /* ------------------------------------------------------------------
-   Dark mode for the category palette tints.
+   Dark mode for the 12 category hues (pastel chips, icon discs, badges).
 
-   `palette.chip` (constants.js) uses bg-{hue}-50 / text-{hue}-700, which the
-   neutral-ramp swap above does not reach — selected category chips and the
-   transaction-row icon discs stayed light pastel on a dark page. A translucent
-   500 for the tint and the 300 shade for text keeps each hue recognisable
-   with ≥ 4.5:1 text contrast on the dark card.
+   `palette.pastel` / `pastelOn` / `chip` (constants.js) use bg-{hue}-50/100,
+   text-{hue}-700/800/900 and ring-{hue}-200, which the neutral-ramp swap above
+   does not reach. On the dark card: a translucent 500 for the tint (deeper for
+   the selected -100), the 200/300 shade for text (≥ 4.5:1), and a translucent
+   ring so idle chips keep an edge without glowing.
    ------------------------------------------------------------------ */
-.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.18); }
+.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.16); }
+.dark .bg-indigo-100 { background-color: rgb(99 102 241 / 0.3); }
 .dark .text-indigo-700 { color: rgb(165 180 252); }
-.dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.18); }
+.dark .text-indigo-800, .dark .text-indigo-900 { color: rgb(199 210 254); }
+.dark .ring-indigo-200 { --tw-ring-color: rgb(99 102 241 / 0.35); }
+.dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.16); }
+.dark .bg-rose-100 { background-color: rgb(244 63 94 / 0.3); }
 .dark .text-rose-700 { color: rgb(253 164 175); }
-.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.18); }
+.dark .text-rose-800, .dark .text-rose-900 { color: rgb(254 205 211); }
+.dark .ring-rose-200 { --tw-ring-color: rgb(244 63 94 / 0.35); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.16); }
+.dark .bg-emerald-100 { background-color: rgb(16 185 129 / 0.3); }
 .dark .text-emerald-700 { color: rgb(110 231 183); }
-.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.18); }
+.dark .text-emerald-800, .dark .text-emerald-900 { color: rgb(167 243 208); }
+.dark .ring-emerald-200 { --tw-ring-color: rgb(16 185 129 / 0.35); }
+.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.16); }
+.dark .bg-amber-100 { background-color: rgb(245 158 11 / 0.3); }
 .dark .text-amber-700 { color: rgb(252 211 77); }
-.dark .bg-violet-50 { background-color: rgb(139 92 246 / 0.2); }
+.dark .text-amber-800, .dark .text-amber-900 { color: rgb(253 230 138); }
+.dark .ring-amber-200 { --tw-ring-color: rgb(245 158 11 / 0.35); }
+.dark .bg-violet-50 { background-color: rgb(139 92 246 / 0.16); }
+.dark .bg-violet-100 { background-color: rgb(139 92 246 / 0.3); }
 .dark .text-violet-700 { color: rgb(196 181 253); }
-.dark .bg-cyan-50 { background-color: rgb(6 182 212 / 0.18); }
+.dark .text-violet-800, .dark .text-violet-900 { color: rgb(221 214 254); }
+.dark .ring-violet-200 { --tw-ring-color: rgb(139 92 246 / 0.35); }
+.dark .bg-cyan-50 { background-color: rgb(6 182 212 / 0.16); }
+.dark .bg-cyan-100 { background-color: rgb(6 182 212 / 0.3); }
 .dark .text-cyan-700 { color: rgb(103 232 249); }
+.dark .text-cyan-800, .dark .text-cyan-900 { color: rgb(165 243 252); }
+.dark .ring-cyan-200 { --tw-ring-color: rgb(6 182 212 / 0.35); }
+.dark .bg-orange-50 { background-color: rgb(249 115 22 / 0.16); }
+.dark .bg-orange-100 { background-color: rgb(249 115 22 / 0.3); }
+.dark .text-orange-700 { color: rgb(253 186 116); }
+.dark .text-orange-800, .dark .text-orange-900 { color: rgb(254 215 170); }
+.dark .ring-orange-200 { --tw-ring-color: rgb(249 115 22 / 0.35); }
+.dark .bg-sky-50 { background-color: rgb(14 165 233 / 0.16); }
+.dark .bg-sky-100 { background-color: rgb(14 165 233 / 0.3); }
+.dark .text-sky-700 { color: rgb(125 211 252); }
+.dark .text-sky-800, .dark .text-sky-900 { color: rgb(186 230 253); }
+.dark .ring-sky-200 { --tw-ring-color: rgb(14 165 233 / 0.35); }
+.dark .bg-pink-50 { background-color: rgb(236 72 153 / 0.16); }
+.dark .bg-pink-100 { background-color: rgb(236 72 153 / 0.3); }
+.dark .text-pink-700 { color: rgb(249 168 212); }
+.dark .text-pink-800, .dark .text-pink-900 { color: rgb(251 207 232); }
+.dark .ring-pink-200 { --tw-ring-color: rgb(236 72 153 / 0.35); }
+.dark .bg-lime-50 { background-color: rgb(132 204 22 / 0.16); }
+.dark .bg-lime-100 { background-color: rgb(132 204 22 / 0.3); }
+.dark .text-lime-700 { color: rgb(190 242 100); }
+.dark .text-lime-800, .dark .text-lime-900 { color: rgb(217 249 157); }
+.dark .ring-lime-200 { --tw-ring-color: rgb(132 204 22 / 0.35); }
+.dark .bg-fuchsia-50 { background-color: rgb(217 70 239 / 0.16); }
+.dark .bg-fuchsia-100 { background-color: rgb(217 70 239 / 0.3); }
+.dark .text-fuchsia-700 { color: rgb(240 171 252); }
+.dark .text-fuchsia-800, .dark .text-fuchsia-900 { color: rgb(245 208 254); }
+.dark .ring-fuchsia-200 { --tw-ring-color: rgb(217 70 239 / 0.35); }
+.dark .bg-teal-50 { background-color: rgb(20 184 166 / 0.16); }
+.dark .bg-teal-100 { background-color: rgb(20 184 166 / 0.3); }
+.dark .text-teal-700 { color: rgb(94 234 212); }
+.dark .text-teal-800, .dark .text-teal-900 { color: rgb(153 246 228); }
+.dark .ring-teal-200 { --tw-ring-color: rgb(20 184 166 / 0.35); }

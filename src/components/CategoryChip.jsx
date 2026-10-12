@@ -1,8 +1,13 @@
+import { Check } from 'lucide-react'
 import { getColorPalette } from '../lib/constants'
-import { SELECT_CHIP_BASE, SELECT_CHIP_IDLE } from '../lib/chipStyles'
+import { SELECT_CHIP_BASE } from '../lib/chipStyles'
 import CategoryIcon from './CategoryIcon'
 
-/** Selectable category chip: icon + name, 44px tall, palette ring when selected. */
+/**
+ * Selectable category chip: icon + name, 44px tall, always in the category's
+ * own pastel. Selected goes a shade deeper with a coloured ring and a ✓ in
+ * place of the icon, so the state never rests on colour alone.
+ */
 export default function CategoryChip({ category, label, selected, onSelect }) {
   const palette = getColorPalette(category.color)
   return (
@@ -10,9 +15,13 @@ export default function CategoryChip({ category, label, selected, onSelect }) {
       type="button"
       onClick={() => onSelect(category.id)}
       aria-pressed={selected}
-      className={`${SELECT_CHIP_BASE} ${selected ? `${palette.chip} ring-2` : SELECT_CHIP_IDLE}`}
+      className={`${SELECT_CHIP_BASE} ${selected ? `${palette.pastelOn} font-semibold` : palette.pastel}`}
     >
-      <CategoryIcon category={category} />
+      {selected ? (
+        <Check className="h-4 w-4 shrink-0" strokeWidth={2.75} aria-hidden="true" />
+      ) : (
+        <CategoryIcon category={category} />
+      )}
       <span className="min-w-0 truncate">{label ?? category.name}</span>
     </button>
   )

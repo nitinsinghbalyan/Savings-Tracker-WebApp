@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { X } from 'lucide-react'
-import { ACCOUNT_TYPES, BANKS, COLOR_PALETTES, CURRENCIES, getBankPreset } from '../lib/constants'
+import { ACCOUNT_TYPES, BANKS, CURRENCIES, GOAL_ACCOUNT_COLOR_PALETTES, getBankPreset } from '../lib/constants'
 import { formatAmountInput, parseAmountInput } from '../lib/format'
 import BankIcon from './icons/banks/BankIcon'
 import ModalShell from './ModalShell'
@@ -224,7 +224,7 @@ export default function AccountForm({
           <div>
             <p className="label-field">Color</p>
             <div className="flex flex-wrap gap-2">
-              {COLOR_PALETTES.map((p) => (
+              {GOAL_ACCOUNT_COLOR_PALETTES.map((p) => (
                 <button
                   key={p.id}
                   type="button"

@@ -216,10 +216,12 @@ export default function HomePage({ isTabActive = true }) {
           <button
             type="button"
             onClick={openCreateForm}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-hover lg:min-h-9 lg:px-3 lg:text-xs"
+            aria-label="New goal"
+            className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-accent text-sm font-semibold text-white transition hover:bg-accent-hover sm:px-4 lg:h-9 lg:px-3 lg:text-xs"
           >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            New goal
+            <Plus className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />
+            {/* Icon-only on phones so the merged title row keeps room for the tabs. */}
+            <span className="hidden sm:inline">New goal</span>
           </button>
         )}
         <Link

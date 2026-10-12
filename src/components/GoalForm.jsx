@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { addDays, format, isAfter, parseISO, startOfDay } from 'date-fns'
-import { Calendar, X } from 'lucide-react'
+import { Calendar, Check, X } from 'lucide-react'
 import {
   CATEGORIES,
-  COLOR_PALETTES,
   CURRENCIES,
+  GOAL_ACCOUNT_COLOR_PALETTES,
+  getColorPalette,
   DEFAULT_CATEGORY,
   OTHER_CATEGORY,
   PRIORITIES,
@@ -72,18 +73,25 @@ function validateForm(values, { isEdit = false, originalEndDate = null } = {}) {
   return errors
 }
 
-function Chip({ selected, onClick, children, className = '' }) {
+// Display-only hue per goal preset — nothing is stored, so goals.color's
+// 6-id CHECK is unaffected.
+const PRESET_HUES = { Home: 'indigo', Travel: 'sky', Emergency: 'rose', Health: 'emerald', Other: 'amber' }
+
+function PresetChip({ category, selected, onClick }) {
+  const palette = getColorPalette(PRESET_HUES[category] ?? 'indigo')
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`${chipBase} ${
-        selected
-          ? 'bg-brand-600 text-white ring-brand-600'
-          : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50'
-      } ${className}`}
+      aria-pressed={selected}
+      className={`${chipBase} ${selected ? `${palette.pastelOn} font-semibold` : palette.pastel}`}
     >
-      {children}
+      {selected ? (
+        <Check className="h-4 w-4 shrink-0" strokeWidth={2.75} aria-hidden="true" />
+      ) : (
+        <CategoryIcon category={{ name: category }} />
+      )}
+      <span className="truncate">{category}</span>
     </button>
   )
 }
@@ -397,7 +405,7 @@ export default function GoalForm({
             <div>
               <p className="label-field">Color</p>
               <div className="chip-row justify-between gap-2">
-                {COLOR_PALETTES.map((palette) => {
+                {GOAL_ACCOUNT_COLOR_PALETTES.map((palette) => {
                   const selected = values.color === palette.id
                   return (
                     <button
@@ -428,8 +436,9 @@ export default function GoalForm({
                   at 375px the equal cells truncated "Emergency". */}
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((category) => (
-                  <Chip
+                  <PresetChip
                     key={category}
+                    category={category}
                     selected={
                       category === OTHER_CATEGORY
                         ? !isPresetCategory(values.category)
@@ -445,11 +454,7 @@ export default function GoalForm({
                         setChipField('category', DEFAULT_CATEGORY)
                       }
                     }}
-                    className="gap-1.5"
-                  >
-                    <CategoryIcon category={{ name: category }} />
-                    <span className="truncate">{category}</span>
-                  </Chip>
+                  />
                 ))}
               </div>
               {!isPresetCategory(values.category) && (

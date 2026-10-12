@@ -82,10 +82,11 @@ export default function NetWorthPage({ isTabActive = true }) {
         <button
           type="button"
           onClick={() => openAdd()}
-          className="flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[13px] font-medium text-white transition hover:bg-accent-hover"
+          aria-label="Add holding"
+          className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full bg-accent text-[13px] font-medium text-white transition hover:bg-accent-hover sm:h-9 sm:rounded-lg sm:px-3"
         >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add
+          <Plus className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Add</span>
         </button>
       </PageHeader>
 

@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-10-10 (v0.39)
+**Last updated:** 2026-10-12 (v0.40)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -133,6 +133,8 @@
 | F-126 | Settings Budgets UI removed | done | `BudgetManager` no longer on Settings page; DB/chart budgets retained (session 65) |
 | F-127 | Summary Overall / Monthly tabs | done | Segmented toggle in `SummarySection`; default Overall (session 66) |
 | F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
+| F-171 | Merged mobile top bar | done | `PageHeader` + `SegmentedTabs` in one row below `lg`: active tab = page title (21px), others 13px and swipeable, actions on the right, sr-only h1. ~110px → 56–58px. **Supersedes** the two-row header + 11px segmented pills (session 90) |
+| F-170 | Pastel category chips, 12 colours | done | Every chip tinted in its pastel; selected = deeper shade + ring + ✓. Six new category colours behind optional `add_more_category_colors.sql` with automatic base fallback; goals/accounts stay on 6 (session 90) |
 | F-169 | Summary hero, movers, income list | done | Headline **Net this month** (income − spent, `cashFlow`) + **savings rate**; `CategoryMovers` (top 3 by absolute change, new/gone included, tap → transactions); collapsed income-by-category; collapsed Balances; "To goals" cell → "Saved" (session 89) |
 | F-168 | Goals list: completed, sort, header CTA, pace | done | Collapsed **Completed** section (derived `saved ≥ target`); sort Deadline/Progress/Priority/Name (localStorage); **New goal** in header; one-line pace on cards — **updates** the 2026-07-04 "no track badge" and "New goal CTA below grid" decisions (session 89) |
 | F-167 | Goal detail cleanup | done | Six facts once each incl. Forecast; funding bars carry values (k/L/Cr) and quote the forecast pace; paper/ink tokens (session 89) |

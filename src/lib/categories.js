@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
-import { assertNoError, isMissingSnapshotColumnError } from './errors'
+import { assertNoError, isColorCheckViolation, isMissingSnapshotColumnError } from './errors'
 import { categorySnapshotFromRow } from './transactionCategory'
-import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from './constants'
+import { baseColorFor, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from './constants'
 import { isValidIconId } from './categoryIcons'
 
 function categoryNameKey(name) {
@@ -209,27 +209,37 @@ export async function createCategory(data) {
   )
   if (existing) return existing
 
-  const { data: category, error } = await supabase
-    .from('categories')
-    .insert({
-      user_id: userId,
-      name,
-      kind,
-      parent_id: parentId,
-      color: data.color ?? 'indigo',
-      // Optional — null renders the name-based default (categoryIcons.js).
-      icon: isValidIconId(data.icon) ? data.icon : null,
-      sort_order: data.sort_order ?? 99,
-      is_system: false,
-      is_savings: Boolean(data.is_savings) && kind === 'expense',
-      monthly_budget: kind === 'expense' ? Math.max(0, Number(data.monthly_budget) || 0) : 0,
-      ...(data.goal_id ? { goal_id: data.goal_id } : {}),
-    })
-    .select()
-    .single()
+  const row = {
+    user_id: userId,
+    name,
+    kind,
+    parent_id: parentId,
+    color: data.color ?? 'indigo',
+    // Optional — null renders the name-based default (categoryIcons.js).
+    icon: isValidIconId(data.icon) ? data.icon : null,
+    sort_order: data.sort_order ?? 99,
+    is_system: false,
+    is_savings: Boolean(data.is_savings) && kind === 'expense',
+    monthly_budget: kind === 'expense' ? Math.max(0, Number(data.monthly_budget) || 0) : 0,
+    ...(data.goal_id ? { goal_id: data.goal_id } : {}),
+  }
+
+  let { data: category, error } = await supabase.from('categories').insert(row).select().single()
+
+  // One of the six newer colours on a database without add_more_category_colors.sql:
+  // save with the base fallback rather than failing the whole create.
+  let colorFellBack = false
+  if (error && isColorCheckViolation(error) && baseColorFor(row.color) !== row.color) {
+    ;({ data: category, error } = await supabase
+      .from('categories')
+      .insert({ ...row, color: baseColorFor(row.color) })
+      .select()
+      .single())
+    colorFellBack = !error
+  }
 
   assertNoError(error, 'Failed to create category')
-  return category
+  return colorFellBack ? { ...category, colorFellBack: true, requestedColor: row.color } : category
 }
 
 export async function updateCategory(id, patch) {
@@ -239,16 +249,24 @@ export async function updateCategory(id, patch) {
   delete safePatch.id
   delete safePatch.created_at
 
-  const { data, error } = await supabase
-    .from('categories')
-    .update(safePatch)
-    .eq('id', id)
-    .eq('user_id', userId)
-    .select()
-    .single()
+  const runUpdate = (body) =>
+    supabase.from('categories').update(body).eq('id', id).eq('user_id', userId).select().single()
+
+  let { data, error } = await runUpdate(safePatch)
+
+  let colorFellBack = false
+  if (
+    error &&
+    isColorCheckViolation(error) &&
+    safePatch.color &&
+    baseColorFor(safePatch.color) !== safePatch.color
+  ) {
+    ;({ data, error } = await runUpdate({ ...safePatch, color: baseColorFor(safePatch.color) }))
+    colorFellBack = !error
+  }
 
   assertNoError(error, 'Failed to update category')
-  return data
+  return colorFellBack ? { ...data, colorFellBack: true, requestedColor: safePatch.color } : data
 }
 
 export async function archiveCategory(id) {

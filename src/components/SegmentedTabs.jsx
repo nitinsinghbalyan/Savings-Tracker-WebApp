@@ -1,34 +1,73 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 
-// Mobile navigation from artboard 1e of the Savings Tracker Redesign:
-// a top segmented control on the paper track, replacing the bottom tab bar.
+// Mobile navigation merged into the title row (session 90). The active tab IS
+// the page title — large, in the display face — and the other tabs sit beside
+// it in small type, swipeable when they overflow. Replaces the two-row header
+// (title above an 11px segmented control) and the Summary/Month,
+// Activity/Ledger, Settings/More naming mismatch between the two.
 const tabs = [
-  { to: '/summary', label: 'Month' },
-  { to: '/goals', label: 'Goals' },
-  { to: '/worth', label: 'Worth' },
-  { to: '/transactions', label: 'Ledger' },
-  { to: '/settings', label: 'More' },
+  { to: '/summary', label: 'Month', activeLabel: 'Month' },
+  { to: '/goals', label: 'Goals', activeLabel: 'Goals' },
+  { to: '/worth', label: 'Worth', activeLabel: 'Worth' },
+  { to: '/transactions', label: 'Ledger', activeLabel: 'Ledger' },
+  { to: '/settings', label: 'More', activeLabel: 'Settings' },
 ]
 
 export default function SegmentedTabs() {
+  const { pathname } = useLocation()
+  const navRef = useRef(null)
+  // Fade the right edge only while there is more strip to scroll to.
+  const [fadeEnd, setFadeEnd] = useState(false)
+
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return undefined
+    const update = () => setFadeEnd(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update)
+    observer?.observe(el)
+    return () => {
+      el.removeEventListener('scroll', update)
+      observer?.disconnect()
+    }
+  }, [])
+
+  // Keep the active (title) tab on screen after navigation.
+  useEffect(() => {
+    navRef.current
+      ?.querySelector('[aria-current="page"]')
+      ?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })
+  }, [pathname])
+
   return (
     <nav
-      className="mt-3.5 flex gap-1 rounded-lg bg-paper-line p-[3px] lg:hidden"
+      ref={navRef}
+      className="no-scrollbar -ml-1 flex min-w-0 flex-1 items-end gap-3.5 overflow-x-auto pl-1 lg:hidden"
+      style={
+        fadeEnd
+          ? {
+              maskImage: 'linear-gradient(to right, #000 calc(100% - 28px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to right, #000 calc(100% - 28px), transparent)',
+            }
+          : undefined
+      }
       aria-label="Main navigation"
     >
-      {tabs.map(({ to, label }) => (
+      {tabs.map(({ to, label, activeLabel }) => (
         <NavLink
           key={to}
           to={to}
           className={({ isActive }) =>
-            `flex-1 rounded-md py-[7px] text-center text-[11px] transition ${
+            `flex min-h-11 shrink-0 items-end whitespace-nowrap pb-2 leading-none transition ${
               isActive
-                ? 'bg-paper-card font-medium text-ink shadow-[0_1px_2px_rgba(22,19,15,.07)]'
-                : 'font-normal text-ink-soft'
+                ? 'font-display text-[21px] font-semibold tracking-[-0.02em] text-ink'
+                : 'text-[13px] font-medium text-ink-soft hover:text-ink'
             }`
           }
         >
-          {label}
+          {({ isActive }) => (isActive ? activeLabel : label)}
         </NavLink>
       ))}
     </nav>
