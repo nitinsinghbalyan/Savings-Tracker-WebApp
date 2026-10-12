@@ -81,6 +81,17 @@ bar and **"pastel + more shades"** (12 colours) for the chips.
 - **Signed-in screens not seen with real data** (the same limitation as
   session 89).
 
+### Deployed
+
+- **Merge:** `master` fast-forwarded `b50810e → 5d849ad` and pushed.
+- **Deploy:** `dpl_AkSwD5zBoG6aFRRARTPuBxet1mb4`, `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `EXIT:0`, deployed from the cloud
+  environment with `VERCEL_TOKEN`.
+- **Live check:** `/` and `/settings` return 200. The deployed chunks contain
+  `bg-fuchsia-50` (constants + CSS), `no-scrollbar` and the active-label logic
+  (PageHeader), `pastelOn` (CategoryChip, GoalForm) and the migration hint
+  (CategoryTreeManager).
+
 ## 2026-10-10 (session 89 — category icons + 44px chips, Goals and Summary improvements)
 
 The user asked for bigger category chips with icons, and better Goals and
