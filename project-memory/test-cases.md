@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-10-12 (v0.40)
+**Last updated:** 2026-10-12 (v0.41)
 
 ## Setup
 
@@ -1002,3 +1002,13 @@ both themes. TC-549 onward need sign-in.
 | TC-573 | New colour, signed in, before migration | Settings › Categories: add a category with Pink | Saves as Rose; toast names `add_more_category_colors.sql` | not-run | |
 | TC-574 | New colour after migration | Run the SQL, add a Teal category | Saves as Teal; chip and charts show teal | not-run | |
 | TC-575 | Header on a real phone | Open each tab on iOS Safari | Swipe works; active tab scrolls into view; safe-area respected | not-run | |
+
+## v0.41 — Goals as categories in the Add transaction picker (session 91)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-576 | Expense saved to a goal, signed in | Add → ₹ amount → pick only a goal → Save | Activity row labelled with the goal; goal progress rises; Summary counts it under Saved, not Spent | not-run | |
+| TC-577 | Goal and category clear each other | Harness: pick goal, then a category | Only the category stays selected; submit carries no goalId | pass | 2026-10-12 |
+| TC-578 | Goal-only submit payload | Harness: pick goal, Save | `category_id: null`, `goalId` set, no validation error | pass | 2026-10-12 |
+| TC-579 | Income still needs a category | Harness: Income, pick goal only, Save | "Select a category"; optional goal row shown, no "Save to a goal" row | pass | 2026-10-12 |
+| TC-580 | Preview line | Harness: ₹5,000 on a goal at 40% of ₹1,00,000 | "Saves to Bali trip · 40% → 45%" | pass | 2026-10-12 |

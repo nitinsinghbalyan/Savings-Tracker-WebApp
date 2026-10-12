@@ -11,6 +11,7 @@ import { useTransactions } from '../hooks/useTransactions'
 import { buildSpendByDay, dayNet } from '../lib/monthlySummary'
 import { formatMoney } from '../lib/format'
 import { contributionTimestamp, percentComplete, savedAmount } from '../lib/contributions'
+import { ensureGoalCategory } from '../lib/goalCategory'
 import { useToast } from '../hooks/useToast'
 import { useGoals } from '../hooks/useGoals'
 import { groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate } from '../lib/transactions'
@@ -46,7 +47,8 @@ export default function TransactionsPage({ isTabActive = true }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const now = new Date()
 
-  const { consumeRecurringPosted, bootstrapping, createRecurringTransaction } = useAppData()
+  const { consumeRecurringPosted, bootstrapping, createRecurringTransaction, refreshCategories } =
+    useAppData()
 
   useEffect(() => {
     if (!isTabActive) return
@@ -180,7 +182,25 @@ export default function TransactionsPage({ isTabActive = true }) {
         return
       }
 
-      const tx = await createTransaction({ ...data, goal_id: options.goalId || undefined })
+      // An expense saved "to a goal" arrives without a category: file it under
+      // the goal's own savings category (created on first use), exactly as
+      // Goals → Add money does. Without the goal↔category migration the snapshot
+      // still labels it with the goal's name.
+      let txData = data
+      const pickedGoal = options.goalId ? goals.find((g) => g.id === options.goalId) : null
+      if (pickedGoal && data.type === 'expense' && !data.category_id) {
+        const goalCategory = await ensureGoalCategory(pickedGoal).catch(() => null)
+        if (goalCategory?.id) refreshCategories({ background: true }).catch(() => {})
+        txData = {
+          ...data,
+          category_id: goalCategory?.id ?? null,
+          category_name: goalCategory?.name ?? pickedGoal.name,
+          category_color: goalCategory?.color ?? pickedGoal.color ?? 'indigo',
+          category_is_savings: true,
+        }
+      }
+
+      const tx = await createTransaction({ ...txData, goal_id: options.goalId || undefined })
 
       const period = getPeriodForDate(data.transaction_date, monthStartDay)
       if (period.year !== year || period.month !== month) {
@@ -279,6 +299,7 @@ export default function TransactionsPage({ isTabActive = true }) {
       accounts,
       defaultCurrency,
       addContribution,
+      refreshCategories,
       toast,
     ],
   )

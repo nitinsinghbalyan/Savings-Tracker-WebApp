@@ -5,6 +5,7 @@ import { CURRENCIES } from '../lib/constants'
 import { buildCategoryPickerTree, getSelectableCategories } from '../lib/categories'
 import { formatTransactionDateLabel } from '../lib/transactions'
 import { formatCurrency, parseAmountInput } from '../lib/format'
+import { percentComplete, savedAmount } from '../lib/contributions'
 import { SELECT_CHIP_BASE, SELECT_CHIP_IDLE, SELECT_CHIP_ON } from '../lib/chipStyles'
 import ModalShell from './ModalShell'
 import CategoryChip from './CategoryChip'
@@ -204,6 +205,17 @@ export default function TransactionForm({
   const currency = selectedAccount?.currency ?? values.currency
   const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? '₹'
   const amountValue = Number(parseAmountInput(values.amount))
+
+  // Goals offered in the picker: unfinished first (keeping the deadline order
+  // they arrive in), finished ones last so topping up stays possible.
+  // Plain computation, not useMemo: this runs after the `if (!open) return null`
+  // above, and a hook there would change the hook count between renders.
+  const goalChoices = [
+    ...goals.filter((g) => percentComplete(g) < 100),
+    ...goals.filter((g) => percentComplete(g) >= 100),
+  ]
+  // For an expense, a goal pick stands in for the category.
+  const goalCountsAsCategory = values.type === 'expense' && Boolean(values.goal_id)
   const amountReady = Boolean(amountValue && amountValue > 0)
 
   const handleTypeChange = (type) => {
@@ -257,16 +269,26 @@ export default function TransactionForm({
         onError?.('Accounts must use the same currency')
         return
       }
-    } else if (!values.category_id) {
-      if (selectableCategories.length === 0) {
+    } else if (!values.category_id && !goalCountsAsCategory) {
+      if (selectableCategories.length === 0 && goalChoices.length === 0) {
         onError?.('Add a category in Settings first')
       } else {
-        onError?.('Select a category')
+        onError?.(
+          values.type === 'expense' && goalChoices.length > 0
+            ? 'Select a category or a goal'
+            : 'Select a category',
+        )
       }
       return
     }
 
-    const categoryId = values.type === 'transfer' ? null : values.category_id
+    // A goal pick IS the category for an expense: TransactionsPage resolves the
+    // goal's own savings category, so no second "Equity"-style pick is needed.
+    // On edit the goal entry keeps the category it was saved with.
+    const categoryId =
+      values.type === 'transfer' || (goalCountsAsCategory && !isEdit)
+        ? null
+        : values.category_id || null
     // Explicit goal pick only — no category→goal auto-link
     const goalId = values.goal_id || null
 
@@ -327,12 +349,53 @@ export default function TransactionForm({
     ? (goals.find((g) => g.id === values.goal_id) ?? null)
     : null
 
+  // Smart preview: what this entry does to the goal, in the goal's terms.
+  const goalPreview = (() => {
+    if (!selectedGoal || values.type !== 'expense') return null
+    const goalCurrency = selectedGoal.currency ?? 'INR'
+    const before = Math.round(percentComplete(selectedGoal))
+    if (goalCurrency !== currency || !(amountValue > 0)) {
+      return { before, after: null, converts: goalCurrency !== currency, goalCurrency }
+    }
+    const target = Number(selectedGoal.target_amount) || 0
+    const after =
+      target > 0 ? Math.min(100, Math.round(((savedAmount(selectedGoal) + amountValue) / target) * 100)) : null
+    return { before, after, converts: false, goalCurrency }
+  })()
+
+  // Picking a category clears a goal pick and vice versa (expenses): one
+  // choice, one meaning.
   const renderCategoryChip = (c) => (
     <CategoryChip
       key={c.id}
       category={c}
-      selected={values.category_id === c.id}
-      onSelect={(id) => setValues((v) => ({ ...v, category_id: id }))}
+      selected={values.category_id === c.id && !goalCountsAsCategory}
+      onSelect={(id) =>
+        setValues((v) => ({
+          ...v,
+          category_id: id,
+          goal_id: v.type === 'expense' && !isEdit ? '' : v.goal_id,
+        }))
+      }
+    />
+  )
+
+  const renderGoalChip = (g) => (
+    <CategoryChip
+      key={g.id}
+      category={{ id: g.id, name: g.name, color: g.color, icon: 'target' }}
+      selected={values.goal_id === g.id}
+      onSelect={(id) =>
+        setValues((v) => {
+          const picking = v.goal_id !== id
+          return {
+            ...v,
+            goal_id: picking ? id : '',
+            // Expense: the goal stands in for the category.
+            category_id: v.type === 'expense' && picking ? '' : v.category_id,
+          }
+        })
+      }
     />
   )
 
@@ -515,8 +578,12 @@ export default function TransactionForm({
 
               {values.type !== 'transfer' && (
                 <div>
-                  <p className="label-field">Category</p>
-                  {categoryRows.length === 0 ? (
+                  <p className="label-field">
+                    {values.type === 'expense' && goalChoices.length > 0 && !isEdit
+                      ? 'Category or goal'
+                      : 'Category'}
+                  </p>
+                  {categoryRows.length === 0 && goalChoices.length === 0 ? (
                     <p className="text-sm text-slate-500">
                       No categories yet.{' '}
                       <a href="/settings/categories" className="font-medium text-brand-600">
@@ -525,53 +592,82 @@ export default function TransactionForm({
                     </p>
                   ) : (
                     <div className="space-y-2.5">
-                      {categoryRows.map((row) => (
-                        <div key={row.key}>
-                          {row.label && (
-                            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                              {row.label}
-                            </p>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                            {row.items.map(renderCategoryChip)}
-                          </div>
+                      {/* Expenses: goals sit in the picker as categories in their own
+                          right — choosing one files the money under the goal's savings
+                          category, so the user never picks a second "Equity" chip. */}
+                      {values.type === 'expense' && !isEdit && goalChoices.length > 0 && (
+                        <div>
+                          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Save to a goal
+                          </p>
+                          <div className="flex flex-wrap gap-2">{goalChoices.map(renderGoalChip)}</div>
                         </div>
-                      ))}
+                      )}
+                      {/* Editing a goal entry: the goal is fixed, so show it rather
+                          than a category list the change would not apply to. */}
+                      {isEdit && values.goal_id && selectedGoal ? (
+                        <div>
+                          <div className="flex flex-wrap gap-2">
+                            <CategoryChip
+                              category={{ id: selectedGoal.id, name: selectedGoal.name, color: selectedGoal.color, icon: 'target' }}
+                              selected
+                              onSelect={() => {}}
+                            />
+                          </div>
+                          <p className="mt-1.5 text-xs text-ink-soft">
+                            Saved to this goal. Delete and re-add to move it.
+                          </p>
+                        </div>
+                      ) : (
+                        categoryRows.map((row, i) => {
+                          // With a goals row above, the first unlabelled row gets a
+                          // heading so the two groups read as separate.
+                          const heading =
+                            row.label ??
+                            (i === 0 && values.type === 'expense' && !isEdit && goalChoices.length > 0
+                              ? 'Or a category'
+                              : null)
+                          return (
+                          <div key={row.key}>
+                            {heading && (
+                              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                {heading}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {row.items.map(renderCategoryChip)}
+                            </div>
+                          </div>
+                          )
+                        })
+                      )}
                     </div>
+                  )}
+                  {goalPreview && (
+                    <p className="mt-2 text-xs text-positive">
+                      Saves to {selectedGoal.name}
+                      {goalPreview.after != null
+                        ? ` · ${goalPreview.before}% → ${goalPreview.after}%`
+                        : ` · ${goalPreview.before}% saved`}
+                      {goalPreview.converts && ` (converts ${currency} → ${goalPreview.goalCurrency})`}
+                    </p>
                   )}
                 </div>
               )}
 
-              {values.type !== 'transfer' && !isEdit && goals.length > 0 && (
+              {/* Income can still also count toward a goal; its category stays required. */}
+              {values.type === 'income' && !isEdit && goalChoices.length > 0 && (
                 <div>
-                  <p className="label-field">Goal (optional)</p>
-                  <div className="flex flex-wrap gap-2">
-                    {goals.map((g) => (
-                      // Same pastel chip as categories, in the goal's colour.
-                      <CategoryChip
-                        key={g.id}
-                        category={{ id: g.id, name: g.name, color: g.color, icon: 'target' }}
-                        selected={values.goal_id === g.id}
-                        onSelect={(id) =>
-                          setValues((v) => ({ ...v, goal_id: v.goal_id === id ? '' : id }))
-                        }
-                      />
-                    ))}
-                  </div>
+                  <p className="label-field">Also add to a goal (optional)</p>
+                  <div className="flex flex-wrap gap-2">{goalChoices.map(renderGoalChip)}</div>
                   {selectedGoal && (
-                    <p className="mt-1.5 text-xs text-emerald-700">
+                    <p className="mt-1.5 text-xs text-positive">
                       Counts toward goal: {selectedGoal.name}
                       {(selectedGoal.currency ?? 'INR') !== currency &&
                         ` (converts ${currency} → ${selectedGoal.currency ?? 'INR'})`}
                     </p>
                   )}
                 </div>
-              )}
-
-              {values.type !== 'transfer' && isEdit && values.goal_id && selectedGoal && (
-                <p className="text-xs text-emerald-700">
-                  Counts toward goal: {selectedGoal.name}. Delete and re-add to change this.
-                </p>
               )}
 
               <div>

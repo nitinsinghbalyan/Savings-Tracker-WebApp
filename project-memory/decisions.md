@@ -1,9 +1,11 @@
 # Decision Log
 
-**Last updated:** 2026-10-12 (v0.40)
+**Last updated:** 2026-10-12 (v0.41)
 
 | Date | Decision | Rationale | Alternatives considered |
 |------|----------|-----------|-------------------------|
+| 2026-10-12 | For **expenses, a goal is a category**: one picker, mutually exclusive, the goal's linked savings category is applied on save | User: "Goal and category are essentially the same" — making them also pick e.g. Equity was a redundant second choice. The goal↔category link already existed (one savings category per goal), so this is UI plus one resolve step, no schema change | Keep two sections and auto-select the goal's category (still two concepts on screen); hide categories when a goal is picked |
+| 2026-10-12 | **Income** keeps category-required with an optional "Also add to a goal" row | A goal's linked category is an expense/savings category, so it cannot stand in for an income category | Allow a goal alone for income (would file income under an expense category) |
 | 2026-10-12 | **12 colours for categories, 6 for goals and accounts** | The user wanted more pastel shades. Only `categories.color` gets the wider CHECK; goals and accounts keep theirs, so their pickers use `GOAL_ACCOUNT_COLOR_PALETTES`. Goal-linked categories inherit a base colour from the goal, so they always fit | Widen all three CHECKs (more migration surface for no request); generate shades per category from a hash (not user-choosable) |
 | 2026-10-12 | The new colours **degrade to a base fallback** when the migration is missing, with a toast; never a failed save | Matches the "optional migrations must degrade, never block" rule. The user can't apply DDL from the app (anon key only) | Hide the six new swatches until a capability probe passes (an extra startup request) |
 | 2026-10-12 | Chip selection = deeper pastel + coloured ring + **✓ replacing the icon** | Twelve pastels make "selected" ambiguous by colour alone; the ✓ carries the state | Solid filled chip with white text (loses the pastel look the user asked for) |

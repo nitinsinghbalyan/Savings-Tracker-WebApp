@@ -1,6 +1,59 @@
 # Changelog
 
-**Last updated:** 2026-10-12 (v0.40)
+**Last updated:** 2026-10-12 (v0.41)
+
+## 2026-10-12 (session 91 — goals are categories in the Add transaction picker)
+
+The user: "Adding to goals should be enough — do not make the user select an
+Equity category. Goal and category are essentially the same."
+
+### Changed
+
+- **One picker for expenses: "Category or goal".**
+  - A **"Save to a goal"** row of goal chips (pastel in the goal's colour,
+    target icon) sits above **"Or a category"**.
+  - Picking a goal **is** the category, and the two choices clear each other.
+  - The separate "Goal (optional)" section is gone for expenses.
+- **Saving a goal pick.** `TransactionsPage.handleSubmit` resolves the goal's
+  own savings category with `ensureGoalCategory` (creating it on first use) and
+  fills the snapshot. This is the same path Goals → Add money already used, so
+  the money still counts once, via the goal, and lands under the goal in
+  Activity.
+  - Without the goal↔category migration the snapshot still carries the goal's
+    name and colour.
+- **Smart preview line**, for example "Saves to Bali trip · 40% → 45%".
+  - It turns into a "converts INR → USD" note when the account and goal
+    currencies differ.
+- **Goal order:** unfinished goals come first in deadline order, and finished
+  goals sit last so they can still be topped up.
+- **Validation:** an expense needs a category **or** a goal, and the error text
+  says so. Income still requires a category; it keeps an "Also add to a goal
+  (optional)" row as before.
+- **Editing a goal entry** shows that goal as the selected chip, with "Delete
+  and re-add to move it", instead of a category list the edit would not apply
+  to. Its saved category is kept.
+
+### Verified
+
+- **Component harness in Chromium at 375px, light and dark** (temporary page,
+  deleted):
+  - The label reads "Category or goal". Goal order is open goals first, then
+    the completed one.
+  - The goal-linked category is not duplicated in the category rows.
+  - Picking a goal shows "Saves to Bali trip · 40% → 45%" and submits
+    `category_id: null, goalId: g1` with no error.
+  - Picking Equity afterwards leaves only Equity selected.
+  - **Income:** the optional goal row is shown with no "Save to a goal" row,
+    and a goal alone is rejected with "Select a category". No page errors.
+- **Build green; whole-tree lint 22 errors + 1 warning**, unchanged.
+
+### Not done (manual follow-up)
+
+- **Signed in:** add an expense by picking only a goal, then check the
+  following (TC-576):
+  - The Activity row shows the goal's name and icon.
+  - The goal's progress rises.
+  - Summary counts it under "Saved" and not under spending.
 
 ## 2026-10-12 (session 90 — pastel category chips in 12 shades, merged mobile top bar)
 
