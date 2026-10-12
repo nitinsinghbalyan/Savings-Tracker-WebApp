@@ -55,6 +55,15 @@ Equity category. Goal and category are essentially the same."
   - The goal's progress rises.
   - Summary counts it under "Saved" and not under spending.
 
+### Deployed
+
+- **Merge:** `master` fast-forwarded to `2d843b1` and pushed.
+- **Deploy:** `dpl_CKoU6Zzbg2mNDX5kryB268KSzDWJ`, `▲ Aliased` to
+  `savings-tracker-azure.vercel.app`, `EXIT:0`.
+- **Live check:** `/` returns 200. The deployed `TransactionForm` chunk
+  contains "Save to a goal", "Or a category", "Select a category or a goal" and
+  the "Saves to" preview.
+
 ## 2026-10-12 (session 90 — pastel category chips in 12 shades, merged mobile top bar)
 
 The user asked for colourful pastel category chips and a smarter merge of the
