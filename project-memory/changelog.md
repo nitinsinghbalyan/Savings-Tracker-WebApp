@@ -45,6 +45,14 @@ re-sorting every group by use).
   row with empty usage, when editing, or on Transfer; Income shows its own
   (TC-583…TC-585)
 
+### Deployed
+
+- `dpl_FNAz2srXRD4oV1m43B2YipURfMRw`, aliased to
+  `savings-tracker-azure.vercel.app` (`▲ Aliased`, exit 0). Root and
+  `/transactions` return 200; the live `TransactionForm` chunk contains
+  "Frequent categories" and the live `transactions` chunk the new usage query.
+  Commit `76a92f2` pushed to `master`
+
 ### Not done (manual follow-up)
 
 - **Signed-in check** (TC-586): the real 90-day query runs only behind sign-in
