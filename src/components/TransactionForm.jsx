@@ -4,6 +4,7 @@ import { Delete, Repeat, X } from 'lucide-react'
 import { CURRENCIES } from '../lib/constants'
 import { buildCategoryPickerTree, getSelectableCategories } from '../lib/categories'
 import { formatTransactionDateLabel } from '../lib/transactions'
+import { buildFrequentCategories, frequentChipLabel } from '../lib/categoryUsage'
 import { formatCurrency, parseAmountInput } from '../lib/format'
 import { percentComplete, savedAmount } from '../lib/contributions'
 import { SELECT_CHIP_BASE, SELECT_CHIP_IDLE, SELECT_CHIP_ON } from '../lib/chipStyles'
@@ -87,6 +88,7 @@ export default function TransactionForm({
   expenseCategories,
   incomeCategories,
   goals = [],
+  categoryUsage = [],
   defaultCurrency = 'INR',
   onSubmit,
   onError,
@@ -139,6 +141,12 @@ export default function TransactionForm({
   const selectableCategories = useMemo(
     () => getSelectableCategories(categories, categoryKind).filter((c) => !c.goal_id),
     [categories, categoryKind],
+  )
+  // Most-used categories (last 90 days) for the "Frequent" row. They also stay
+  // in their groups below, so the full list never shifts around.
+  const frequentCategories = useMemo(
+    () => buildFrequentCategories(selectableCategories, categoryUsage),
+    [selectableCategories, categoryUsage],
   )
   const resetKey = open
     ? `${transaction?.id ?? 'new'}:${activeAccounts.map((a) => a.id).join(',')}:${expenseCategories.map((c) => c.id).join(',')}:${incomeCategories.map((c) => c.id).join(',')}:${defaultCurrency}`
@@ -365,10 +373,11 @@ export default function TransactionForm({
 
   // Picking a category clears a goal pick and vice versa (expenses): one
   // choice, one meaning.
-  const renderCategoryChip = (c) => (
+  const renderCategoryChip = (c, keyPrefix = '', label) => (
     <CategoryChip
-      key={c.id}
+      key={`${keyPrefix}${c.id}`}
       category={c}
+      label={label}
       selected={values.category_id === c.id && !goalCountsAsCategory}
       onSelect={(id) =>
         setValues((v) => ({
@@ -595,6 +604,18 @@ export default function TransactionForm({
                       {/* Expenses: goals sit in the picker as categories in their own
                           right — choosing one files the money under the goal's savings
                           category, so the user never picks a second "Equity" chip. */}
+                      {!isEdit && frequentCategories.length > 0 && (
+                        <div>
+                          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Frequent
+                          </p>
+                          <div className="flex flex-wrap gap-2" role="group" aria-label="Frequent categories">
+                            {frequentCategories.map((c) =>
+                              renderCategoryChip(c, 'freq-', frequentChipLabel(c, selectableCategories, categories)),
+                            )}
+                          </div>
+                        </div>
+                      )}
                       {values.type === 'expense' && !isEdit && goalChoices.length > 0 && (
                         <div>
                           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -635,7 +656,7 @@ export default function TransactionForm({
                               </p>
                             )}
                             <div className="flex flex-wrap gap-2">
-                              {row.items.map(renderCategoryChip)}
+                              {row.items.map((c) => renderCategoryChip(c))}
                             </div>
                           </div>
                           )

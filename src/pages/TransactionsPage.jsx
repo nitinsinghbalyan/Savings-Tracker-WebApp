@@ -14,7 +14,7 @@ import { contributionTimestamp, percentComplete, savedAmount } from '../lib/cont
 import { ensureGoalCategory } from '../lib/goalCategory'
 import { useToast } from '../hooks/useToast'
 import { useGoals } from '../hooks/useGoals'
-import { groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate } from '../lib/transactions'
+import { getCategoryUsage, groupTransactionsByDate, formatTransactionDateLabel, getPeriodForDate } from '../lib/transactions'
 import { buildGoalContributionFromTransaction, buildGoalLinkedTransactionIds, shouldHighlightSavingsOrGoal } from '../lib/transactionGoal'
 import PageHeader from '../components/PageHeader'
 import MonthPicker from '../components/MonthPicker'
@@ -156,6 +156,22 @@ export default function TransactionsPage({ isTabActive = true }) {
   // synced through an effect, so opening costs no extra render pass.
   const addFromUrl = Boolean(searchParams.get('new'))
   const showTransactionForm = formOpen || addFromUrl
+  // Category use for the Add sheet's "Frequent" row, refetched on each open so
+  // it reflects the last save. A failure just leaves the row out.
+  const [categoryUsage, setCategoryUsage] = useState([])
+  const addSheetOpen = showTransactionForm && !editingTx
+  useEffect(() => {
+    if (!addSheetOpen || !dataReady) return undefined
+    let cancelled = false
+    getCategoryUsage()
+      .catch(() => [])
+      .then((rows) => {
+        if (!cancelled) setCategoryUsage(rows)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [addSheetOpen, dataReady])
 
   const handleMonthChange = useCallback(
     (y, m) => {
@@ -549,6 +565,7 @@ export default function TransactionsPage({ isTabActive = true }) {
             expenseCategories={expenseCategories}
             incomeCategories={incomeCategories}
             goals={goals}
+            categoryUsage={categoryUsage}
             defaultCurrency={defaultCurrency}
             onSubmit={handleSubmit}
             onError={handleFormError}

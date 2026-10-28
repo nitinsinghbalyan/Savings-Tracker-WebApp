@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-10-12 (v0.41)
+**Last updated:** 2026-10-28 (v0.42)
 
 ## Setup
 
@@ -1012,3 +1012,14 @@ both themes. TC-549 onward need sign-in.
 | TC-578 | Goal-only submit payload | Harness: pick goal, Save | `category_id: null`, `goalId` set, no validation error | pass | 2026-10-12 |
 | TC-579 | Income still needs a category | Harness: Income, pick goal only, Save | "Select a category"; optional goal row shown, no "Save to a goal" row | pass | 2026-10-12 |
 | TC-580 | Preview line | Harness: ₹5,000 on a goal at 40% of ₹1,00,000 | "Saves to Bali trip · 40% → 45%" | pass | 2026-10-12 |
+
+## v0.42 — Frequent categories row (session 92)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-581 | Frequent ranking | node: `buildFrequentCategories` over fixtures | Count desc, tie → most recent; once-used, unknown and null ids dropped; max 6; `[]` for empty/null input | pass | 2026-10-28 |
+| TC-582 | Same-name chips | `frequentChipLabel` with "Other" under Food and Bills | "Food · Other"; unique names get no label | pass | 2026-10-28 |
+| TC-583 | Frequent row layout | Harness 375px, light + dark, 12 categories with usage | Row first, above "Save to a goal"; 6 chips ≥ 44px; goal category excluded; no overflow | pass | 2026-10-28 |
+| TC-584 | Both copies select | Harness: tap Groceries in the Frequent row | Both Groceries chips `aria-pressed="true"` | pass | 2026-10-28 |
+| TC-585 | Row hidden when it should be | Harness: empty usage; editing; Transfer. Then Income | No row in the first three; Income shows its own (Salary) | pass | 2026-10-28 |
+| TC-586 | Real usage, signed in | Open Add; then save an expense in a new category twice and reopen | Most-used categories from the last 90 days lead; the new one appears after its second use | not-run | |

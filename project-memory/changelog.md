@@ -1,6 +1,53 @@
 # Changelog
 
-**Last updated:** 2026-10-12 (v0.41)
+**Last updated:** 2026-10-28 (v0.42)
+
+## 2026-10-28 (session 92 — "Frequent" categories row on Add transaction)
+
+The user: "Frequently used categories should be displayed first on add
+transaction screen." Asked how; they chose **a Frequent row on top with the
+full list unchanged below** (over moving chips out of their groups, or
+re-sorting every group by use).
+
+### Added
+
+- **Frequent row** at the top of the Add transaction category picker: up to 6
+  categories used at least twice in the last 90 days, most-used first (ties →
+  most recently used, then picker order). They also stay in their usual group,
+  so the full list never shifts; picking either copy selects both
+- `getCategoryUsage({ days: 90, limit: 500 })` in `lib/transactions.js` — a
+  bounded, narrow query (`category_id, transaction_date, created_at`; expense and
+  income only). `TransactionsPage` refetches it every time the Add sheet opens,
+  so it reflects the last save. On failure it resolves to `[]` and the row is
+  simply absent — never blocks the form
+- `lib/categoryUsage.js` (pure): `buildFrequentCategories()` and
+  `frequentChipLabel()` — a subcategory whose name another category shares
+  reads "Bills · Other" in the Frequent row, where its group heading is gone
+
+### Notes
+
+- Not shown when editing, for transfers, or when nothing qualifies (a new user
+  sees today's layout). Goal-linked categories are excluded — goals have their
+  own "Save to a goal" row directly below
+- Income gets its own Frequent row from income usage (the selectable list is
+  per kind)
+- No migration; only columns every schema version has
+
+### Verified
+
+- `vite build` green; lint 22 errors = the existing baseline, none new
+- `buildFrequentCategories` checked in node against fixtures: ranking, recency
+  tie-break, single-use / unknown / null ids dropped, cap of 6, empty and bad
+  input; `frequentChipLabel` disambiguation (TC-581, TC-582)
+- Harness at 375px, light and dark: row first, above "Save to a goal"; 6 chips,
+  all 44px; goal category and the once-used category excluded; tapping a
+  Frequent chip sets `aria-pressed` on both copies; no horizontal overflow; no
+  row with empty usage, when editing, or on Transfer; Income shows its own
+  (TC-583…TC-585)
+
+### Not done (manual follow-up)
+
+- **Signed-in check** (TC-586): the real 90-day query runs only behind sign-in
 
 ## 2026-10-12 (session 91 — goals are categories in the Add transaction picker)
 

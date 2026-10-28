@@ -1,4 +1,4 @@
-import { format, endOfMonth, parseISO, startOfMonth } from 'date-fns'
+import { format, endOfMonth, parseISO, startOfMonth, subDays } from 'date-fns'
 import { supabase } from './supabase'
 import { requireUserId } from './auth'
 import { assertNoError, isMissingGoalLinkColumnError, isMissingSnapshotColumnError } from './errors'
@@ -76,6 +76,29 @@ export async function getTransactions({ startDate, endDate, type, accountId } = 
 
   const { data, error } = await query
   assertNoError(error, 'Failed to load transactions')
+  return data ?? []
+}
+
+/**
+ * Category use over the recent window, for the Add sheet's "Frequent" row.
+ * Bounded (date floor + row cap) and narrow: only the columns needed to count.
+ */
+export async function getCategoryUsage({ days = 90, limit = 500 } = {}) {
+  const userId = await requireUserId()
+  const since = format(subDays(new Date(), days), 'yyyy-MM-dd')
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('category_id, transaction_date, created_at')
+    .eq('user_id', userId)
+    .in('type', ['expense', 'income'])
+    .not('category_id', 'is', null)
+    .gte('transaction_date', since)
+    .order('transaction_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  assertNoError(error, 'Failed to load category usage')
   return data ?? []
 }
 

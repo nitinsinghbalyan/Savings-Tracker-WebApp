@@ -1,6 +1,6 @@
 # Features
 
-**Last updated:** 2026-10-12 (v0.41)
+**Last updated:** 2026-10-28 (v0.42)
 
 | ID | Feature | Status | Notes |
 |----|---------|--------|-------|
@@ -133,6 +133,7 @@
 | F-126 | Settings Budgets UI removed | done | `BudgetManager` no longer on Settings page; DB/chart budgets retained (session 65) |
 | F-127 | Summary Overall / Monthly tabs | done | Segmented toggle in `SummarySection`; default Overall (session 66) |
 | F-128 | All-time summary data | done | `useTransactions({ allTime: true })`; lifetime goal contributions; no budget lines on Overall chart (session 66) |
+| F-173 | Frequent categories row on Add transaction | done | Up to 6 categories used ≥ 2× in the last 90 days, most-used first, above "Save to a goal"; they also stay in their groups. `getCategoryUsage` (bounded) + `buildFrequentCategories`; Add only, not edit/transfer (session 92) |
 | F-172 | Goals as categories in the Add transaction picker | done | Expense picker = "Save to a goal" chips + "Or a category"; a goal pick stands in for the category and is filed under the goal's savings category on save (`ensureGoalCategory`); live "40% → 45%" preview. **Supersedes F-139's** separate goal row for expenses (income keeps an optional one) (session 91) |
 | F-171 | Merged mobile top bar | done | `PageHeader` + `SegmentedTabs` in one row below `lg`: active tab = page title (21px), others 13px and swipeable, actions on the right, sr-only h1. ~110px → 56–58px. **Supersedes** the two-row header + 11px segmented pills (session 90) |
 | F-170 | Pastel category chips, 12 colours | done | Every chip tinted in its pastel; selected = deeper shade + ring + ✓. Six new category colours behind optional `add_more_category_colors.sql` with automatic base fallback; goals/accounts stay on 6 (session 90) |

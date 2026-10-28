@@ -1,9 +1,11 @@
 # Decision Log
 
-**Last updated:** 2026-10-12 (v0.41)
+**Last updated:** 2026-10-28 (v0.42)
 
 | Date | Decision | Rationale | Alternatives considered |
 |------|----------|-----------|-------------------------|
+| 2026-10-28 | Frequent categories = a **separate row on top, duplicated** in the full list below | User's choice. The grouped list never moves, so muscle memory for its positions survives; the Frequent row is a shortcut, not a reorder | Move frequent chips out of their groups (no duplicates, but positions shift as usage changes); re-sort every group by use |
+| 2026-10-28 | Usage = **last 90 days, ≤ 500 rows, ≥ 2 uses, top 6**, fetched from Supabase each time Add opens | Cross-device and always current; bounded per the "no unbounded queries" rule; ≥ 2 keeps one-off categories out; 6 fits two rows at 375px. A failed fetch hides the row | The month already loaded on the Ledger (empty early in a month, and filtered by the type chip); per-device localStorage counts (start empty, differ between phone and laptop) |
 | 2026-10-12 | For **expenses, a goal is a category**: one picker, mutually exclusive, the goal's linked savings category is applied on save | User: "Goal and category are essentially the same" — making them also pick e.g. Equity was a redundant second choice. The goal↔category link already existed (one savings category per goal), so this is UI plus one resolve step, no schema change | Keep two sections and auto-select the goal's category (still two concepts on screen); hide categories when a goal is picked |
 | 2026-10-12 | **Income** keeps category-required with an optional "Also add to a goal" row | A goal's linked category is an expense/savings category, so it cannot stand in for an income category | Allow a goal alone for income (would file income under an expense category) |
 | 2026-10-12 | **12 colours for categories, 6 for goals and accounts** | The user wanted more pastel shades. Only `categories.color` gets the wider CHECK; goals and accounts keep theirs, so their pickers use `GOAL_ACCOUNT_COLOR_PALETTES`. Goal-linked categories inherit a base colour from the goal, so they always fit | Widen all three CHECKs (more migration surface for no request); generate shades per category from a hash (not user-choosable) |
