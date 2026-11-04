@@ -36,6 +36,13 @@ The user: "Tap to change the end date of goals is not working."
 - Transaction chip: tap lands on the input; a picked date shows "Oct 2, 2026"
   and is submitted; Today still toggles it back to "Pick date" (TC-591)
 
+### Deployed
+
+- `dpl_AbDoRCp8SXzKdpJf6UFFYxuk6eNq`, aliased to
+  `savings-tracker-azure.vercel.app` (`▲ Aliased`, exit 0). Root and `/goals`
+  return 200; the live `GoalForm` chunk has `noValidate` and the
+  `datePicker` chunk `showPicker`. Commit `644782d` pushed to `master`
+
 ### Not done (manual follow-up)
 
 - **Real-phone check** (TC-592): headless Chromium can't drive the iOS
