@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-10-28 (v0.42)
+**Last updated:** 2026-11-04 (v0.43)
 
 ## Setup
 
@@ -1023,3 +1023,14 @@ both themes. TC-549 onward need sign-in.
 | TC-584 | Both copies select | Harness: tap Groceries in the Frequent row | Both Groceries chips `aria-pressed="true"` | pass | 2026-10-28 |
 | TC-585 | Row hidden when it should be | Harness: empty usage; editing; Transfer. Then Income | No row in the first three; Income shows its own (Salary) | pass | 2026-10-28 |
 | TC-586 | Real usage, signed in | Open Add; then save an expense in a new category twice and reopen | Most-used categories from the last 90 days lead; the new one appears after its second use | not-run | |
+
+## v0.43 — Native date pickers (session 93)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-587 | Goal end date tap target | Harness 375px touch: `elementFromPoint` at the field centre; tap | The date input; it takes focus and the calendar opens | pass | 2026-11-04 |
+| TC-588 | Pick and save | Harness: Edit goal, pick 2027-03-15, Save changes | Shows "Mon, 15 Mar 2027 / Tap to change"; payload `end_date: '2027-03-15'` | pass | 2026-11-04 |
+| TC-589 | Field a11y and look | Harness light + dark; new goal | `getByLabel('End date')` resolves; ≥ 44px; placeholder "Pick an end date"; no overflow | pass | 2026-11-04 |
+| TC-590 | Overdue goal edit | Harness: goal ending 2026-01-31, rename, Save; then set 2026-02-01 | Saves with old date (old code: 0 saves); past changed date → "End date must be in the future" | pass | 2026-11-04 |
+| TC-591 | Transaction "Pick date" chip | Harness: tap point, pick 2026-10-02, Today, re-pick, Save | Tap lands on the input; chip shows "Oct 2, 2026"; Today resets it; payload date 2026-10-02 | pass | 2026-11-04 |
+| TC-592 | Real iPhone | Goals → Edit → tap end date; Add → Pick date | Native picker opens; chosen date saves | not-run | |

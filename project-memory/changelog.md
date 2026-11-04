@@ -1,6 +1,46 @@
 # Changelog
 
-**Last updated:** 2026-10-28 (v0.42)
+**Last updated:** 2026-11-04 (v0.43)
+
+## 2026-11-04 (session 93 — goal end date picker fixed)
+
+The user: "Tap to change the end date of goals is not working."
+
+### Fixed
+
+- **Goal end date opens the picker again.** `DatePickerField` (GoalForm) was
+  a button that called `showPicker()` on a hidden `sr-only` date input; iOS
+  Safari ignores that, so the tap was lost. The real `<input type="date">` now
+  sits transparent over the styled field, so the tap opens the native picker
+  on every platform. New `lib/datePicker.js` (`showNativePicker`) also asks for
+  the picker on click, for desktop Chrome, inside try/catch. Same look; the
+  field is now focusable, labelled by "End date", with a focus ring
+- **Saving an overdue goal** no longer silently fails: the input's `min`
+  (tomorrow) made native validation reject the unchanged old date before
+  `onSubmit`. The form is now `noValidate`; `validateForm` keeps the rules
+- **Add transaction "Pick date" chip**: same hidden-input pattern, same fix.
+  An emptied value (iOS "Clear") keeps the previous date rather than blanking
+  the required field
+
+### Verified
+
+- `vite build` green; lint 22 errors = baseline, none new
+- Harness at 375px, touch + mobile emulation, light and dark:
+  `elementFromPoint` at the field's centre is the date input (was the button);
+  a tap focuses it and opens Chromium's calendar; picking 2027-03-15 shows
+  "Mon, 15 Mar 2027" and saves `end_date: '2027-03-15'`; `getByLabel('End
+  date')` resolves; new-goal placeholder intact; no overflow (TC-587…TC-589)
+- Overdue goal: **old code** — 0 saves, `validationMessage` "Value must be
+  11/05/2026 or later"; **new code** — saves with the old date kept; changing
+  it to a past date still shows "End date must be in the future" (TC-590)
+- Transaction chip: tap lands on the input; a picked date shows "Oct 2, 2026"
+  and is submitted; Today still toggles it back to "Pick date" (TC-591)
+
+### Not done (manual follow-up)
+
+- **Real-phone check** (TC-592): headless Chromium can't drive the iOS
+  wheel. Tap the goal end date on the iPhone and confirm the picker opens and
+  the date saves
 
 ## 2026-10-28 (session 92 — "Frequent" categories row on Add transaction)
 

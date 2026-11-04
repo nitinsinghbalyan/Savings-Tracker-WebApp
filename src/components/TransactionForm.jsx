@@ -4,6 +4,7 @@ import { Delete, Repeat, X } from 'lucide-react'
 import { CURRENCIES } from '../lib/constants'
 import { buildCategoryPickerTree, getSelectableCategories } from '../lib/categories'
 import { formatTransactionDateLabel } from '../lib/transactions'
+import { showNativePicker } from '../lib/datePicker'
 import { buildFrequentCategories, frequentChipLabel } from '../lib/categoryUsage'
 import { formatCurrency, parseAmountInput } from '../lib/format'
 import { percentComplete, savedAmount } from '../lib/contributions'
@@ -152,7 +153,6 @@ export default function TransactionForm({
     ? `${transaction?.id ?? 'new'}:${activeAccounts.map((a) => a.id).join(',')}:${expenseCategories.map((c) => c.id).join(',')}:${incomeCategories.map((c) => c.id).join(',')}:${defaultCurrency}`
     : 'closed'
   const lastResetKeyRef = useRef('')
-  const dateInputRef = useRef(null)
 
   useEffect(() => {
     if (!open) {
@@ -200,16 +200,6 @@ export default function TransactionForm({
     values.transaction_date === format(new Date(), 'yyyy-MM-dd') ||
     values.transaction_date === format(subDays(new Date(), 1), 'yyyy-MM-dd')
 
-  const openDatePicker = () => {
-    const input = dateInputRef.current
-    if (!input) return
-    if (typeof input.showPicker === 'function') {
-      input.showPicker()
-    } else {
-      input.focus()
-      input.click()
-    }
-  }
   const currency = selectedAccount?.currency ?? values.currency
   const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? '₹'
   const amountValue = Number(parseAmountInput(values.amount))
@@ -714,31 +704,32 @@ export default function TransactionForm({
                     </button>
                   ))}
 
-                  <button
-                    type="button"
-                    onClick={openDatePicker}
-                    className={`${categoryChipBase} chip-row-item justify-center ${
-                      isPresetDate
-                        ? SELECT_CHIP_IDLE
-                        : SELECT_CHIP_ON
-                    }`}
-                  >
-                    {isPresetDate ? 'Pick date' : formatTransactionDateLabel(values.transaction_date)}
-                  </button>
-
-                  {/* Visually hidden, opened via showPicker() — same pattern as GoalForm */}
-                  <input
-                    ref={dateInputRef}
-                    id="tx-date"
-                    type="date"
-                    value={values.transaction_date}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, transaction_date: e.target.value }))
-                    }
-                    className="sr-only"
-                    aria-label="Pick a date"
-                    required
-                  />
+                  {/* The transparent date input covers the chip, so the tap opens
+                      the native picker directly (see lib/datePicker.js). */}
+                  <div className="relative flex min-w-0 flex-1">
+                    <span
+                      aria-hidden="true"
+                      className={`${categoryChipBase} chip-row-item w-full justify-center ${
+                        isPresetDate
+                          ? SELECT_CHIP_IDLE
+                          : SELECT_CHIP_ON
+                      }`}
+                    >
+                      {isPresetDate ? 'Pick date' : formatTransactionDateLabel(values.transaction_date)}
+                    </span>
+                    <input
+                      id="tx-date"
+                      type="date"
+                      value={values.transaction_date}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, transaction_date: e.target.value || v.transaction_date }))
+                      }
+                      onClick={showNativePicker}
+                      className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
+                      aria-label="Pick a date"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 

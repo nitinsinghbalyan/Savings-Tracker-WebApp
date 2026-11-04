@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { addDays, format, isAfter, parseISO, startOfDay } from 'date-fns'
 import { Calendar, Check, X } from 'lucide-react'
 import {
@@ -16,6 +16,7 @@ import {
   getAmountScaleLabel,
   parseAmountInput,
 } from '../lib/format'
+import { showNativePicker } from '../lib/datePicker'
 import ModalShell from './ModalShell'
 import CategoryIcon from './CategoryIcon'
 
@@ -109,29 +110,17 @@ function PriorityChip({ priority, selected, onClick, className = '' }) {
 }
 
 function DatePickerField({ id, value, onChange, error, minDate }) {
-  const inputRef = useRef(null)
   const displayValue = value
     ? format(parseISO(value), 'EEE, d MMM yyyy')
     : null
 
-  const openPicker = () => {
-    const input = inputRef.current
-    if (!input) return
-    if (typeof input.showPicker === 'function') {
-      input.showPicker()
-    } else {
-      input.focus()
-      input.click()
-    }
-  }
-
+  // The transparent date input covers the styled field, so the tap opens the
+  // native picker directly (see lib/datePicker.js).
   return (
-    <div>
-      <button
-        type="button"
-        onClick={openPicker}
-        aria-labelledby={`${id}-label`}
-        className={`date-picker-trigger w-full ${error ? 'border-red-300 ring-red-100' : ''}`}
+    <div className="group relative">
+      <div
+        aria-hidden="true"
+        className={`date-picker-trigger w-full group-focus-within:border-brand-500 group-focus-within:ring-2 group-focus-within:ring-brand-500/20 ${error ? 'border-red-300 ring-red-100' : ''}`}
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
           <Calendar className="h-5 w-5" aria-hidden="true" />
@@ -146,17 +135,16 @@ function DatePickerField({ id, value, onChange, error, minDate }) {
             <span className="mt-0.5 block text-xs text-slate-500">Tap to change</span>
           )}
         </span>
-      </button>
+      </div>
       <input
-        ref={inputRef}
         id={id}
         type="date"
         value={value}
         min={minDate}
         onChange={onChange}
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden="true"
+        onClick={showNativePicker}
+        aria-labelledby={`${id}-label`}
+        className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
       />
     </div>
   )
@@ -328,7 +316,9 @@ export default function GoalForm({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+        {/* noValidate: validateForm owns the rules. Native validation would
+            reject an overdue goal's unchanged end date against `min`. */}
+        <form noValidate onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div data-modal-scroll className="modal-scroll flex-1 space-y-5 px-4 py-4 sm:px-6">
             {submitError && (
               <p role="alert" className="alert-error">

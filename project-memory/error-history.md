@@ -2,7 +2,7 @@
 
 Log bugs, incidents, and fixes so the same issues are not re-debugged from scratch.
 
-**Last updated:** 2026-10-10 (v0.39)
+**Last updated:** 2026-11-04 (v0.43)
 
 | Date | Symptom | Root cause | Fix | Prevention |
 |------|---------|------------|-----|------------|
@@ -75,6 +75,8 @@ Log bugs, incidents, and fixes so the same issues are not re-debugged from scrat
 | 2026-10-10 | Cyan and violet goal cards: progress bar a different colour from the card's top edge | Edge used `palette.fill` hex, bar used the Tailwind `palette.bar` class; they differ for those two ids | Bar uses `palette.fill` too | Pick one source per visual (hex `fill`) and don't mix `fill` with `bar` on the same element |
 | 2026-10-10 | Selected category chips and icon discs stayed light pastel in dark mode | `.dark` only re-maps slate/brand; `bg-*-50 text-*-700` palette tints were literal | `.dark` overrides for the six palette tints in `index.css` | When adding a colour utility family, check it under `.dark` — only slate/brand/tokens adapt automatically |
 | 2026-10-10 | (caught pre-ship) "Insurance premium" got the home icon; "Credit card" got the car icon | Substring keyword rules: `emi` ⊂ premium, `car` ⊂ card | Specific rules moved first | Keyword matchers need collision tests for every rule that is a substring of a common word |
+| 2026-11-04 | Goals: tapping the end date ("Tap to change") did nothing on the phone; the Add transaction "Pick date" chip had the same pattern | A styled `<button>` called `showPicker()` on an `sr-only` `<input type="date">` (fallback `focus()`+`click()`). iOS Safari ignores both for a hidden input, and nothing caught a thrown `showPicker` | The real date input now covers the field, transparent (`absolute inset-0 opacity-0`), so the tap lands on it; `showNativePicker` (`lib/datePicker.js`) still asks for the picker on click for desktop Chrome, inside try/catch | Never open a native picker through a hidden input + `showPicker()` — overlay the real input. Test pickers by **tapping on a phone**; on desktop, `elementFromPoint` at the field's centre must be the input |
+| 2026-11-04 | Editing an **overdue** goal (rename / new target, date untouched) silently did nothing on Save | The hidden date input carried `min` = tomorrow, so native form validation rejected the old date ("Value must be … or later") before `onSubmit` ran — no visible message on an `sr-only` field. The 2026-10-10 fix only relaxed `validateForm` | `noValidate` on the goal form; `validateForm` owns the rules (unchanged date OK, changed date must be future) | A form with its own validation gets `noValidate`. When a JS rule is relaxed, check the native attributes (`min`, `max`, `required`, `pattern`) on the same field enforce the same thing |
 
 ## Template (copy for new entries)
 
