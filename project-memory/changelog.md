@@ -1,6 +1,32 @@
 # Changelog
 
-**Last updated:** 2026-11-04 (v0.43)
+**Last updated:** 2026-11-13 (v0.44)
+
+## 2026-11-13 (session 94 — Frequent row shows up to 12 categories)
+
+The user: "I need more recommended categories … more than 6." Asked how
+many; they chose **up to 12**, still only categories used at least twice in
+the last 90 days.
+
+### Changed
+
+- `buildFrequentCategories` default `limit` 6 → 12 (`lib/categoryUsage.js`).
+  Query, ranking, the ≥ 2-use rule, duplication in the full list and where
+  the row shows are unchanged; the 500-row usage cap is far above 12 × 2
+
+### Verified
+
+- `vite build` green; lint 22 errors = baseline
+- node checks: 15 categories used ≥ 2× → 12 returned in count order; single
+  uses still dropped; explicit `limit` honoured; TC-581/582 cases re-run
+  (TC-593)
+- Harness 375px, light + dark, 15 used categories: 12 chips in four rows,
+  all 44px, above "Save to a goal", goal category excluded, no overflow
+  (TC-594)
+
+### Not done (manual follow-up)
+
+- Signed-in check with real data (TC-586 still `not-run`)
 
 ## 2026-11-04 (session 93 — goal end date picker fixed)
 

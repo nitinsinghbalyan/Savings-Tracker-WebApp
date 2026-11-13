@@ -8,7 +8,7 @@
  * @param {Array} usageRows    rows from getCategoryUsage: { category_id, transaction_date, created_at }
  * @returns {Array}            at most `limit` categories, each used at least `minCount` times
  */
-export function buildFrequentCategories(selectable, usageRows, { limit = 6, minCount = 2 } = {}) {
+export function buildFrequentCategories(selectable, usageRows, { limit = 12, minCount = 2 } = {}) {
   if (!Array.isArray(selectable) || !Array.isArray(usageRows) || usageRows.length === 0) return []
 
   const stats = new Map()

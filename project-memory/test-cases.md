@@ -1,6 +1,6 @@
 # Test Cases
 
-**Last updated:** 2026-11-04 (v0.43)
+**Last updated:** 2026-11-13 (v0.44)
 
 ## Setup
 
@@ -1034,3 +1034,10 @@ both themes. TC-549 onward need sign-in.
 | TC-590 | Overdue goal edit | Harness: goal ending 2026-01-31, rename, Save; then set 2026-02-01 | Saves with old date (old code: 0 saves); past changed date → "End date must be in the future" | pass | 2026-11-04 |
 | TC-591 | Transaction "Pick date" chip | Harness: tap point, pick 2026-10-02, Today, re-pick, Save | Tap lands on the input; chip shows "Oct 2, 2026"; Today resets it; payload date 2026-10-02 | pass | 2026-11-04 |
 | TC-592 | Real iPhone | Goals → Edit → tap end date; Add → Pick date | Native picker opens; chosen date saves | not-run | |
+
+## v0.44 — Frequent row up to 12 (session 94)
+
+| ID | Test | Steps | Expected | Result | Date |
+|----|------|-------|----------|--------|------|
+| TC-593 | Cap of 12 | node: 15 categories used 2…16× | 12 returned, most-used first; single uses dropped; `{ limit: 6 }` still gives 6 | pass | 2026-11-13 |
+| TC-594 | 12-chip row layout | Harness 375px light + dark, 15 used categories + a goal | 12 chips, ≥ 44px, above "Save to a goal", goal category excluded, no overflow | pass | 2026-11-13 |
