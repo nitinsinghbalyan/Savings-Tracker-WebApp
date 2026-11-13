@@ -24,6 +24,14 @@ the last 90 days.
   all 44px, above "Save to a goal", goal category excluded, no overflow
   (TC-594)
 
+### Deployed
+
+- `dpl_J51XDPB9FhnJ814wK6b2WnPJRM4v`, aliased to
+  `savings-tracker-azure.vercel.app` (`▲ Aliased`, exit 0); root 200; the live
+  `TransactionForm` chunk carries `limit:n=12`. Commit `dfdf8a4` on `master`.
+  This fresh container had no `.vercel/project.json` (gitignored); re-created
+  it from the known project/org ids before deploying
+
 ### Not done (manual follow-up)
 
 - Signed-in check with real data (TC-586 still `not-run`)
